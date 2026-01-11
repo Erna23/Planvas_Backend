@@ -4,5 +4,5 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:1234@localhost:3306/Planvas"
+  url      = env("DATABASE_URL")
 }
