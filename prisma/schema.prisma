@@ -6,3 +6,15 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id                Int      @id @default(autoincrement())
+  email             String   @unique @db.VarChar(255)
+  googleId          String   @map("google_id") @db.VarChar(255)
+  nickname          String?  @db.VarChar(50)
+  refreshToken      String?  @map("refresh_token") @db.VarChar(512)
+  onboardingStatus  String   @map("onboarding_status") @db.VarChar(20)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("user")
+}
