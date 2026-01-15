@@ -48,7 +48,7 @@ model UserProfile {
   userId    Int      @unique @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interests Json     // [2,3,7] 같은 형태로 저장
+  interests Json     // [2,3,7] 같은 형태
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_profile")
