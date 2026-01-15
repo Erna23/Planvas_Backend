@@ -8,13 +8,65 @@ datasource db {
 }
 
 model User {
-  id                Int      @id @default(autoincrement())
-  email             String   @unique @db.VarChar(255)
-  googleId          String   @map("google_id") @db.VarChar(255)
-  nickname          String?  @db.VarChar(50)
-  refreshToken      String?  @map("refresh_token") @db.VarChar(512)
-  onboardingStatus  String   @map("onboarding_status") @db.VarChar(20)
-  createdAt         DateTime @default(now()) @map("created_at")
+  id                  Int      @id @default(autoincrement())
+  email               String   @unique @db.VarChar(255)
+  provider            String   @db.VarChar(20) // "google"
+  oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
+  name                String   @db.VarChar(50)
+  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
+  createdAt           DateTime @default(now()) @map("created_at")
 
+  goalPeriods   GoalPeriod[]
+  profile       UserProfile?
+  calendar      CalendarSetting?
+
+  @@unique([provider, oauthId])
   @@map("user")
+}
+
+model GoalPeriod {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title      String   @db.VarChar(100)
+  startDate  DateTime @map("start_date")
+  endDate    DateTime @map("end_date")
+
+  growth     Int
+  rest       Int
+  presetType String   @map("preset_type") @db.VarChar(20) // "CUSTOM" 등
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("goal_period")
+}
+
+model UserProfile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  interests Json     // [2,3,7] 같은 형태로 저장
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profile")
+}
+
+model CalendarSetting {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique @map("user_id")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  connect              Boolean  @default(false)
+  provider             String?  @db.VarChar(20) // "google"
+  importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
+
+  selectedEventIds     Json?    @map("selected_event_ids")     // [1,2,4]
+  manualFixedSchedules Json?    @map("manual_fixed_schedules") 
+
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("calendar_setting")
 }
