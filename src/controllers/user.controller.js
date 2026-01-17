@@ -3,7 +3,7 @@ import {
   signupWithGoogle,
   getMeByUserId,
   saveOnboardingByUserId,
-} from "../service/user.service.js";
+} from "../services/user.service.js";
 
 import { requireAuth } from "../auth.config.js";
 

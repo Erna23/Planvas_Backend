@@ -1,5 +1,5 @@
 import { verifyGoogleIdToken, signAccessToken, EXPIRES_IN_SECONDS } from "../auth.config.js";
-import { parseIdTokenBody, validateOnboardingBody } from "../dto/user.dto.js";
+import { parseIdTokenBody, validateOnboardingBody } from "../dtos/user.dto.js";
 import {
   findUserByProviderOauthId,
   createUser,
@@ -8,7 +8,7 @@ import {
   createGoalPeriod,
   upsertUserProfileInterests,
   upsertCalendarSetting,
-} from "../repository/user.repository.js";
+} from "../repositories/user.repository.js";
 
 /**
  * POST /api/users/oauth2/google
