@@ -63,4 +63,8 @@ function defaultOnboardingFail() {
     error: { errorCode: "O500", reason: "온보딩 저장 중 서버 오류가 발생했습니다.", data: null },
     success: null,
   };
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 27297438c8f56cd6e6e681e8d02f60699632b3e2
