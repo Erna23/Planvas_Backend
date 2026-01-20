@@ -13,15 +13,55 @@ model User {
   provider            String   @db.VarChar(20) // "google"
   oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
   name                String   @db.VarChar(50)
+  refreshToken        String?  @map("refresh_token") @db.Text
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
   createdAt           DateTime @default(now()) @map("created_at")
 
   goalPeriods   GoalPeriod[]
   profile       UserProfile?
   calendar      CalendarSetting?
+  activities          UserActivity[]       
+  notificationSetting NotificationSetting? 
 
   @@unique([provider, oauthId])
   @@map("user")
+}
+model UserActivity {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
+  googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
+  
+  title         String   @db.VarChar(200)
+  startAt       DateTime @map("start_at")
+  endAt         DateTime @map("end_at")
+  
+  // "FIXED"(고정), "GROWTH"(성장), "REST"(휴식)
+  type          String   @default("FIXED") @db.VarChar(20)
+  
+  status        String   @default("TODO") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("user_activity")
+}
+
+model NotificationSetting {
+  id                        Int     @id @default(autoincrement())
+  userId                    Int     @unique @map("user_id")
+  user                      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dDayEnabled               Boolean @default(true) @map("d_day_enabled")               // D-Day 알림
+  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled") // 활동 완료 알림
+  
+  fcmToken                  String? @map("fcm_token") @db.VarChar(255)
+
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_setting")
 }
 
 model GoalPeriod {
