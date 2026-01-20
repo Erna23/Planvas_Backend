@@ -5,22 +5,30 @@ import { OAuth2Client } from "google-auth-library";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // 웹 애플리케이션 Google Client ID
-const ACCESS_EXPIRES_IN = "30d"; // 데모용: 30일
-export const EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30; // 2592000
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET; // ★ 추가됨
 
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const ACCESS_EXPIRES_IN = "30d";
+export const EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30;
+
+const googleClient = new OAuth2Client(
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  "postmessage"
+);
 
 if (!JWT_SECRET) {
   throw new Error("Missing env: JWT_SECRET");
 }
 if (!GOOGLE_CLIENT_ID) {
-  throw new Error("Missing env: GOOGLE_CLIENT_ID (web client id)");
+  throw new Error("Missing env: GOOGLE_CLIENT_ID");
+}
+if (!GOOGLE_CLIENT_SECRET) {
+  throw new Error("Missing env: GOOGLE_CLIENT_SECRET"); // ★ 체크 추가
 }
 
-
 /**
- * Google ID Token 검증 → { email, name, oauthId(sub), provider }
+ * Google ID Token 검증 (로그인용)
  */
 export async function verifyGoogleIdToken(idToken) {
   if (!idToken) throw new Error("idToken is required");
@@ -33,28 +41,49 @@ export async function verifyGoogleIdToken(idToken) {
   const payload = ticket.getPayload();
   if (!payload) throw new Error("Invalid token payload");
 
-  const email = payload.email;
-  const name = payload.name || payload.given_name || "사용자";
-  const oauthId = payload.sub; // Google unique user id
-  const provider = "google";
-
-  if (!email || !oauthId) {
-    throw new Error("Token payload missing email/sub");
-  }
-
-  return { email, name, oauthId, provider };
-}
-
-export function signAccessToken({ userId }) {
-  return jwt.sign(
-    { userId }, // payload 최소화
-    JWT_SECRET,
-    { expiresIn: ACCESS_EXPIRES_IN }
-  );
+  return {
+    email: payload.email,
+    name: payload.name || payload.given_name || "사용자",
+    oauthId: payload.sub,
+    provider: "google",
+  };
 }
 
 /**
- * Authorization: Bearer <token> 에서 token 추출
+ * 연동용: Auth Code -> Refresh Token 교환
+ */
+export async function getGoogleTokens(code) {
+  try {
+    const { tokens } = await googleClient.getToken(code);
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      idToken: tokens.id_token,
+    };
+  } catch (error) {
+    console.error("Google Token Exchange Error:", error);
+    throw new Error("구글 토큰 교환에 실패했습니다.");
+  }
+}
+
+/**
+ * 동기화용: 저장된 Refresh Token으로 클라이언트 생성
+ */
+export function getGoogleClient(refreshToken) {
+  const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+  client.setCredentials({ refresh_token: refreshToken });
+  return client;
+}
+
+/**
+ * JWT Access Token 생성 (우리 서비스용)
+ */
+export function signAccessToken({ userId }) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
+}
+
+/**
+ * Authorization 헤더 추출
  */
 function extractBearerToken(req) {
   const auth = req.headers.authorization;
@@ -65,7 +94,7 @@ function extractBearerToken(req) {
 }
 
 /**
- * JWT 인증 미들웨어 (GET /api/users/me 등에 사용)
+ * JWT 인증 미들웨어
  */
 export function requireAuth(req, res, next) {
   try {
@@ -79,7 +108,7 @@ export function requireAuth(req, res, next) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.auth = decoded; // { userId, iat, exp }
+    req.auth = decoded;
     return next();
   } catch (e) {
     return res.status(401).json({
