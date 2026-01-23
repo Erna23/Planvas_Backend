@@ -3,6 +3,7 @@ import {
   signupWithGoogle,
   getMeByUserId,
   saveOnboardingByUserId,
+  getMyInterestsByUserId,
 } from "../services/user.service.js";
 
 import { requireAuth } from "../auth.config.js";
@@ -14,6 +15,7 @@ export function registerUserRoutes(app) {
       const result = await googleOAuth2(req.body);
       return res.status(200).json(result);
     } catch (e) {
+      console.error("[POST /api/users/oauth2/google] error:", e);
       return res.status(e.statusCode ?? 401).json(e.payload ?? defaultAuthFail());
     }
   });
@@ -38,6 +40,17 @@ export function registerUserRoutes(app) {
     }
   });
 
+    // GET /api/users/me/interests
+  app.get("/api/users/me/interests", requireAuth, async (req, res) => {
+    try {
+      const result = await getMyInterestsByUserId(req.auth.userId);
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[GET /api/users/me/interests] error:", e);
+      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultInterestsFail());
+    }
+  });
+
   // POST /api/users/me/onboarding
   app.post("/api/users/me/onboarding", requireAuth, async (req, res) => {
     try {
@@ -57,14 +70,18 @@ function defaultAuthFail() {
   };
 }
 
+function defaultInterestsFail() {
+  return {
+    resultType: "FAIL",
+    error: { errorCode: "I500", reason: "관심사 조회 중 서버 오류가 발생했습니다.", data: null },
+    success: null,
+  };
+}
+
 function defaultOnboardingFail() {
   return {
     resultType: "FAIL",
     error: { errorCode: "O500", reason: "온보딩 저장 중 서버 오류가 발생했습니다.", data: null },
     success: null,
   };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 27297438c8f56cd6e6e681e8d02f60699632b3e2

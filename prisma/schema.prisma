@@ -75,7 +75,8 @@ model GoalPeriod {
 
   growth     Int
   rest       Int
-  presetType String   @map("preset_type") @db.VarChar(20) // "CUSTOM" 등
+  presetType String @default("CUSTOM") @map("preset_type") @db.VarChar(20)
+  presetId  Int?
 
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -109,4 +110,11 @@ model CalendarSetting {
   updatedAt            DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_setting")
+}
+
+model Interest {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  @@map("interest")
 }

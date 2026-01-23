@@ -8,6 +8,8 @@ import {
   createGoalPeriod,
   upsertUserProfileInterests,
   upsertCalendarSetting,
+  findUserProfileByUserId,
+  findInterestsByIds,
 } from "../repositories/user.repository.js";
 
 /**
@@ -216,6 +218,39 @@ export async function saveOnboardingByUserId(userId, body) {
   };
 }
 
+/**
+ * GET /api/users/me/interests
+ * - controller에서 requireAuth로 인증 후 userId 전달
+ */
+export async function getMyInterestsByUserId(userId) {
+  const user = await findUserById(userId);
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { errorCode: "U404", reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // profile.interests 는 온보딩에서 저장된 관심사 ID 배열(Int[])이라고 가정
+  const profile = await findUserProfileByUserId(userId);
+  const raw = profile?.interests;
+  const interestIds = 
+  Array.isArray(raw) ? raw.map(Number).filter((n) => Number.isInteger(n)) : [];
+
+
+  const interests = await findInterestsByIds(interestIds);
+
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success: { interests },
+  };
+}
+
 /* ----------------- 공통 에러 유틸 ----------------- */
 
 function authFailGoogle() {
@@ -227,8 +262,4 @@ function authFailGoogle() {
     success: null,
   };
   return err;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 27297438c8f56cd6e6e681e8d02f60699632b3e2
