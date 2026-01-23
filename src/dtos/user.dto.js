@@ -40,8 +40,4 @@ export function validateOnboardingBody(body) {
   }
 
   return { goalPeriod, calendar, profile };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 27297438c8f56cd6e6e681e8d02f60699632b3e2
