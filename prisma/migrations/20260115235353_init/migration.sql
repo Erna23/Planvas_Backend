@@ -55,6 +55,21 @@ CREATE TABLE `calendar_setting` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `Reports` (
+	`id`	int	NOT NULL AUTO_INCREMENT,
+	`user_id`	INT	NOT NULL,
+	`goal_id`	int	NOT NULL,
+	`type`	varchar(20)	NOT NULL,
+	`title`	varchar(100)	NULL,
+	`sub_title`	varchar(255)	NULL,
+	`snapshot_data`	json	NOT NULL	COMMENT '사용자가 일정 삭제해도 수치는 저장되도록',
+	`created_at`	datetime	NOT NULL,
+
+    UNIQUE INDEX `Reports_goal_id_idx`(`goal_id`), 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `goal_period` ADD CONSTRAINT `goal_period_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -63,3 +78,9 @@ ALTER TABLE `user_profile` ADD CONSTRAINT `user_profile_user_id_fkey` FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE `calendar_setting` ADD CONSTRAINT `calendar_setting_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reports` ADD CONSTRAINT `FK_user_TO_Reports_1` FOREIGN KEY (`user_id`) REFERENCES `user` (	`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reports` ADD CONSTRAINT `FK_Goals_TO_Reports_1` FOREIGN KEY (`goal_id`) REFERENCES `goal_period` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
