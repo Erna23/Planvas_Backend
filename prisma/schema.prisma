@@ -22,7 +22,7 @@ model User {
   calendar      CalendarSetting?
   activities          UserActivity[]       
   notificationSetting NotificationSetting? 
-  reports Report[]
+  report       Report[]
 
   @@unique([provider, oauthId])
   @@map("user")
@@ -82,7 +82,7 @@ model GoalPeriod {
 
   createdAt  DateTime @default(now()) @map("created_at")
 
-  reports Report[]
+  report Report[]
 
   @@index([userId])
   @@map("goal_period")
