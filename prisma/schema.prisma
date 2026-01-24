@@ -82,7 +82,7 @@ model GoalPeriod {
 
   createdAt  DateTime @default(now()) @map("created_at")
 
-  reports Report[]
+  reports       Report[]
 
   @@index([userId])
   @@map("goal_period")
