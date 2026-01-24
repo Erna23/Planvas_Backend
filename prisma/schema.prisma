@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = "mysql://root:1234@localhost:3306/Planvas"
 }
 
 model User {
@@ -22,10 +22,12 @@ model User {
   calendar      CalendarSetting?
   activities          UserActivity[]       
   notificationSetting NotificationSetting? 
+  reports Report[]
 
   @@unique([provider, oauthId])
   @@map("user")
 }
+
 model UserActivity {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")
@@ -80,6 +82,8 @@ model GoalPeriod {
 
   createdAt  DateTime @default(now()) @map("created_at")
 
+  reports Report[]
+
   @@index([userId])
   @@map("goal_period")
 }
@@ -117,4 +121,22 @@ model Interest {
   name String @unique @db.VarChar(50)
 
   @@map("interest")
+}
+
+model Report {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  goalId       Int
+  type         String   @db.VarChar(20)
+  title        String?  @db.VarChar(100)
+  subTitle     String?  @db.VarChar(255)
+  snapshotData Json
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("report")
+  @@index([userId])
+  @@index([goalId])
 }
