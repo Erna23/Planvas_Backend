@@ -127,6 +127,8 @@ model Report {
   id           Int      @id @default(autoincrement())
   userId       Int
   goalId       Int
+  growth       Int
+  rest         Int
   type         String   @db.VarChar(20)
   title        String?  @db.VarChar(100)
   subTitle     String?  @db.VarChar(255)
