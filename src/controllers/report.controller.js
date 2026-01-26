@@ -1,0 +1,30 @@
+import { requireAuth } from "../auth.config.js";
+import { getSeasonsReports } from "../services/report.service.js";
+
+export function registerReportRoutes(app) {
+    app.get("/api/reports/seasons", requireAuth, async (req, res) => {
+        try {
+            const result = await getSeasonsReports(req.auth.userId);
+            return res.status(200).json(result);
+        } catch (e) {
+            return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
+        }
+    });
+
+    // app.get("/api/reports/seasons/:goalId", requireAuth, async (req, res) => {
+    //     try {
+    //         const result = await getSeasonReport(req.auth.userId, req.params.goalId);
+    //         return res.status(200).json(result);
+    //     } catch (e) {
+    //         return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
+    //     }
+    // });
+}
+
+function defaultReportsFail() {
+    return {
+        resultType: "FAIL",
+        error: { reason: "목표 처리 중 서버 오류가 발생했습니다.", data: null },
+        success: null,
+    };
+}

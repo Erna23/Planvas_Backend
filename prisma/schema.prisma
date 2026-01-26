@@ -142,3 +142,10 @@ model Report {
   @@index([userId])
   @@index([goalId])
 }
+
+enum Recommend {
+  ALL
+  REST
+  GROWTH
+  NONE
+}
