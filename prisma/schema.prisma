@@ -20,6 +20,9 @@ model User {
   profile       UserProfile?
   calendar      CalendarSetting?
 
+  reminders     Reminder[]
+  pushTokens    PushToken[]
+
   @@unique([provider, oauthId])
   @@map("user")
 }
@@ -69,4 +72,28 @@ model CalendarSetting {
   updatedAt            DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_setting")
+}
+model Reminder {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminderType String   @map("reminder_type") @db.VarChar(50)
+  isEnabled    Boolean  @default(true) @map("is_enabled")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("reminder")
+}
+
+model PushToken {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String   @unique @db.VarChar(255)
+  platform    String   @db.VarChar(20)
+  environment String   @db.VarChar(20)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("push_token")
 }
