@@ -1,6 +1,6 @@
 import { Recommend } from "@prisma/client"
 import { findUserById } from "../repositories/user.repository"
-import { createReport } from "../repositories/report.repository";
+import { createNewReport } from "../repositories/report.repository";
 import { findGoalReports, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository";
 import { toGoalReportDto } from "../dtos/report.dto";
 
