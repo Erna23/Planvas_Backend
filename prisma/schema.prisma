@@ -13,18 +13,58 @@ model User {
   provider            String   @db.VarChar(20) // "google"
   oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
   name                String   @db.VarChar(50)
+  refreshToken        String?  @map("refresh_token") @db.Text
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
   createdAt           DateTime @default(now()) @map("created_at")
 
-  goalPeriods   GoalPeriod[]
-  profile       UserProfile?
-  calendar      CalendarSetting?
+  goalPeriods           GoalPeriod[]
+  profile               UserProfile?
+  calendar              CalendarSetting?
+  activities            UserActivity[]
+  notificationSetting   NotificationSetting?
+  reports               Report[]
 
-  reminders     Reminder[]
-  pushTokens    PushToken[]
+  reminders             Reminder[]
+  pushTokens            PushToken[]
 
   @@unique([provider, oauthId])
   @@map("user")
+}
+
+model UserActivity {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
+
+  title         String   @db.VarChar(200)
+  startAt       DateTime @map("start_at")
+  endAt         DateTime @map("end_at")
+
+  type          String   @default("FIXED") @db.VarChar(20)
+  status        String   @default("TODO") @db.VarChar(20)
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("user_activity")
+}
+
+model NotificationSetting {
+  id                        Int      @id @default(autoincrement())
+  userId                    Int      @unique @map("user_id")
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")
+  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled")
+
+  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
+
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_setting")
 }
 
 model GoalPeriod {
@@ -38,9 +78,12 @@ model GoalPeriod {
 
   growth     Int
   rest       Int
-  presetType String   @map("preset_type") @db.VarChar(20) // "CUSTOM" 등
+  presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
+  presetId   Int?
 
   createdAt  DateTime @default(now()) @map("created_at")
+
+  reports    Report[]
 
   @@index([userId])
   @@map("goal_period")
@@ -51,7 +94,7 @@ model UserProfile {
   userId    Int      @unique @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interests Json     // [2,3,7] 같은 형태
+  interests Json
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_profile")
@@ -63,20 +106,22 @@ model CalendarSetting {
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   connect              Boolean  @default(false)
-  provider             String?  @db.VarChar(20) // "google"
+  provider             String?  @db.VarChar(20)
   importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json?    @map("selected_event_ids")     // [1,2,4]
-  manualFixedSchedules Json?    @map("manual_fixed_schedules") 
+  selectedEventIds     Json?    @map("selected_event_ids")
+  manualFixedSchedules Json?    @map("manual_fixed_schedules")
 
   updatedAt            DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_setting")
 }
+
 model Reminder {
   id           Int      @id @default(autoincrement())
   userId       Int      @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   reminderType String   @map("reminder_type") @db.VarChar(50)
   isEnabled    Boolean  @default(true) @map("is_enabled")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -88,7 +133,8 @@ model Reminder {
 model PushToken {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   token       String   @unique @db.VarChar(255)
   platform    String   @db.VarChar(20)
   environment String   @db.VarChar(20)
@@ -96,4 +142,31 @@ model PushToken {
 
   @@index([userId])
   @@map("push_token")
+}
+
+model Interest {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  @@map("interest")
+}
+
+model Report {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  goalId       Int
+  growth       Int
+  rest         Int
+  type         String   @db.VarChar(20)
+  title        String?  @db.VarChar(100)
+  subTitle     String?  @db.VarChar(255)
+  snapshotData Json
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("report")
+  @@index([userId])
+  @@index([goalId])
 }
