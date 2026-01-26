@@ -1,9 +1,9 @@
 import { Recommend } from "@prisma/client"
 import { findUserById } from "../repositories/user.repository"
 import { findRecentReportsByUserId } from "../repositories/report.repository";
-import { findGoalPeriodById } from "../repositories/goals.repository";
+import { findGoalPeriodById, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository";
 
-export async function getSeasonsReports(userId) {
+export async function getSeasonsReports(userId, year = null) {
     const user = await findUserById(userId);
     if(!user) {
         const err = new Error("User not found");
@@ -16,29 +16,32 @@ export async function getSeasonsReports(userId) {
         throw err;
     }
 
-    const report = await findRecentReportsByUserId(userId);
-    if(!report) {
-        const err = new Error("Report not found");
+    const reports = await findGoalReports(userId).map((report) => ({
+        ...report, 
+        year: new Date(report.endDate).getFullYear()
+    }));
+
+    if(year != null) {
+        return reports.filter((report) => report.year === year);
+    }
+    return reports;
+}
+
+export async function createReport(userId, goalId) {
+    const user = await findUserById(userId);
+    if(!user) {
+        const err = new Error("User not found");
         err.statusCode = 404;
         err.payload = {
             resultType: "FAIL",
-            error: { reason: "보고서를 찾을 수 없습니다.", data: null },
+            error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
             success: null,
         };
         throw err;
     }
-    
-    const goal = await findGoalPeriodById(report.goalId);
-    if(!goal) {
-        const err = new Error("Goal not found");
-        err.statusCode = 404;
-        err.payload = {
-            resultType: "FAIL",
-            error: { reason: "목표를 찾을 수 없습니다.", data: null },
-            success: null,
-        };
-        throw err;
-    }
+
+    const goal = await findCurrentGoalPeriodByUserId(userId);
+    const newReport = await createNewReport(userId, goal);
 
     let recommend;
     if(report.growth + report.rest < 50) {
@@ -64,4 +67,8 @@ export async function getSeasonsReports(userId) {
     }
 
     return toGoalReportDto(report, goal, recommend);
+}
+
+export async function createReport(userId, goalId) {
+
 }

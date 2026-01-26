@@ -1,3 +1,5 @@
+import { prisma } from "../db.config.js";
+
 export async function findRecentReportsByUserId(userId) {
     return prisma.report.findFirst({
         where: {
@@ -15,4 +17,16 @@ export async function findRecentReportsByUserId(userId) {
             subTitle: true,
         }
     });
+}
+
+export async funciton createNewReport(userId, goal) {
+    return prisma.report.create({
+        data: {
+            goalId: goal.goalId,
+            growth: 
+        },
+        select: {
+
+        }
+    })
 }

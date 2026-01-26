@@ -128,3 +128,15 @@ export async function updateGoalPeriodRatio(goalId, growth, rest) {
     },
   });
 }
+
+export async function findGoalReports(userId) {
+  return prisma.goalPeriod.findMany({
+    where: { userId: userId },
+    select: {
+      id: true,
+      title: true,
+      startDate: true,
+      endDate: true
+    }
+  })
+}
