@@ -4,7 +4,10 @@ import { getSeasonsReports, createReport } from "../services/report.service.js";
 export function registerReportRoutes(app) {
     app.get("/api/reports/seasons", requireAuth, async (req, res) => {
         try {
-            const result = await getSeasonsReports(req.auth.userId);
+            const { year } = req.query;
+            const parsedYear = year ? Number(year) : 0;
+
+            const result = await getSeasonsReports(req.auth.userId, parsedYear);
             return res.status(200).json(result);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());

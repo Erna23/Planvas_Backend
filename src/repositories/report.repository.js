@@ -19,14 +19,10 @@ export async function findRecentReportsByUserId(userId) {
     });
 }
 
-export async funciton createNewReport(userId, goal) {
+export async function createNewReport(userId, goal) {
     return prisma.report.create({
         data: {
             goalId: goal.goalId,
-            growth: 
-        },
-        select: {
-
         }
     })
 }
