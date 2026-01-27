@@ -1,8 +1,8 @@
 import { Recommend } from "@prisma/client"
-import { findUserById } from "../repositories/user.repository"
-import { createNewReport } from "../repositories/report.repository";
-import { findGoalReports, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository";
-import { toGoalReportDto } from "../dtos/report.dto";
+import { findUserById } from "../repositories/user.repository.js"
+import { createNewReport } from "../repositories/report.repository.js";
+import { findGoalReports, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository.js";
+import { toGoalReportDto } from "../dtos/report.dto.js";
 
 export async function getSeasonsReports(userId, year = 0) {
     const user = await findUserById(userId);
