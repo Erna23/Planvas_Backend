@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Prisma 폴더가 변경되었는지 감지하는 단계 
+      # Prisma 폴더가 변경되었는지 감지하는 단계
       - name: Check prisma has changes
         uses: dorny/paths-filter@v3
         id: paths-filter
@@ -27,7 +27,6 @@ jobs:
           echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-         
           cat >>~/.ssh/config <<END
           Host umc9thworkbook
             HostName $EC2_HOST
@@ -46,6 +45,15 @@ jobs:
           ssh umc9thworkbook 'sudo chown ubuntu:ubuntu /opt/app'
           scp -r ./[!.]* umc9thworkbook:/opt/app
 
+      # ✅ .env를 서버에 생성(점파일 scp 제외 문제 해결)
+      - name: Write .env on server
+        run: |
+          ssh umc9thworkbook 'cat > /opt/app/.env << "EOF"
+          ${{ secrets.ENV_FILE }}
+          EOF'
+          ssh umc9thworkbook 'chmod 600 /opt/app/.env'
+          ssh umc9thworkbook 'sudo chown ubuntu:ubuntu /opt/app/.env'
+
       - name: Install dependencies
         run: |
           ssh umc9thworkbook 'cd /opt/app; npm install'
@@ -56,6 +64,7 @@ jobs:
         run: |
           ssh umc9thworkbook 'cd /opt/app; npx prisma migrate deploy'
 
+      # ✅ systemd에 WorkingDirectory 추가 + User 고정
       - name: Copy systemd service file
         run: |
           ssh umc9thworkbook '
@@ -64,9 +73,11 @@ jobs:
             After=network.target
 
             [Service]
-            User=${USER}
-            ExecStart=/usr/bin/npm run start --prefix /opt/app/
+            User=ubuntu
+            WorkingDirectory=/opt/app
+            ExecStart=/usr/bin/npm run start
             Restart=always
+            EnvironmentFile=/opt/app/.env
 
             [Install]
             WantedBy=multi-user.target" | sudo tee /etc/systemd/system/app.service
