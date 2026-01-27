@@ -1,4 +1,4 @@
-import { requireAuth } from "../auth.config";
+import { requireAuth } from "../auth.config.js";
 
 export function registerScheduleRoutes(app) {
     // 고정 일정 CRUD
