@@ -132,7 +132,6 @@ model Report {
   type         String   @db.VarChar(20)
   title        String?  @db.VarChar(100)
   subTitle     String?  @db.VarChar(255)
-  snapshotData Json
   createdAt    DateTime @default(now()) @map("created_at")
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -141,4 +140,11 @@ model Report {
   @@map("report")
   @@index([userId])
   @@index([goalId])
+}
+
+enum Recommend {
+  ALL
+  REST
+  GROWTH
+  NONE
 }
