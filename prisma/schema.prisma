@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:1234@localhost:3306/Planvas"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -147,4 +147,68 @@ enum Recommend {
   REST
   GROWTH
   NONE
+}
+enum ActivityTab {
+  GROWTH
+  REST
+}
+
+enum ActivityType {
+  NORMAL
+  CONTEST
+}
+
+model Activity {
+  id           Int          @id @default(autoincrement())
+  title        String
+  tab          ActivityTab
+  point        Int
+  thumbnailUrl String?
+  description  String?
+  type         ActivityType @default(NORMAL)
+
+  // 공모전/기간 표시용 (와이어프레임 대응)
+  startDate    DateTime?
+  endDate      DateTime?
+  externalUrl  String?
+
+  // 탐색 화면 칩 필터용
+  categoryId   Int?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  cartItems    CartItem[]
+  myActivities MyActivity[]
+
+  @@index([tab])
+  @@index([categoryId])
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, activityId])
+  @@index([userId])
+}
+
+model MyActivity {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  goalId     Int
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+
+  startDate  DateTime
+  endDate    DateTime
+  point      Int
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([goalId])
 }
