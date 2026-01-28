@@ -17,82 +17,83 @@ model User {
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
   createdAt           DateTime @default(now()) @map("created_at")
 
-  goalPeriods           GoalPeriod[]
-  profile               UserProfile?
-  calendar              CalendarSetting?
-  activities            UserActivity[]
-  notificationSetting   NotificationSetting?
-  reports               Report[]
+  goalPeriods         GoalPeriod[]
+  profile             UserProfile?
+  calendar            CalendarSetting?
+  activities          UserActivity[]
+  notificationSetting NotificationSetting?
+  reports             Report[]
 
-  reminders             Reminder[]
-  pushTokens            PushToken[]
+  reminders        Reminder[]
+  pushTokens       PushToken[]
+  notificationLogs NotificationLog[]
 
   @@unique([provider, oauthId])
   @@map("user")
 }
 
 model UserActivity {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
+  googleEventId String? @unique @map("google_event_id") @db.VarChar(255)
 
-  title         String   @db.VarChar(200)
-  startAt       DateTime @map("start_at")
-  endAt         DateTime @map("end_at")
+  title   String   @db.VarChar(200)
+  startAt DateTime @map("start_at")
+  endAt   DateTime @map("end_at")
 
-  type          String   @default("FIXED") @db.VarChar(20)
-  status        String   @default("TODO") @db.VarChar(20)
+  type   String @default("FIXED") @db.VarChar(20)
+  status String @default("TODO") @db.VarChar(20)
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("user_activity")
 }
 
 model NotificationSetting {
-  id                        Int      @id @default(autoincrement())
-  userId                    Int      @unique @map("user_id")
-  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")
-  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled")
+  dDayEnabled               Boolean @default(true) @map("d_day_enabled")
+  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled")
 
-  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
+  fcmToken String? @map("fcm_token") @db.VarChar(255)
 
-  updatedAt                 DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("notification_setting")
 }
 
 model GoalPeriod {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title      String   @db.VarChar(100)
-  startDate  DateTime @map("start_date")
-  endDate    DateTime @map("end_date")
+  title     String   @db.VarChar(100)
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
 
   growth     Int
   rest       Int
-  presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
+  presetType String @default("CUSTOM") @map("preset_type") @db.VarChar(20)
   presetId   Int?
 
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  reports    Report[]
+  reports Report[]
 
   @@index([userId])
   @@map("goal_period")
 }
 
 model UserProfile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   interests Json
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -101,39 +102,40 @@ model UserProfile {
 }
 
 model CalendarSetting {
-  id                   Int      @id @default(autoincrement())
-  userId               Int      @unique @map("user_id")
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  connect              Boolean  @default(false)
-  provider             String?  @db.VarChar(20)
-  importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
+  connect              Boolean @default(false)
+  provider             String? @db.VarChar(20)
+  importFixedSchedules Boolean @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json?    @map("selected_event_ids")
-  manualFixedSchedules Json?    @map("manual_fixed_schedules")
+  selectedEventIds     Json? @map("selected_event_ids")
+  manualFixedSchedules Json? @map("manual_fixed_schedules")
 
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_setting")
 }
 
 model Reminder {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @map("user_id")
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   reminderType String   @map("reminder_type") @db.VarChar(50)
   isEnabled    Boolean  @default(true) @map("is_enabled")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  @@unique([userId, reminderType]) // 추가
   @@index([userId])
   @@map("reminder")
 }
 
 model PushToken {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   token       String   @unique @db.VarChar(255)
   platform    String   @db.VarChar(20)
@@ -166,7 +168,24 @@ model Report {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
-  @@map("report")
   @@index([userId])
   @@index([goalId])
+  @@map("report")
+}
+
+model NotificationLog {
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String @db.VarChar(50) // "DDAY" | "ACTIVITY_COMPLETE"
+  refType String @db.VarChar(50) // "GOAL_PERIOD" | "USER_ACTIVITY"
+  refId   Int    @map("ref_id") // 목표기간 id 또는 활동 id
+
+  sendDate DateTime @map("send_date") // 이 날짜 기준 1번만 보내기
+  sentAt   DateTime @default(now()) @map("sent_at")
+
+  @@unique([userId, type, refType, refId, sendDate])
+  @@index([userId])
+  @@map("notification_log")
 }
