@@ -6,6 +6,8 @@ import { registerCalendarRoutes } from "./controllers/calendar.controller.js";
 import { registerGoalRoutes } from "./controllers/goals.controller.js";
 import { registerReportRoutes } from "./controllers/report.controller.js";
 import { registerScheduleRoutes } from "./controllers/schedule.controller.js";
+import { registerActivityRoutes } from "./controllers/activity.controller.js";
+import { registerCartRoutes } from "./controllers/cart.controller.js";
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ registerCalendarRoutes(app);
 registerGoalRoutes(app);
 registerReportRoutes(app);
 registerScheduleRoutes(app);
+registerActivityRoutes(app);
+registerCartRoutes(app);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

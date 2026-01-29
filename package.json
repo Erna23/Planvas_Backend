@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/index.js",
-    "dev": "nodemon --exec node src/index.js"
+    "dev": "nodemon --exec node src/index.js",
+    "seed:activity": "node src/scripts/seed-activity.js",
+    "import:contests": "node src/scripts/import-contests.js"
   },
   "repository": {
     "type": "git",
@@ -38,6 +40,6 @@
   },
   "prisma": {
   "seed": "node prisma/seed.js"
-}
+  }
 
 }

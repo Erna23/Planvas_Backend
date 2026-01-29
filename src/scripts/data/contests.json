@@ -1,0 +1,14 @@
+{
+  "contests": [
+    {
+      "contestId": 101,
+      "title": "테스트 공모전 1",
+      "startDate": "2026-02-01",
+      "endDate": "2026-02-28",
+      "thumbnailUrl": "https://placehold.co/200x200",
+      "point": 30,
+      "url": "https://example.com",
+      "summary": "테스트용 더미 공모전"
+    }
+  ]
+}
