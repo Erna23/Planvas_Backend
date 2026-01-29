@@ -7,7 +7,7 @@ import * as calendarRepository from "../repositories/calendar.repository.js";
  */
 export const connectGoogleCalendar = async (userId, code) => {
   const { refreshToken } = await getGoogleTokens(code);
-  
+
   if (refreshToken) {
     await calendarRepository.updateUserRefreshToken(userId, refreshToken);
     return true;
@@ -17,64 +17,39 @@ export const connectGoogleCalendar = async (userId, code) => {
 
 /**
  * 2. 연동 상태 조회
- * - 유저가 이미 연동된 상태인지 확인
  */
 export const getCalendarStatus = async (userId) => {
   const user = await calendarRepository.findUserById(userId);
   return {
-    isConnected: !!user?.refreshToken, // 토큰이 있으면 true, 없으면 false
+    isConnected: !!user?.refreshToken,
   };
 };
 
 /**
  * 3. 캘린더 동기화 (Google -> DB 저장)
+ * [수정됨] 
+ * - 기존: Google API로 직접 조회 -> 전체 저장
+ * - 변경: Controller에서 넘겨준 '선택된 일정(events)'을 -> DB에 저장
  */
-export const syncGoogleEvents = async (userId) => {
-  // 레포지토리 호출
-  const user = await calendarRepository.findUserById(userId);
-  
-  if (!user?.refreshToken) {
-    throw new Error("NOT_CONNECTED");
+export const syncGoogleEvents = async (userId, events) => {
+  // 1. 저장할 일정이 없으면 0 리턴
+  if (!events || events.length === 0) {
+    return 0;
   }
 
-  // 구글 클라이언트 설정
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "https://developers.google.com/oauthplayground"
+  // 2. 받은 목록을 순회하며 DB에 저장 (Promise.all로 병렬 처리)
+  // Repository의 upsertUserActivity 함수가 이미 Google Event 객체 구조를 처리하도록 되어있으므로 그대로 전달
+  const promises = events.map((event) =>
+    calendarRepository.upsertUserActivity(userId, event)
   );
-  oauth2Client.setCredentials({ refresh_token: user.refreshToken });
 
-  const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-  const now = new Date();
-  const threeMonthsLater = new Date();
-  threeMonthsLater.setMonth(now.getMonth() + 3);
+  await Promise.all(promises);
 
-  const response = await calendar.events.list({
-    calendarId: "primary",
-    timeMin: now.toISOString(),
-    timeMax: threeMonthsLater.toISOString(),
-    maxResults: 200,
-    singleEvents: true,
-    orderBy: "startTime",
-  });
-  
-  const events = response.data.items || [];
-
-  // DB 저장 로직도 레포지토리에게 위임
-  if (events.length > 0) {
-    const promises = events.map((event) => 
-      calendarRepository.upsertUserActivity(userId, event)
-    );
-    await Promise.all(promises);
-  }
-
-  return events.length;
+  return events.length; // 저장된 개수 반환
 };
 
 /**
  * 4. 구글 일정 목록 조회 (DB 저장 X, 미리보기용)
- * - 동기화 버튼 누르기 전에 "이런 일정이 있어요" 보여주는 용도
  */
 export const getGoogleEventsList = async (userId) => {
   const user = await calendarRepository.findUserById(userId);
@@ -96,7 +71,7 @@ export const getGoogleEventsList = async (userId) => {
     calendarId: "primary",
     timeMin: now.toISOString(),
     timeMax: end.toISOString(),
-    maxResults: 50, // 미리보기니까 적당히
+    maxResults: 50,
     singleEvents: true,
     orderBy: "startTime",
   });
@@ -108,10 +83,11 @@ export const getGoogleEventsList = async (userId) => {
  * 5. 월간 조회 (DB에서 조회)
  */
 export const getMonthlyEvents = async (userId, year, month) => {
+  // 해당 월의 1일
   const startDate = new Date(year, month - 1, 1);
+  // 해당 월의 마지막 날 (0일은 전달의 마지막 날을 의미하지만, month가 다음달 인덱스이므로 현재달 마지막 날이 됨)
   const endDate = new Date(year, month, 0, 23, 59, 59);
 
-  // 레포지토리 호출
   return await calendarRepository.findMonthlyActivities(userId, startDate, endDate);
 };
 
@@ -123,6 +99,5 @@ export const getDailyEvents = async (userId, dateStr) => {
   const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
   const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
 
-  // 레포지토리 호출
   return await calendarRepository.findDailyActivities(userId, startOfDay, endOfDay);
 };
