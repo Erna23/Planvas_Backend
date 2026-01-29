@@ -3,9 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { registerUserRoutes } from "./controllers/user.controller.js";
 import { registerCalendarRoutes } from "./controllers/calendar.controller.js";
-import { registerGoalRoutes } from "./controllers/goals.controller.js";
-import { registerReportRoutes } from "./controllers/report.controller.js";
-import { registerScheduleRoutes } from "./controllers/schedule.controller.js";
+import { registerHomeRoutes } from "./controllers/home.controller.js";
 
 dotenv.config();
 
@@ -17,9 +15,7 @@ app.use(express.json());
 
 registerUserRoutes(app);
 registerCalendarRoutes(app);
-registerGoalRoutes(app);
-registerReportRoutes(app);
-registerScheduleRoutes(app);
+registerHomeRoutes(app);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

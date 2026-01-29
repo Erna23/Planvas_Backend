@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id                  Int      @id @default(autoincrement())
-  email String? @unique @db.VarChar(255)
+  email               String?  @unique @db.VarChar(255)
   provider            String   @db.VarChar(20) // "google"
   oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
   name                String   @db.VarChar(50)
@@ -17,12 +17,12 @@ model User {
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
   createdAt           DateTime @default(now()) @map("created_at")
 
-  goalPeriods   GoalPeriod[]
-  profile       UserProfile?
-  calendar      CalendarSetting?
-  activities          UserActivity[]       
-  notificationSetting NotificationSetting? 
-  reports       Report[]
+  goalPeriods         GoalPeriod[]
+  profile             UserProfile?
+  calendar            CalendarSetting?
+  activities          UserActivity[]
+  notificationSetting NotificationSetting?
+  reports             Report[]
 
   @@unique([provider, oauthId])
   @@map("user")
@@ -35,14 +35,13 @@ model UserActivity {
 
   // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
   googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
-  
+   
   title         String   @db.VarChar(200)
   startAt       DateTime @map("start_at")
   endAt         DateTime @map("end_at")
-  
-  // "FIXED"(고정), "GROWTH"(성장), "REST"(휴식)
+   
   type          String   @default("FIXED") @db.VarChar(20)
-  
+   
   status        String   @default("TODO") @db.VarChar(20)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -52,14 +51,14 @@ model UserActivity {
 }
 
 model NotificationSetting {
-  id                        Int     @id @default(autoincrement())
-  userId                    Int     @unique @map("user_id")
-  user                      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                        Int      @id @default(autoincrement())
+  userId                    Int      @unique @map("user_id")
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  dDayEnabled               Boolean @default(true) @map("d_day_enabled")               // D-Day 알림
-  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled") // 활동 완료 알림
-  
-  fcmToken                  String? @map("fcm_token") @db.VarChar(255)
+  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")                // D-Day 알림
+  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled") // 활동 완료 알림
+   
+  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
 
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
@@ -77,12 +76,12 @@ model GoalPeriod {
 
   growth     Int
   rest       Int
-  presetType String @default("CUSTOM") @map("preset_type") @db.VarChar(20)
-  presetId  Int?
+  presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
+  presetId   Int?
 
   createdAt  DateTime @default(now()) @map("created_at")
 
-  reports       Report[]
+  reports    Report[]
 
   @@index([userId])
   @@map("goal_period")
@@ -108,7 +107,7 @@ model CalendarSetting {
   provider             String?  @db.VarChar(20) // "google"
   importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json?    @map("selected_event_ids")     // [1,2,4]
+  selectedEventIds     Json?    @map("selected_event_ids")      // [1,2,4]
   manualFixedSchedules Json?    @map("manual_fixed_schedules") 
 
   updatedAt            DateTime @updatedAt @map("updated_at")
@@ -124,22 +123,33 @@ model Interest {
 }
 
 model Report {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  goalId       Int
-  growth       Int
-  rest         Int
-  type         String   @db.VarChar(20)
-  title        String?  @db.VarChar(100)
-  subTitle     String?  @db.VarChar(255)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  goalId    Int
+  growth    Int
+  rest      Int
+  type      String     @db.VarChar(20)
+  title     String?    @db.VarChar(100)
+  subTitle  String?    @db.VarChar(255)
+  createdAt DateTime   @default(now()) @map("created_at")
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@map("report")
   @@index([userId])
   @@index([goalId])
+}
+
+model Recommendation {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(100)
+  category  String   @db.VarChar(20) // "GROWTH" or "REST"
+  point     Int      @default(10)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("recommendation")
 }
 
 enum Recommend {
