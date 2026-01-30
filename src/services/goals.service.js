@@ -13,9 +13,45 @@ import {
   findGoalPeriodById,
   updateGoalPeriod,
   updateGoalPeriodRatio,
+  findActivitiesForGoalProgress,
 } from "../repositories/goals.repository.js";
 
 const formatDateOnly = (d) => d.toISOString().slice(0, 10);
+
+function endDateToExclusive(endDate) {
+  // goalPeriod.endDate(00:00Z) 기준으로 "다음날 00:00Z"를 exclusive로 만들어 날짜 전체 포함
+  const endExclusive = new Date(endDate);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+  return endExclusive;
+}
+
+function calcCurrentRatios(activities) {
+  // 분 단위 합산
+  let growthMin = 0;
+  let restMin = 0;
+
+  for (const a of activities) {
+    // start/end 없는 데이터 방어
+    if (!a.startAt || !a.endAt) continue;
+    const ms = new Date(a.endAt).getTime() - new Date(a.startAt).getTime();
+    if (!Number.isFinite(ms) || ms <= 0) continue;
+
+    const minutes = ms / (1000 * 60);
+    if (a.type === "GROWTH") growthMin += minutes;
+    if (a.type === "REST") restMin += minutes;
+  }
+
+  const total = growthMin + restMin;
+  if (total <= 0) return { currentGrowthRatio: 0, currentRestRatio: 0 };
+
+  let currentGrowthRatio = Math.round((growthMin / total) * 100);
+  // 합이 100 안 맞는 케이스 보정
+  if (currentGrowthRatio < 0) currentGrowthRatio = 0;
+  if (currentGrowthRatio > 100) currentGrowthRatio = 100;
+  const currentRestRatio = 100 - currentGrowthRatio;
+
+  return { currentGrowthRatio, currentRestRatio };
+}
 
 /**
  * POST /api/goals
@@ -164,6 +200,10 @@ export async function getCurrentGoalByUserId(userId) {
     };
   }
 
+  const endExclusive = endDateToExclusive(current.endDate);
+  const activities = await findActivitiesForGoalProgress(userId, current.startDate, endExclusive);
+  const { currentGrowthRatio, currentRestRatio } = calcCurrentRatios(activities);
+
   return {
     resultType: "SUCCESS",
     error: null,
@@ -172,8 +212,18 @@ export async function getCurrentGoalByUserId(userId) {
       title: current.title,
       startDate: formatDateOnly(current.startDate),
       endDate: formatDateOnly(current.endDate),
+
+      // 목표(타겟) 비율
       growthRatio: current.growth,
       restRatio: current.rest,
+
+      // 현재(실제 기록 기반) 비율
+      currentGrowthRatio,
+      currentRestRatio,
+
+      // 필요하면 UI 라벨링용
+      presetType: current.presetType,
+      presetId: current.presetId ?? null,
     },
   };
 }
@@ -222,9 +272,96 @@ export async function updateGoalRatioByUserId(userId, goalIdParam, body) {
 }
 
 /**
+ * GET /api/goals/:goalId (기간 + 타겟 비율)
+ */
+export async function getGoalDetailByUserId(userId, goalIdParam) {
+  const goalId = parseGoalIdParam(goalIdParam);
+  const goal = await findGoalPeriodById(goalId);
+
+  if (!goal) {
+    const err = new Error("Goal not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "목표 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  if (goal.userId !== userId) {
+    const err = new Error("Forbidden");
+    err.statusCode = 403;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "해당 목표에 대한 권한이 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success: {
+      goalId: goal.id,
+      title: goal.title,
+      startDate: formatDateOnly(goal.startDate),
+      endDate: formatDateOnly(goal.endDate),
+      growthRatio: goal.growth,
+      restRatio: goal.rest,
+      presetType: goal.presetType,
+      presetId: goal.presetId ?? null,
+    },
+  };
+}
+
+/**
+ * GET /api/goals/:goalId/progress (현재 성장/휴식 비율)
+ */
+export async function getGoalProgressByUserId(userId, goalIdParam) {
+  const goalId = parseGoalIdParam(goalIdParam);
+  const goal = await findGoalPeriodById(goalId);
+
+  if (!goal) {
+    const err = new Error("Goal not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "목표 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  if (goal.userId !== userId) {
+    const err = new Error("Forbidden");
+    err.statusCode = 403;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "해당 목표에 대한 권한이 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  const endExclusive = endDateToExclusive(goal.endDate);
+  const activities = await findActivitiesForGoalProgress(userId, goal.startDate, endExclusive);
+  const { currentGrowthRatio, currentRestRatio } = calcCurrentRatios(activities);
+
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success: {
+      goalId: goal.id,
+      currentGrowthRatio,
+      currentRestRatio,
+    },
+  };
+}
+
+/**
  * GET /api/goals/ratio-presets
- * - 일단 고정 프리셋(서버 상수)로 제공
- * - 나중에 DB 테이블(GoalRatioPreset 등)로 옮겨도 API는 유지 가능
  */
 export async function getGoalRatioPresets() {
   return {

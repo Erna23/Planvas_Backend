@@ -6,6 +6,7 @@ import cors from "cors";
 import { registerUserRoutes } from "./controllers/user.controller.js";
 import { registerCalendarRoutes } from "./controllers/calendar.controller.js";
 import { registerHomeRoutes } from "./controllers/home.controller.js";
+import { registerGoalRoutes } from "./controllers/goals.controller.js";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 registerUserRoutes(app);
 registerCalendarRoutes(app);
 registerHomeRoutes(app);
+registerGoalRoutes(app);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
