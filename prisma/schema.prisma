@@ -28,6 +28,23 @@ model User {
   @@map("user")
 }
 
+model Activity {
+  id            Int      @id	@default(autoincrement())
+
+	name					String	 @db.VarChar(100)
+  category			String	 @default("성장활동") @db.VarChar(10)
+
+	growth_point	Int			 @default(0)
+	rest_point		Int			 @default(0)
+
+	createdAt			DateTime @default(now()) @map(created_at)
+	updatedAt			DateTime @updatedAt @map(updated_at)
+
+	userActivites UserActivity[]
+
+	@@map("activity")
+}
+
 model UserActivity {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")
@@ -35,7 +52,11 @@ model UserActivity {
 
   // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
   googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
-   
+  
+	// 사용자가 직접 추가한 경우 activity id, 구글 연동 일정은 null
+	activityId		Int?			 @map("user_selection")
+	activity			Activity?  @relation(fields: [activityId], references: [id], onDelete: SetNull)
+
   title         String   @db.VarChar(200)
   startAt       DateTime @map("start_at")
   endAt         DateTime @map("end_at")
@@ -47,6 +68,7 @@ model UserActivity {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+	@@index([activityId])
   @@map("user_activity")
 }
 
