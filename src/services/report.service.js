@@ -2,7 +2,9 @@ import { Recommend } from "@prisma/client"
 import { findUserById } from "../repositories/user.repository.js"
 import { createNewReport } from "../repositories/report.repository.js";
 import { findGoalReports, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository.js";
-import { toGoalReportDto } from "../dtos/report.dto.js";
+import { getGrowth, getRest } from "../repositories/schedule.repository.js";
+import { getSummaryDto, toGoalReportDto } from "../dtos/report.dto.js";
+
 
 export async function getSeasonsReports(userId, year = 0) {
     const user = await findUserById(userId);
@@ -43,30 +45,10 @@ export async function createReport(userId, goalId) {
     }
 
     const goal = await findCurrentGoalPeriodByUserId(userId);
-    const newReport = await createNewReport(userId, goal);
+    const growth = await getGrowth(userId, goal.startDate, goal.endDate);
+    const rest = await getRest(userId, goal.startDate, goal.endDate);
+    const summary = await getSummaryDto(goal, growth, rest);
 
-    let recommend;
-    if(newReport.growth + newReport.rest < 50) {
-        recommend = {
-            focus : Recommend.ALL,
-            text: "새로운 활동 탐색하기"
-        }
-    } else if(goal.growth > goal.rest && newReport.growth / goal.growth * 100 < 40) {
-        recommend = {
-            focus: Recommend.GROWTH,
-            text: "새로운 성장 활동 탐색하기"
-        }
-    } else if(goal.rest > goal.growth && newReport.rest / goal.rest * 100 < 40) {
-        recommend = {
-            focus: Recommend.REST,
-            text: "새로운 휴식 활동 탐색하기"
-        }
-    } else {
-        recommend = {
-            focus: Recommend.NONE,
-            text: "새로운 활동 탐색하기"
-        }
-    }
-
-    return toGoalReportDto(newReport, goal, recommend);
+    await createNewReport(user, growth, rest, goal, summary);
+    return toGoalReportDto(goal, growth, rest, summary);
 }
