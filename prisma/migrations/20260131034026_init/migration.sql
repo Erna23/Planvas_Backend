@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `user` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NULL,
     `provider` VARCHAR(20) NOT NULL,
     `oauth_id` VARCHAR(255) NOT NULL,
     `name` VARCHAR(50) NOT NULL,
@@ -15,10 +15,24 @@ CREATE TABLE `user` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `activity` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(100) NOT NULL,
+    `category` VARCHAR(10) NOT NULL DEFAULT '성장활동',
+    `growth_point` INTEGER NOT NULL DEFAULT 0,
+    `rest_point` INTEGER NOT NULL DEFAULT 0,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `user_activity` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
     `google_event_id` VARCHAR(255) NULL,
+    `user_selection` INTEGER NULL,
     `title` VARCHAR(200) NOT NULL,
     `start_at` DATETIME(3) NOT NULL,
     `end_at` DATETIME(3) NOT NULL,
@@ -29,6 +43,7 @@ CREATE TABLE `user_activity` (
 
     UNIQUE INDEX `user_activity_google_event_id_key`(`google_event_id`),
     INDEX `user_activity_user_id_idx`(`user_id`),
+    INDEX `user_activity_user_selection_idx`(`user_selection`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -102,10 +117,11 @@ CREATE TABLE `report` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
     `goalId` INTEGER NOT NULL,
+    `growth` INTEGER NOT NULL,
+    `rest` INTEGER NOT NULL,
     `type` VARCHAR(20) NOT NULL,
     `title` VARCHAR(100) NULL,
     `subTitle` VARCHAR(255) NULL,
-    `snapshotData` JSON NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `report_userId_idx`(`userId`),
@@ -113,8 +129,22 @@ CREATE TABLE `report` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `recommendation` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(100) NOT NULL,
+    `category` VARCHAR(20) NOT NULL,
+    `point` INTEGER NOT NULL DEFAULT 10,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `user_activity` ADD CONSTRAINT `user_activity_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `user_activity` ADD CONSTRAINT `user_activity_user_selection_fkey` FOREIGN KEY (`user_selection`) REFERENCES `activity`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `notification_setting` ADD CONSTRAINT `notification_setting_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
