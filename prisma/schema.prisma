@@ -37,8 +37,8 @@ model Activity {
 	growth_point	Int			 @default(0)
 	rest_point		Int			 @default(0)
 
-	createdAt			DateTime @default(now()) @map(created_at)
-	updatedAt			DateTime @updatedAt @map(updated_at)
+	createdAt			DateTime @default(now()) @map("created_at")
+	updatedAt			DateTime @updatedAt @map("updated_at")
 
 	userActivites UserActivity[]
 
