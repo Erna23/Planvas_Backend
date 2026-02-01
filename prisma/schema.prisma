@@ -53,17 +53,19 @@ model UserActivity {
   // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
   googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
   
-	// 사용자가 직접 추가한 경우 activity id, 구글 연동 일정은 null
+	// 사용자가 직접 구매해서 추가한 경우 activity id, 구글 연동 일정은 null
 	activityId		Int?			 @map("user_selection")
 	activity			Activity?  @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  // 둘 다 아닌 것은 둘 다 null
 
   title         String   @db.VarChar(200)
+  category      String   @db.VarChar(200)
+  point         Int      @default(0)
+
   startAt       DateTime @map("start_at")
   endAt         DateTime @map("end_at")
-   
-  type          String   @default("FIXED") @db.VarChar(20)
-   
-  status        String   @default("TODO") @db.VarChar(20)
+  completed     Boolean  @default(false)   
+  
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

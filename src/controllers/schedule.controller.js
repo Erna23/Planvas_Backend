@@ -1,4 +1,17 @@
 import { requireAuth } from "../auth.config.js";
+import {
+    addFixedSchedule,
+    getFixedSchedule,
+    updateFixedSchedule,
+    deleteFixedSchedule,
+    getTodos,
+    completeTodos,
+    createMyActivity,
+    getMyActivityInfo,
+    updateMyActivity,
+    deleteMyActivity,
+    completeMyActivity
+} from "../services/schedule.service.js";
 
 export function registerScheduleRoutes(app) {
     // 고정 일정 CRUD
@@ -31,7 +44,7 @@ export function registerScheduleRoutes(app) {
 
     app.delete("/api/fixed-schedules/:id", requireAuth, async (req, res) => {
         try {
-            const result = await deleteFixedSchedule(req.auth.userId, req.params.id)
+            const result = await deleteMyActivity(req.auth.userId, req.params.id)
             return res.status(200).json(result);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultSchedulesFail());
@@ -53,7 +66,7 @@ export function registerScheduleRoutes(app) {
 
     app.patch("/api/todos/:todoId", requireAuth, async (req, res) => {
         try {
-            const result = await completeTodos(req.auth.userId, req.params.todoId);
+            const result = await completeTodos(req.params.todoId);
             return res.status(200).json(result);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultSchedulesFail());
@@ -81,7 +94,7 @@ export function registerScheduleRoutes(app) {
 
     app.patch("/api/my-activities/:id", requireAuth, async(req, res) => {
         try {
-            const result = await updateMyActivity(req.auth.userId, req.params.id);
+            const result = await updateMyActivity(req.auth.userId, req.params.id, req.body);
             return res.status(200).json(result);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultSchedulesFail());

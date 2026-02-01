@@ -29,7 +29,6 @@ export async function createNewReport(user, growth, rest, goal, summary) {
             type: summary.type,
             title: summary.title,
             subtitle: summary.subTitle,
-            
         },
         select: {
             growth: true,
