@@ -34,10 +34,11 @@ CREATE TABLE `user_activity` (
     `google_event_id` VARCHAR(255) NULL,
     `user_selection` INTEGER NULL,
     `title` VARCHAR(200) NOT NULL,
+    `category` VARCHAR(200) NOT NULL,
+    `point` INTEGER NOT NULL DEFAULT 0,
     `start_at` DATETIME(3) NOT NULL,
     `end_at` DATETIME(3) NOT NULL,
-    `type` VARCHAR(20) NOT NULL DEFAULT 'FIXED',
-    `status` VARCHAR(20) NOT NULL DEFAULT 'TODO',
+    `completed` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
