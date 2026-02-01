@@ -57,14 +57,15 @@ model UserActivity {
 	activityId		Int?			 @map("user_selection")
 	activity			Activity?  @relation(fields: [activityId], references: [id], onDelete: SetNull)
   // 둘 다 아닌 것은 둘 다 null
-  
+
   title         String   @db.VarChar(200)
+  category      String   @db.VarChar(200)
+  point         Int      @default(0)
+
   startAt       DateTime @map("start_at")
   endAt         DateTime @map("end_at")
-   
-  type          String   @default("FIXED") @db.VarChar(20)
-   
-  status        String   @default("TODO") @db.VarChar(20)
+  completed     Boolean  @default(false)   
+  
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

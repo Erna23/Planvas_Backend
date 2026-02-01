@@ -5,7 +5,14 @@ import {
   findFixedActivitiesByUserId,
   updateUserActivityById,
   deleteUserActivityById,
+  addOwnUserActivity,
+  completeActivity,
+  getDateActivity
 } from "../repositories/schedule.repository.js";
+import {
+    createNewActivity,
+    getMyActivityInfo
+} from "../repositories/activity.repository.js";
 
 const dayMap = {
     'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3,
@@ -75,10 +82,52 @@ export async function updateFixedSchedule(userId, id, body) {
         throw err;
     }
 
-    return await updateUserActivityById(id, body);
+    await updateUserActivityById(id, body);
+    return {
+        msg: "수정이 완료되었습니다."
+    }
 }
 
-export async function deleteFixedSchedule(userId, id) {
+export async function getTodos(userId, date) {
+    return await getDateActivity(userId, date);
+}
+
+export async function completeTodos(id) {
+    return {
+        id: await completeActivity(id).id
+    }
+}
+
+export async function createMyActivity(userId, body) {
+    let newActivity;
+    if(body.activityId == null) newActivity = await createNewActivity(body);
+    else newActivity = await getMyActivityInfo(body.activityId);
+
+    return await addOwnUserActivity(userId, newActivity, body);
+}
+
+export async function getMyActivityInfo(userId, Id) {
+    const ownActivity = await findUserActivityById(Id);
+
+    return {
+        myActivityId: ownActivity.id,
+        title: ownActivity.title,
+        category: ownActivity.category,
+        point: ownActivity.point,
+        startAt: ownActivity.startAt,
+        endAt: ownActivity.endAt,
+        completed: ownActivity.completed
+    }
+}
+
+export async function updateMyActivity(userId, id, body) {
+    await updateUserActivityById(id, body);
+    return {
+        msg: "수정이 완료되었습니다."
+    }
+}
+
+export async function deleteMyActivity(userId, id) {
     const user = await findUserById(userId);
     if (!user) {
         const err = new Error("User not found");
@@ -98,70 +147,22 @@ export async function deleteFixedSchedule(userId, id) {
     };
 }
 
-
-export async function getTodos {
+export async function completeMyActivity(userId, id) {
+    const goal = await findCurrentGoalPeriodByUserId(userId);
+    const { before_growth, before_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
     
-}
+    const activity = await completeActivity(id);
+    const { after_growth, after_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
 
-export async function completeTodos {
-
-}
-
-export async function createMyActivity {
-
-}
-
-export async function getMyActivityInfo {
-
-}
-
-export async function updateMyActivity {
-
-}
-
-export async function deleteMyActivity {
-
-}
-
-export async function completeMyActivity {
-
-}
-
-function parseDateOnly(dateStr) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-    if (!m) throwError(400, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)");
-    const y = Number(m[1]);
-    const mo = Number(m[2]);
-    const d = Number(m[3]);
-    return new Date(Date.UTC(y, mo - 1, d));
-  }
-  
-  function parseTimeOnly(timeStr) {
-    const m = /^(\d{2}):(\d{2})$/.exec(timeStr);
-    if (!m) throwError(400, "시간 형식이 올바르지 않습니다. (HH:mm)");
-    const hh = Number(m[1]);
-    const mm = Number(m[2]);
-    if (hh < 0 || hh > 23) throwError(400, "시간(hour)은 00~23 사이여야 합니다.");
-    if (mm < 0 || mm > 59) throwError(400, "분(minute)은 00~59 사이여야 합니다.");
-    return { hh, mm };
-  }
-  
-  function combineKST(dateUTC, { hh, mm }) {
-    // KST(+09:00)로 날짜+시간 합치기
-    const y = dateUTC.getUTCFullYear();
-    const mo = String(dateUTC.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(dateUTC.getUTCDate()).padStart(2, "0");
-    const H = String(hh).padStart(2, "0");
-    const M = String(mm).padStart(2, "0");
-    return new Date(`${y}-${mo}-${d}T${H}:${M}:00+09:00`);
-  }
-  
-  function eachDateUTCInclusive(startUTC, endUTC) {
-    const dates = [];
-    const cur = new Date(startUTC.getTime());
-    while (cur.getTime() <= endUTC.getTime()) {
-      dates.push(new Date(cur.getTime()));
-      cur.setUTCDate(cur.getUTCDate() + 1);
+    return {
+        myActivityId: activity.id,
+        beforeProgress: {
+            growthAchieved: before_growth,
+            restAchieved: before_rest
+        },
+        afterProgress: {
+            growthAchieved: after_growth,
+            restAchieved: after_rest
+        }
     }
-    return dates;
-  }
+}

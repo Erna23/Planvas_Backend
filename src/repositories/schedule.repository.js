@@ -14,6 +14,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
             activityId: { not: null },
             startAt: { lt: e },
             endAt: { gt: s },
+            completed: true
         },
         select: {
             activity: { select: { growth_point: true, rest_point: true } },
@@ -53,7 +54,8 @@ export async function createFixedActivitiesMany(userId, schedules) {
 export async function findFixedActivitiesByUserId(userId) {
     const activities = await prisma.userActivity.findMany({
         where: {
-            userId
+            userId,
+            activityId: null
         },
         select: {
             id: true,
@@ -64,7 +66,7 @@ export async function findFixedActivitiesByUserId(userId) {
     });
     
     const fixedSchedules = activities.map(activity => ({
-        fixedScheduleId: activity.id,
+        id: activity.id,
         title: activity.title,
         date: activity.startAt.toISOString().split('T')[0],
         startAt: activity.startAt.toTimeString().slice(0, 5),
@@ -85,20 +87,23 @@ export async function updateUserActivityById(id, data) {
         where: { id },
         select: { startAt: true, endAt: true }
     });
-    
-    if (!existing) {
-        throw new Error('Activity not found');
-    }
 
-    let title = existing.title;
     let date = existing.startAt.toISOString().split('T')[0];
     let startTime = existing.startAt.toTimeString().slice(0, 5);
     let endTime = existing.endAt.toTimeString().slice(0, 5);
     
-    // 새 값이 있으면 덮어쓰기
+    let isChangeCate = false;
+    let isChangePoint = false;
     if (data.title !== undefined) {
-        title = data.title;
         updateData.title = data.title;
+    }
+    if (data.category !== undefined) {
+        isChangeCate = true;
+        updateData.category = data.category;
+    }
+    if (data.point !== undefined) {
+        isChangePoint = true;
+        updateData.point = data.point;
     }
     if (data.date !== undefined) date = data.date;
     if (data.startTime !== undefined) startTime = data.startTime;
@@ -108,22 +113,70 @@ export async function updateUserActivityById(id, data) {
     updateData.startAt = new Date(`${date}T${startTime}:00`);
     updateData.endAt = new Date(`${date}T${endTime}:00`);
     
-    const updated = await prisma.userActivity.update({
+    await prisma.userActivity.update({
         where: { id },
         data: updateData,
-        select: { id: true }
+        select: { 
+            id: true,
+            title: true,
+            category: true,
+            point: true
+        }
     });
-
-    return {
-        fixedScheduleId: updated.id,
-        title: title,
-        date: date,
-        startAt: startTime,
-        endAt: endTime
-    }
 }
 
 export async function deleteUserActivityById(id) {
     await prisma.userActivity.delete({ where: { id } });
     return true;
+}
+
+export async function addOwnUserActivity(userId, activity, data) {
+    return await prisma.userActivity.create({
+        data: {
+            userId,
+            activityId: activity.id,
+            title: activity.title,
+            category,
+            point,
+            startAt: new Date(`${data.startDate}T${data.startTime}:00`),
+            endAt: new Date(`${data.endDate}T${data.endTime}:00`)
+        },
+        select: {
+            id: true
+        }
+    })
+}
+
+export async function completeActivity(id) {
+    return await prisma.userActivity.update({
+        where: { id },
+        data: {
+            completed: true
+        }
+    })
+}
+
+export async function getDateActivity(userId, date) {
+    const startOfDay = new Date(`${date}T00:00:00`);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    return await prisma.userActivity.findMany({
+        where: {
+            userId,
+            startAt: {
+                gte: startOfDay,
+                lt: endOfDay
+            }
+        },
+        orderBy: {
+            startAt: 'asc'
+        },
+        select: {
+            id: true,
+            title: true,
+            category: true,
+            completed: true
+        }
+    });
 }

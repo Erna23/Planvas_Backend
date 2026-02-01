@@ -35,9 +35,7 @@ export const upsertUserActivity = async (userId, event) => {
       googleEventId: event.id,
       title: event.summary || "제목 없음",
       startAt: new Date(start),
-      endAt: new Date(end),
-      type: "FIXED",
-      status: "TODO",
+      endAt: new Date(end)
     },
   });
 };
