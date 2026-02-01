@@ -1,8 +1,7 @@
-import { Recommend } from "@prisma/client"
 import { findUserById } from "../repositories/user.repository.js"
 import { createNewReport } from "../repositories/report.repository.js";
 import { findGoalReports, findCurrentGoalPeriodByUserId } from "../repositories/goals.repository.js";
-import { getGrowth, getRest } from "../repositories/schedule.repository.js";
+import { getGrowthAndRest } from "../repositories/schedule.repository.js";
 import { getSummaryDto, toGoalReportDto } from "../dtos/report.dto.js";
 
 
@@ -45,8 +44,7 @@ export async function createReport(userId, goalId) {
     }
 
     const goal = await findCurrentGoalPeriodByUserId(userId);
-    const growth = await getGrowth(userId, goal.startDate, goal.endDate);
-    const rest = await getRest(userId, goal.startDate, goal.endDate);
+    const { growth, rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
     const summary = await getSummaryDto(goal, growth, rest);
 
     await createNewReport(user, growth, rest, goal, summary);

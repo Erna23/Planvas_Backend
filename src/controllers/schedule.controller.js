@@ -1,4 +1,17 @@
 import { requireAuth } from "../auth.config.js";
+import {
+    addFixedSchedule,
+    getFixedSchedule,
+    updateFixedSchedule,
+    deleteFixedSchedule,
+    getTodos,
+    completeTodos,
+    createMyActivity,
+    getMyActivityInfo,
+    updateMyActivity,
+    deleteMyActivity,
+    completeMyActivity
+} from "../services/schedule.service.js";
 
 export function registerScheduleRoutes(app) {
     // 고정 일정 CRUD
