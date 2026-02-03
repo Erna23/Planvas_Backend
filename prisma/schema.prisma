@@ -9,9 +9,9 @@ datasource db {
 
 model User {
   id                  Int      @id @default(autoincrement())
-  email               String   @unique @db.VarChar(255)
-  provider            String   @db.VarChar(20) // "google"
-  oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
+  email               String?  @unique @db.VarChar(255)
+  provider            String   @db.VarChar(20)
+  oauthId             String   @map("oauth_id") @db.VarChar(255)
   name                String   @db.VarChar(50)
   refreshToken        String?  @map("refresh_token") @db.Text
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
@@ -32,6 +32,23 @@ model User {
   @@map("user")
 }
 
+model Activity {
+  id Int @id @default(autoincrement())
+
+  name     String @db.VarChar(100)
+  category String @default("성장활동") @db.VarChar(10)
+
+  growth_point Int @default(0)
+  rest_point   Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userActivites UserActivity[]
+
+  @@map("activity")
+}
+
 model UserActivity {
   id     Int  @id @default(autoincrement())
   userId Int  @map("user_id")
@@ -39,17 +56,22 @@ model UserActivity {
 
   googleEventId String? @unique @map("google_event_id") @db.VarChar(255)
 
-  title   String   @db.VarChar(200)
-  startAt DateTime @map("start_at")
-  endAt   DateTime @map("end_at")
+  activityId Int?      @map("user_selection")
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
 
-  type   String @default("FIXED") @db.VarChar(20)
-  status String @default("TODO") @db.VarChar(20)
+  title    String @db.VarChar(200)
+  category String @db.VarChar(200)
+  point    Int    @default(0)
+
+  startAt   DateTime @map("start_at")
+  endAt     DateTime @map("end_at")
+  completed Boolean  @default(false)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([activityId])
   @@map("user_activity")
 }
 
@@ -61,8 +83,7 @@ model NotificationSetting {
   dDayEnabled               Boolean @default(true) @map("d_day_enabled")
   activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled")
 
-  fcmToken String? @map("fcm_token") @db.VarChar(255)
-
+  fcmToken  String?  @map("fcm_token") @db.VarChar(255)
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("notification_setting")
@@ -154,16 +175,15 @@ model Interest {
 }
 
 model Report {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  goalId       Int
-  growth       Int
-  rest         Int
-  type         String   @db.VarChar(20)
-  title        String?  @db.VarChar(100)
-  subTitle     String?  @db.VarChar(255)
-  snapshotData Json
-  createdAt    DateTime @default(now()) @map("created_at")
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  goalId    Int
+  growth    Int
+  rest      Int
+  type      String   @db.VarChar(20)
+  title     String?  @db.VarChar(100)
+  subTitle  String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -188,4 +208,22 @@ model NotificationLog {
   @@unique([userId, type, refType, refId, sendDate])
   @@index([userId])
   @@map("notification_log")
+}
+
+model Recommendation {
+  id       Int    @id @default(autoincrement())
+  title    String @db.VarChar(100)
+  category String @db.VarChar(20) // "GROWTH" or "REST"
+  point    Int    @default(10)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("recommendation")
+}
+
+enum Recommend {
+  ALL
+  REST
+  GROWTH
+  NONE
 }

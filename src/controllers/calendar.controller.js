@@ -1,13 +1,12 @@
 import { requireAuth } from "../auth.config.js";
-import { 
-  calendarResponseDTO, 
-  calendarMonthResponseDTO, 
-  calendarDayDetailResponseDTO 
-} from "../dtos/calendar.dto.js"; 
+import {
+    calendarResponseDTO,
+    calendarMonthResponseDTO,
+    calendarDayDetailResponseDTO
+} from "../dtos/calendar.dto.js";
 import * as calendarService from "../services/calendar.service.js";
 
 export function registerCalendarRoutes(app) {
-
     // 1. 연동 (Connect)
     app.post("/api/integrations/google-calendar/connect", requireAuth, async (req, res) => {
         try {
@@ -28,16 +27,26 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 3. 동기화 (Sync)
+    // 3. 구글 캘린더 일정 선택 저장 동기화 (Sync)
     app.post("/api/integrations/google-calendar/sync", requireAuth, async (req, res) => {
         try {
-            const count = await calendarService.syncGoogleEvents(req.auth.userId);
-            res.status(200).json({ resultType: "SUCCESS", success: { message: "동기화 완료", count } });
-        } catch (e) {
-            if (e.message === "NOT_CONNECTED") {
-                return res.status(400).json({ resultType: "FAIL", error: { errorCode: "C002", reason: "연동 필요" } });
-            }
-            res.status(500).json({ resultType: "FAIL", error: { errorCode: "C003", reason: "동기화 실패", data: e.message } });
+            const userId = req.auth.userId;
+            const { events } = req.body;
+
+            console.log("저장 요청된 일정 개수:", events ? events.length : 0);
+
+            const savedCount = await calendarService.syncGoogleEvents(userId, events);
+
+            res.status(200).json({
+                resultType: "SUCCESS",
+                success: { savedCount: savedCount }
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                resultType: "FAIL",
+                error: { errorCode: "C003", reason: "동기화 실패" }
+            });
         }
     });
 
@@ -85,10 +94,7 @@ export function registerCalendarRoutes(app) {
                 });
             }
 
-            // 1. 서비스에서 데이터 가져오기 (DB Raw Data)
             const rawData = await calendarService.getDailyEvents(req.auth.userId, date);
-
-            // 2. DTO를 통해 명세서 포맷(HH:mm, itemId 등)으로 변환 ★
             const resultData = calendarDayDetailResponseDTO(rawData, date);
 
             res.status(200).json({ resultType: "SUCCESS", error: null, success: resultData });

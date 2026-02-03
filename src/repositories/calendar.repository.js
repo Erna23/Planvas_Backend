@@ -35,9 +35,7 @@ export const upsertUserActivity = async (userId, event) => {
       googleEventId: event.id,
       title: event.summary || "제목 없음",
       startAt: new Date(start),
-      endAt: new Date(end),
-      type: "FIXED",
-      status: "TODO",
+      endAt: new Date(end)
     },
   });
 };
@@ -47,8 +45,10 @@ export const findMonthlyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
       userId: userId,
-      startAt: { gte: startDate },
-      endAt: { lte: endDate },
+      // 로직 변경: "기간이 겹치는 모든 일정"
+      // (일정 시작일 <= 조회 종료일) AND (일정 종료일 >= 조회 시작일)
+      startAt: { lte: endDate },
+      endAt: { gte: startDate },
     },
     orderBy: { startAt: "asc" },
   });
@@ -59,7 +59,9 @@ export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
       userId: userId,
-      startAt: { gte: startOfDay, lte: endOfDay },
+      // 로직 변경: 어제 시작해서 내일까지 가는 일정도 오늘 조회됨
+      startAt: { lte: endOfDay },
+      endAt: { gte: startOfDay },
     },
     orderBy: { startAt: "asc" },
   });

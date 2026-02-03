@@ -5,6 +5,8 @@ import {
   getCurrentGoalByUserId,
   updateGoalRatioByUserId,
   getGoalRatioPresets,
+  getGoalDetailByUserId,
+  getGoalProgressByUserId,
 } from "../services/goals.service.js";
 
 export function registerGoalRoutes(app) {
@@ -15,17 +17,6 @@ export function registerGoalRoutes(app) {
       return res.status(201).json(result);
     } catch (e) {
       console.error("[POST /api/goals] error:", e);
-      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
-    }
-  });
-
-  // PATCH /api/goals/:goalId (기간/이름 수정)
-  app.patch("/api/goals/:goalId", requireAuth, async (req, res) => {
-    try {
-      const result = await updateGoalPeriodByUserId(req.auth.userId, req.params.goalId, req.body);
-      return res.status(200).json(result);
-    } catch (e) {
-      console.error("[PATCH /api/goals/:goalId] error:", e);
       return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
     }
   });
@@ -41,7 +32,29 @@ export function registerGoalRoutes(app) {
     }
   });
 
-  // PATCH /api/goals/:goalId/ratio (성장/휴식 비율 변경)
+  // GET /api/goals/ratio-presets (프리셋 목록)
+  app.get("/api/goals/ratio-presets", requireAuth, async (req, res) => {
+    try {
+      const result = await getGoalRatioPresets();
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[GET /api/goals/ratio-presets] error:", e);
+      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
+    }
+  });
+
+  // GET /api/goals/:goalId/progress (진행 비율)  ← :goalId 보다 위!
+  app.get("/api/goals/:goalId/progress", requireAuth, async (req, res) => {
+    try {
+      const result = await getGoalProgressByUserId(req.auth.userId, req.params.goalId);
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[GET /api/goals/:goalId/progress] error:", e);
+      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
+    }
+  });
+
+  // PATCH /api/goals/:goalId/ratio
   app.patch("/api/goals/:goalId/ratio", requireAuth, async (req, res) => {
     try {
       const result = await updateGoalRatioByUserId(req.auth.userId, req.params.goalId, req.body);
@@ -52,13 +65,24 @@ export function registerGoalRoutes(app) {
     }
   });
 
-  // GET /api/goals/ratio-presets (비율 추천 프리셋 목록)
-  app.get("/api/goals/ratio-presets", requireAuth, async (req, res) => {
+  // PATCH /api/goals/:goalId (기간/이름 수정)
+  app.patch("/api/goals/:goalId", requireAuth, async (req, res) => {
     try {
-      const result = await getGoalRatioPresets();
+      const result = await updateGoalPeriodByUserId(req.auth.userId, req.params.goalId, req.body);
       return res.status(200).json(result);
     } catch (e) {
-      console.error("[GET /api/goals/ratio-presets] error:", e);
+      console.error("[PATCH /api/goals/:goalId] error:", e);
+      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
+    }
+  });
+
+  // GET /api/goals/:goalId (목표 상세: 기간 + 타겟비율)
+  app.get("/api/goals/:goalId", requireAuth, async (req, res) => {
+    try {
+      const result = await getGoalDetailByUserId(req.auth.userId, req.params.goalId);
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[GET /api/goals/:goalId] error:", e);
       return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
     }
   });

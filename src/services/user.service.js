@@ -96,7 +96,7 @@ export async function signupWithGoogle(body) {
   }
 
   const created = await createUser({
-    email,
+    email: email ?? null,
     provider,
     oauthId,
     name,

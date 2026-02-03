@@ -128,3 +128,35 @@ export async function updateGoalPeriodRatio(goalId, growth, rest) {
     },
   });
 }
+
+export async function findGoalReports(userId) {
+  return prisma.goalPeriod.findMany({
+    where: { userId: userId },
+    select: {
+      id: true,
+      title: true,
+      startDate: true,
+      endDate: true
+    }
+  })
+}
+
+/**
+ * 목표 기간 내 활동(성장/휴식) 조회
+ * - FIXED 제외하고 GROWTH/REST만 계산용으로 가져옴
+ */
+export async function findActivitiesForGoalProgress(userId, startInclusive, endExclusive) {
+  return prisma.userActivity.findMany({
+    where: {
+      userId,
+      startAt: { gte: startInclusive, lt: endExclusive },
+      category: { in: ["GROWTH", "REST"] },
+    },
+    select: {
+      type: true,
+      startAt: true,
+      endAt: true,
+      status: true,
+    },
+  });
+}
