@@ -1,0 +1,168 @@
+// fixedSchedule.service.js
+import { findUserById } from "../repositories/user.repository.js";
+import {
+  createFixedActivitiesMany,
+  findFixedActivitiesByUserId,
+  updateUserActivityById,
+  deleteUserActivityById,
+  addOwnUserActivity,
+  completeActivity,
+  getDateActivity
+} from "../repositories/schedule.repository.js";
+import {
+    createNewActivity,
+    getMyActivityInfo
+} from "../repositories/activity.repository.js";
+
+const dayMap = {
+    'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3,
+    'THU': 4, 'FRI': 5, 'SAT': 6
+}
+
+export async function addFixedSchedule(userId, body) {
+    const user = await findUserById(userId);
+    if (!user) throwError();
+
+    const targetDays = body.daysOfWeek.map(day => dayMap[day]);
+
+    const endDay = new Date(body.endDate);
+    const schedules = [];
+    for(let date = new Date(body.startDate); date <= endDay; date.setDate(date.getDate() + 1)) {
+        const dayOfWeek = date.getDay();
+
+        if(targetDays.includes(dayOfWeek)) {
+            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+            schedules.push({
+                title: body.title,
+                startAt: new Date(`${dateStr}T${body.startTime}:00`),
+                endAt: new Date(`${dateStr}T${body.endTime}:00`)
+            });
+        }
+    }
+
+    const ids = await createFixedActivitiesMany(userId, schedules);
+    return {
+        fixedScheduleId: ids,
+        title: body.title,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        daysOfWeek: body.daysOfWeek,
+        startTime: body.startTime,
+        endTime: body.endTime
+    }
+}
+
+export async function getFixedSchedule(userId) {
+  const user = await findUserById(userId);
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  return findFixedActivitiesByUserId(userId);
+}
+
+export async function updateFixedSchedule(userId, id, body) {
+    const user = await findUserById(userId);
+    if (!user) {
+        const err = new Error("User not found");
+        err.statusCode = 404;
+        err.payload = {
+            resultType: "FAIL",
+            error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+            success: null,
+        };
+        throw err;
+    }
+
+    await updateUserActivityById(id, body);
+    return {
+        msg: "수정이 완료되었습니다."
+    }
+}
+
+export async function getTodos(userId, date) {
+    return await getDateActivity(userId, date);
+}
+
+export async function completeTodos(id) {
+    return {
+        id: await completeActivity(id).id
+    }
+}
+
+export async function createMyActivity(userId, body) {
+    let newActivity;
+    if(body.activityId == null) newActivity = await createNewActivity(body);
+    else newActivity = await getMyActivityInfo(body.activityId);
+
+    return await addOwnUserActivity(userId, newActivity, body);
+}
+
+export async function getMyActivityInfo(userId, Id) {
+    const ownActivity = await findUserActivityById(Id);
+
+    return {
+        myActivityId: ownActivity.id,
+        title: ownActivity.title,
+        category: ownActivity.category,
+        point: ownActivity.point,
+        startAt: ownActivity.startAt,
+        endAt: ownActivity.endAt,
+        completed: ownActivity.completed
+    }
+}
+
+export async function updateMyActivity(userId, id, body) {
+    await updateUserActivityById(id, body);
+    return {
+        msg: "수정이 완료되었습니다."
+    }
+}
+
+export async function deleteMyActivity(userId, id) {
+    const user = await findUserById(userId);
+    if (!user) {
+        const err = new Error("User not found");
+        err.statusCode = 404;
+        err.payload = {
+            resultType: "FAIL",
+            error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+            success: null,
+        };
+        throw err;
+    }
+    
+    const deleted = await deleteUserActivityById(id);
+    return {
+        deleted: deleted,
+        message: "고정 일정이 삭제되었습니다."
+    };
+}
+
+export async function completeMyActivity(userId, id) {
+    const goal = await findCurrentGoalPeriodByUserId(userId);
+    const { before_growth, before_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+    
+    const activity = await completeActivity(id);
+    const { after_growth, after_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+
+    return {
+        myActivityId: activity.id,
+        beforeProgress: {
+            growthAchieved: before_growth,
+            restAchieved: before_rest
+        },
+        afterProgress: {
+            growthAchieved: after_growth,
+            restAchieved: after_rest
+        }
+    }
+}
