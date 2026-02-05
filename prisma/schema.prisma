@@ -54,11 +54,15 @@ model UserActivity {
   userId Int  @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
   googleEventId String? @unique @map("google_event_id") @db.VarChar(255)
 
+  // 사용자가 직접 구매해서 추가한 경우 activity id, 구글 연동 일정은 null
   activityId Int?      @map("user_selection")
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  // 둘 다 아닌 것은 둘 다 null
 
+ 
   title    String @db.VarChar(200)
   category String @db.VarChar(200)
   point    Int    @default(0)
@@ -80,10 +84,11 @@ model NotificationSetting {
   userId Int  @unique @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  dDayEnabled               Boolean @default(true) @map("d_day_enabled")
-  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled")
+  dDayEnabled               Boolean @default(true) @map("d_day_enabled") // D-Day 알림
+  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled") // 활동 완료 알림
 
-  fcmToken  String?  @map("fcm_token") @db.VarChar(255)
+  fcmToken String? @map("fcm_token") @db.VarChar(255)
+  
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("notification_setting")
@@ -116,7 +121,7 @@ model UserProfile {
   userId Int  @unique @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interests Json
+  interests Json // [2,3,7] 같은 형태
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_profile")
@@ -128,10 +133,11 @@ model CalendarSetting {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   connect              Boolean @default(false)
-  provider             String? @db.VarChar(20)
+  provider             String? @db.VarChar(20) // "google"
   importFixedSchedules Boolean @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json? @map("selected_event_ids")
+  selectedEventIds     Json? @map("selected_event_ids") // [1,2,4]
+  
   manualFixedSchedules Json? @map("manual_fixed_schedules")
 
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -226,4 +232,70 @@ enum Recommend {
   REST
   GROWTH
   NONE
+}
+
+enum ActivityTab {
+  GROWTH
+  REST
+}
+
+enum ActivityType {
+  NORMAL
+  CONTEST
+}
+
+model Activity {
+  id           Int          @id @default(autoincrement())
+  title        String
+  tab          ActivityTab
+  point        Int
+  thumbnailUrl String?      @db.VarChar(2048)
+  description  String?      @db.Text
+  type         ActivityType @default(NORMAL)
+
+  // 공모전/기간 표시용 (와이어프레임 대응)
+  startDate   DateTime?
+  endDate     DateTime?
+  externalUrl String?   @db.VarChar(2048)
+
+  // 탐색 화면 칩 필터용
+  categoryId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartItems      CartItem[]
+  myActivities   MyActivity[]
+  userActivities UserActivity[]
+
+  @@index([tab])
+  @@index([categoryId])
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, activityId])
+  @@index([userId])
+}
+
+model MyActivity {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  goalId     Int
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+  point     Int
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([goalId])
 }

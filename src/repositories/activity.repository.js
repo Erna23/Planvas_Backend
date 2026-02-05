@@ -1,31 +1,38 @@
-import { prisma } from "../db.config.js"
+import { prisma } from "../db.config.js";
 
-export async function createNewActivity(data) {
-    const isGrowth = data.category === "GROWTH";
-    
-    return await prisma.activity.create({
-        data: {
-            name: data.title,
-            category: data.category,
-            growth_point: isGrowth ? data.point : 0,
-            rest_point: isGrowth ? 0 : data.point
-        },
-        select: {
-            id: true,
-            name: true
-        }
-    });
+export async function findActivities({ tab, categoryId, q, page, size }) {
+  const where = {
+    tab,
+    ...(Number.isFinite(categoryId) ? { categoryId } : {}),
+    ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
+  };
+
+  const [total, rows] = await Promise.all([
+    prisma.activity.count({ where }),
+    prisma.activity.findMany({
+      where,
+      orderBy: [{ id: "desc" }],
+      skip: page * size,
+      take: size,
+    }),
+  ]);
+
+  return { total, rows };
 }
 
-export async function getMyActivityInfo(id) {
-    return await prisma.activity.findFirst({
-        where: id,
-        select: {
-            id: true,
-            title: true,
-            category: true,
-            growth_point: true,
-            rest_point: true
-        }
-    })
+export async function findRecommendations({ tab }) {
+  const where = tab ? { tab } : {};
+  return prisma.activity.findMany({
+    where,
+    orderBy: [
+      { type: "desc" }, // CONTEST 우선 노출(원하면 서비스에서 정렬 변경 가능)
+      { point: "desc" },
+      { id: "desc" },
+    ],
+    take: 10,
+  });
+}
+
+export async function findById(activityId) {
+  return prisma.activity.findUnique({ where: { id: activityId } });
 }

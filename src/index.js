@@ -9,6 +9,10 @@ import { registerNotificationRoutes } from "./controllers/notification.controlle
 import { registerCalendarRoutes } from "./controllers/calendar.controller.js";
 import { registerHomeRoutes } from "./controllers/home.controller.js";
 import { registerGoalRoutes } from "./controllers/goals.controller.js";
+import { registerReportRoutes } from "./controllers/report.controller.js";
+import { registerScheduleRoutes } from "./controllers/schedule.controller.js";
+import { registerActivityRoutes } from "./controllers/activity.controller.js";
+import { registerCartRoutes } from "./controllers/cart.controller.js";
 
 // 알림 기능에서 실제로 필요한 라우트들
 import { registerNotificationInboxRoutes } from "./controllers/notification.inbox.controller.js";
@@ -35,6 +39,10 @@ registerNotificationRoutes(app);
 registerCalendarRoutes(app);
 registerHomeRoutes(app);
 registerGoalRoutes(app);
+registerReportRoutes(app);
+registerScheduleRoutes(app);
+registerActivityRoutes(app);
+registerCartRoutes(app);
 
 // 알림함/푸시토큰 라우트
 registerNotificationInboxRoutes(app);
@@ -49,3 +57,4 @@ if (process.env.NODE_ENV !== "production") {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
