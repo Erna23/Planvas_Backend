@@ -4,14 +4,14 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:1234@localhost:3306/Planvas"
+  url      = env("DATABASE_URL")
 }
 
 model User {
   id                  Int      @id @default(autoincrement())
   email               String?  @unique @db.VarChar(255)
-  provider            String   @db.VarChar(20) // "google"
-  oauthId             String   @map("oauth_id") @db.VarChar(255) // google sub
+  provider            String   @db.VarChar(20)
+  oauthId             String   @map("oauth_id") @db.VarChar(255)
   name                String   @db.VarChar(50)
   refreshToken        String?  @map("refresh_token") @db.Text
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
@@ -24,119 +24,147 @@ model User {
   notificationSetting NotificationSetting?
   reports             Report[]
 
+  reminders        Reminder[]
+  pushTokens       PushToken[]
+  notificationLogs NotificationLog[]
+
   @@unique([provider, oauthId])
   @@map("user")
 }
 
 model Activity {
-  id            Int      @id	@default(autoincrement())
+  id Int @id @default(autoincrement())
 
-	name					String	 @db.VarChar(100)
-  category			String	 @default("성장활동") @db.VarChar(10)
+  name     String @db.VarChar(100)
+  category String @default("성장활동") @db.VarChar(10)
 
-	growth_point	Int			 @default(0)
-	rest_point		Int			 @default(0)
+  growth_point Int @default(0)
+  rest_point   Int @default(0)
 
-	createdAt			DateTime @default(now()) @map("created_at")
-	updatedAt			DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-	userActivites UserActivity[]
+  userActivites UserActivity[]
 
-	@@map("activity")
+  @@map("activity")
 }
 
 model UserActivity {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // 구글 연동 일정은 ID가 있고, 직접 추가한 건 null
-  googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
-  
-	// 사용자가 직접 구매해서 추가한 경우 activity id, 구글 연동 일정은 null
-	activityId		Int?			 @map("user_selection")
-	activity			Activity?  @relation(fields: [activityId], references: [id], onDelete: SetNull)
-  // 둘 다 아닌 것은 둘 다 null
+  googleEventId String? @unique @map("google_event_id") @db.VarChar(255)
 
-  title         String   @db.VarChar(200)
-  category      String   @db.VarChar(200)
-  point         Int      @default(0)
+  activityId Int?      @map("user_selection")
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
 
-  startAt       DateTime @map("start_at")
-  endAt         DateTime @map("end_at")
-  completed     Boolean  @default(false)   
-  
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  title    String @db.VarChar(200)
+  category String @db.VarChar(200)
+  point    Int    @default(0)
+
+  startAt   DateTime @map("start_at")
+  endAt     DateTime @map("end_at")
+  completed Boolean  @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
-	@@index([activityId])
+  @@index([activityId])
   @@map("user_activity")
 }
 
 model NotificationSetting {
-  id                        Int      @id @default(autoincrement())
-  userId                    Int      @unique @map("user_id")
-  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")                // D-Day 알림
-  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled") // 활동 완료 알림
-   
-  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
+  dDayEnabled               Boolean @default(true) @map("d_day_enabled")
+  activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled")
 
-  updatedAt                 DateTime @updatedAt @map("updated_at")
+  fcmToken  String?  @map("fcm_token") @db.VarChar(255)
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("notification_setting")
 }
 
 model GoalPeriod {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title      String   @db.VarChar(100)
-  startDate  DateTime @map("start_date")
-  endDate    DateTime @map("end_date")
+  title     String   @db.VarChar(100)
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
 
   growth     Int
   rest       Int
-  presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
+  presetType String @default("CUSTOM") @map("preset_type") @db.VarChar(20)
   presetId   Int?
 
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  reports    Report[]
+  reports Report[]
 
   @@index([userId])
   @@map("goal_period")
 }
 
 model UserProfile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interests Json     // [2,3,7] 같은 형태
+  interests Json
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_profile")
 }
 
 model CalendarSetting {
-  id                   Int      @id @default(autoincrement())
-  userId               Int      @unique @map("user_id")
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  connect              Boolean  @default(false)
-  provider             String?  @db.VarChar(20) // "google"
-  importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
+  connect              Boolean @default(false)
+  provider             String? @db.VarChar(20)
+  importFixedSchedules Boolean @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json?    @map("selected_event_ids")      // [1,2,4]
-  manualFixedSchedules Json?    @map("manual_fixed_schedules") 
+  selectedEventIds     Json? @map("selected_event_ids")
+  manualFixedSchedules Json? @map("manual_fixed_schedules")
 
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_setting")
+}
+
+model Reminder {
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reminderType String   @map("reminder_type") @db.VarChar(50)
+  isEnabled    Boolean  @default(true) @map("is_enabled")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, reminderType]) // 추가
+  @@index([userId])
+  @@map("reminder")
+}
+
+model PushToken {
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token       String   @unique @db.VarChar(255)
+  platform    String   @db.VarChar(20)
+  environment String   @db.VarChar(20)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("push_token")
 }
 
 model Interest {
@@ -147,30 +175,47 @@ model Interest {
 }
 
 model Report {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    Int
   goalId    Int
   growth    Int
   rest      Int
-  type      String     @db.VarChar(20)
-  title     String?    @db.VarChar(100)
-  subTitle  String?    @db.VarChar(255)
-  createdAt DateTime   @default(now()) @map("created_at")
+  type      String   @db.VarChar(20)
+  title     String?  @db.VarChar(100)
+  subTitle  String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
-  @@map("report")
   @@index([userId])
   @@index([goalId])
+  @@map("report")
+}
+
+model NotificationLog {
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String @db.VarChar(50) // "DDAY" | "ACTIVITY_COMPLETE"
+  refType String @db.VarChar(50) // "GOAL_PERIOD" | "USER_ACTIVITY"
+  refId   Int    @map("ref_id") // 목표기간 id 또는 활동 id
+
+  sendDate DateTime @map("send_date") // 이 날짜 기준 1번만 보내기
+  sentAt   DateTime @default(now()) @map("sent_at")
+
+  @@unique([userId, type, refType, refId, sendDate])
+  @@index([userId])
+  @@map("notification_log")
 }
 
 model Recommendation {
-  id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(100)
-  category  String   @db.VarChar(20) // "GROWTH" or "REST"
-  point     Int      @default(10)
-  
+  id       Int    @id @default(autoincrement())
+  title    String @db.VarChar(100)
+  category String @db.VarChar(20) // "GROWTH" or "REST"
+  point    Int    @default(10)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("recommendation")
