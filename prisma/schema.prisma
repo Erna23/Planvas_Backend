@@ -33,19 +33,31 @@ model User {
 }
 
 model Activity {
-  id Int @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
+  title        String
+  tab          ActivityTab
+  point        Int
+  thumbnailUrl String?      @db.VarChar(2048)
+  description  String?      @db.Text
+  type         ActivityType @default(NORMAL)
 
-  name     String @db.VarChar(100)
-  category String @default("성장활동") @db.VarChar(10)
+  // 공모전/기간 표시용 (와이어프레임 대응)
+  startDate   DateTime?
+  endDate     DateTime?
+  externalUrl String?   @db.VarChar(2048)
 
-  growth_point Int @default(0)
-  rest_point   Int @default(0)
+  // 탐색 화면 칩 필터용
+  categoryId Int?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userActivites UserActivity[]
+  cartItems      CartItem[]
+  myActivities   MyActivity[]
+  userActivities UserActivity[]
 
+  @@index([tab])
+  @@index([categoryId])
   @@map("activity")
 }
 
@@ -62,7 +74,6 @@ model UserActivity {
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
   // 둘 다 아닌 것은 둘 다 null
 
- 
   title    String @db.VarChar(200)
   category String @db.VarChar(200)
   point    Int    @default(0)
@@ -88,7 +99,7 @@ model NotificationSetting {
   activityCompletionEnabled Boolean @default(true) @map("activity_completion_enabled") // 활동 완료 알림
 
   fcmToken String? @map("fcm_token") @db.VarChar(255)
-  
+
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("notification_setting")
@@ -136,8 +147,8 @@ model CalendarSetting {
   provider             String? @db.VarChar(20) // "google"
   importFixedSchedules Boolean @default(false) @map("import_fixed_schedules")
 
-  selectedEventIds     Json? @map("selected_event_ids") // [1,2,4]
-  
+  selectedEventIds Json? @map("selected_event_ids") // [1,2,4]
+
   manualFixedSchedules Json? @map("manual_fixed_schedules")
 
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -242,34 +253,6 @@ enum ActivityTab {
 enum ActivityType {
   NORMAL
   CONTEST
-}
-
-model Activity {
-  id           Int          @id @default(autoincrement())
-  title        String
-  tab          ActivityTab
-  point        Int
-  thumbnailUrl String?      @db.VarChar(2048)
-  description  String?      @db.Text
-  type         ActivityType @default(NORMAL)
-
-  // 공모전/기간 표시용 (와이어프레임 대응)
-  startDate   DateTime?
-  endDate     DateTime?
-  externalUrl String?   @db.VarChar(2048)
-
-  // 탐색 화면 칩 필터용
-  categoryId Int?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  cartItems      CartItem[]
-  myActivities   MyActivity[]
-  userActivities UserActivity[]
-
-  @@index([tab])
-  @@index([categoryId])
 }
 
 model CartItem {
