@@ -81,7 +81,7 @@ function buildDescription(item) {
 
 async function resetImportedActivities(tab, type) {
   // “외부에서 가져온 것만” reset: externalUrl이 있는 것만 삭제
-  const targets = await prisma.activity.findMany({
+  const targets = await prisma.activityCatalog.findMany({
     where: {
       tab,
       type,
@@ -98,7 +98,7 @@ async function resetImportedActivities(tab, type) {
 
   const cartDel = await prisma.cartItem.deleteMany({ where: { activityId: { in: ids } } });
   const myDel = await prisma.myActivity.deleteMany({ where: { activityId: { in: ids } } });
-  const actDel = await prisma.activity.deleteMany({ where: { id: { in: ids } } });
+  const actDel = await prisma.activityCatalog.deleteMany({ where: { id: { in: ids } } });
 
   console.log(
     `[import] reset: cartItem=${cartDel.count}, myActivity=${myDel.count}, activity=${actDel.count} (tab=${tab}, type=${type})`
@@ -148,14 +148,14 @@ async function main() {
 
     // externalUrl 기준 upsert (모델에 unique 없으니 findFirst + update/create)
     const existing = item.url
-      ? await prisma.activity.findFirst({ where: { externalUrl: item.url } })
+      ? await prisma.activityCatalog.findFirst({ where: { externalUrl: item.url } })
       : null;
 
     if (existing) {
-      await prisma.activity.update({ where: { id: existing.id }, data });
+      await prisma.activityCatalog.update({ where: { id: existing.id }, data });
       updated += 1;
     } else {
-      await prisma.activity.create({ data });
+      await prisma.activityCatalog.create({ data });
       created += 1;
     }
   }

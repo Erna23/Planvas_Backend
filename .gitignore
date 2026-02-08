@@ -4,3 +4,7 @@ node_modules/
 /src/generated/prisma
 .history/
 .DS_Store
+
+# local backups
+backup.sql
+prisma/schema.prisma.bak

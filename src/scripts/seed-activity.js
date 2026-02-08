@@ -4,7 +4,7 @@ dotenv.config();
 import { prisma } from "../db.config.js";
 
 async function main() {
-  const count = await prisma.activity.count();
+  const count = await prisma.activityCatalog.count();
   if (count > 0) {
     console.log(`[seed] Activity already exists: ${count}. skip.`);
     return;
@@ -74,11 +74,11 @@ async function main() {
       categoryId: 7,
       startDate: new Date("2026-01-10T00:00:00Z"),
       endDate: new Date("2026-01-25T00:00:00Z"),
-      externalUrl: "https://example.com"
+      externalUrl: "https://example.com/contest-a"
     }
   ];
 
-  await prisma.activity.createMany({ data: items });
+  await prisma.activityCatalog.createMany({ data: items });
   console.log(`[seed] inserted activities: ${items.length}`);
 }
 
