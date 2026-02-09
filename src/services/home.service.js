@@ -46,12 +46,17 @@ export const getHomeData = async (userId) => {
   for (let d = new Date(startOfWeek); d <= endOfWeek; d.setDate(d.getDate() + 1)) {
     const dateString = d.toISOString().split("T")[0];
 
-    const count = weeklyRaw.filter((a) => {
+    // 해당 날짜의 일정들을 모두 찾음
+    const dailySchedules = weeklyRaw.filter((a) => {
       const aDate = new Date(a.startAt);
       return aDate.toISOString().split("T")[0] === dateString;
-    }).length;
+    });
 
-    weeklyStats.push({ date: dateString, count });
+    // count 대신 schedules 배열 자체를 넣음
+    weeklyStats.push({
+      date: dateString,
+      schedules: dailySchedules
+    });
   }
 
   // --------------------------------------------------------

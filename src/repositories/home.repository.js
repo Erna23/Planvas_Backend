@@ -15,7 +15,14 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       userId: userId,
       startAt: { gte: startDate, lte: endDate },
     },
-    select: { startAt: true }
+    // startAt뿐만 아니라 id, title, type도 가져옵니다.
+    select: { 
+      id: true, 
+      title: true, 
+      type: true, 
+      startAt: true 
+    },
+    orderBy: { startAt: 'asc' } // 시간순 정렬 추가
   });
 };
 

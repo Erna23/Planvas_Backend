@@ -72,7 +72,6 @@ paths:
                           weekStartDate:
                             type: string
                             example: "2024-02-04"
-                            description: "이번 주 시작일(보통 일요일)"
                           days:
                             type: array
                             items:
@@ -84,10 +83,26 @@ paths:
                                 hasItems:
                                   type: boolean
                                   example: true
-                                  description: "해당 날짜에 일정이 있는지 여부 (점 표시용)"
                                 todoCount:
                                   type: integer
                                   example: 3
+                                # [추가된 부분] 날짜별 일정 리스트
+                                schedules:
+                                  type: array
+                                  description: "해당 날짜의 일정 목록 (캘린더 표시용)"
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: integer
+                                        example: 101
+                                      title:
+                                        type: string
+                                        example: "공모전 마감"
+                                      category:
+                                        type: string
+                                        example: "GROWTH"
+                                        description: "FIXED, GROWTH, REST"
 
                       # 4. 오늘의 할 일 (todayTodos)
                       todayTodos:
