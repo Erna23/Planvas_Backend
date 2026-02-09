@@ -1,0 +1,346 @@
+paths:
+  /api/settings/reminders:
+    get:
+      summary: 알림 설정 조회
+      description: 사용자 알림(리마인더) 설정을 조회합니다.
+      tags:
+        - Notification
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      dDayReminderEnabled:
+                        type: boolean
+                        example: true
+                      activityCompleteReminderEnabled:
+                        type: boolean
+                        example: true
+              examples:
+                success:
+                  value:
+                    resultType: "SUCCESS"
+                    error: null
+                    success:
+                      dDayReminderEnabled: true
+                      activityCompleteReminderEnabled: true
+        "401":
+          description: 인증 실패
+        "500":
+          description: 알림 설정 조회 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "N500"
+                      reason:
+                        type: string
+                        example: "알림 설정 조회 실패"
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+
+    patch:
+      summary: 알림 설정 변경
+      description: |
+        사용자 알림(리마인더) 설정을 변경합니다.
+        PATCH는 "보낸 값만" 업데이트합니다. (최소 1개 필드 필요)
+      tags:
+        - Notification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dDayReminderEnabled:
+                  type: boolean
+                  description: D-day 리마인더 활성화 여부
+                  example: true
+                activityCompleteReminderEnabled:
+                  type: boolean
+                  description: 활동 완료 리마인더 활성화 여부
+                  example: false
+            examples:
+              enableDday:
+                value:
+                  dDayReminderEnabled: true
+              disableActivityComplete:
+                value:
+                  activityCompleteReminderEnabled: false
+              updateBoth:
+                value:
+                  dDayReminderEnabled: true
+                  activityCompleteReminderEnabled: true
+      responses:
+        "200":
+          description: 변경 성공 (변경 후 최신값 반환)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      dDayReminderEnabled:
+                        type: boolean
+                        example: true
+                      activityCompleteReminderEnabled:
+                        type: boolean
+                        example: false
+              examples:
+                success:
+                  value:
+                    resultType: "SUCCESS"
+                    error: null
+                    success:
+                      dDayReminderEnabled: true
+                      activityCompleteReminderEnabled: false
+        "400":
+          description: 요청 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "N400"
+                      reason:
+                        type: string
+                        example: "변경할 값이 없습니다"
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+              examples:
+                noPatch:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      errorCode: "N400"
+                      reason: "변경할 값이 없습니다"
+                      data: null
+                    success: null
+                invalidDdayType:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      errorCode: "N400"
+                      reason: "dDayReminderEnabled는 boolean이어야 함"
+                      data: null
+                    success: null
+                invalidActivityCompleteType:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      errorCode: "N400"
+                      reason: "activityCompleteReminderEnabled는 boolean이어야 함"
+                      data: null
+                    success: null
+        "401":
+          description: 인증 실패
+        "500":
+          description: 알림 설정 변경 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "N500"
+                      reason:
+                        type: string
+                        example: "알림 설정 변경 실패"
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+
+  /api/notifications:
+    get:
+      summary: 알림함 조회
+      description: |
+        알림함(수신 로그) 목록을 조회합니다.
+        cursor 기반 페이지네이션을 지원합니다.
+      tags:
+        - Notification Inbox
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: take
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: 한 번에 가져올 개수 (1~50, 기본 20)
+        - in: query
+          name: cursorId
+          required: false
+          schema:
+            type: integer
+          description: 다음 페이지 조회를 위한 커서(마지막 항목 id)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 123
+                            type:
+                              type: string
+                              description: 알림 타입
+                              enum: [DDAY, ACTIVITY_COMPLETE]
+                              example: "DDAY"
+                            title:
+                              type: string
+                              example: "D-day 리마인더"
+                            body:
+                              type: string
+                              example: "목표 기간 종료일까지 7일 남았어요: 다이어트"
+                            refType:
+                              type: string
+                              description: 참조 대상 타입
+                              enum: [GOAL_PERIOD, USER_ACTIVITY]
+                              example: "GOAL_PERIOD"
+                            refId:
+                              type: integer
+                              description: 참조 대상 ID
+                              example: 12
+                            sendDate:
+                              type: string
+                              format: date-time
+                              example: "2026-02-09T00:00:00.000Z"
+                            sentAt:
+                              type: string
+                              format: date-time
+                              example: "2026-02-09T09:00:00.000Z"
+                      nextCursorId:
+                        nullable: true
+                        type: integer
+                        example: 122
+              examples:
+                success:
+                  value:
+                    resultType: "SUCCESS"
+                    error: null
+                    success:
+                      notifications:
+                        - id: 123
+                          type: "DDAY"
+                          title: "D-day 리마인더"
+                          body: "목표 기간 종료일까지 7일 남았어요: 다이어트"
+                          refType: "GOAL_PERIOD"
+                          refId: 12
+                          sendDate: "2026-02-09T00:00:00.000Z"
+                          sentAt: "2026-02-09T09:00:00.000Z"
+                        - id: 122
+                          type: "ACTIVITY_COMPLETE"
+                          title: "활동 완료 리마인더"
+                          body: "아직 완료되지 않았어요: 독서 30분"
+                          refType: "USER_ACTIVITY"
+                          refId: 201
+                          sendDate: "2026-02-09T00:00:00.000Z"
+                          sentAt: "2026-02-09T10:00:00.000Z"
+                      nextCursorId: 122
+        "401":
+          description: 인증 실패
+        "500":
+          description: 알림함 조회 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "N500"
+                      reason:
+                        type: string
+                        example: "알림함 조회 실패"
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
