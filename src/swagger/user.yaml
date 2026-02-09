@@ -1,0 +1,354 @@
+openapi: 3.0.0
+
+tags:
+  - name: User
+    description: 사용자/인증/온보딩 API
+
+components:
+  schemas:
+    ErrorObject:
+      type: object
+      required: [errorCode, reason, data]
+      properties:
+        errorCode:
+          type: string
+          description: 서비스 에러 코드
+          example: "A001"
+        reason:
+          type: string
+          description: 에러 사유(메시지)
+          example: "유효하지 않은 Google ID Token입니다."
+        data:
+          nullable: true
+          description: 추가 데이터(없으면 null)
+          example: null
+
+    FailResponse:
+      type: object
+      required: [resultType, error, success]
+      properties:
+        resultType:
+          type: string
+          enum: [FAIL]
+          example: "FAIL"
+        error:
+          $ref: "#/components/schemas/ErrorObject"
+        success:
+          nullable: true
+          example: null
+
+  responses:
+    FailResponse:
+      description: 공통 FAIL 응답
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FailResponse"
+
+paths:
+  /api/users/oauth2/google:
+    post:
+      summary: 구글 OAuth 로그인 (기존 유저 여부 확인)
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+      responses:
+        "200":
+          description: 처리 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      signupRequired:
+                        type: boolean
+                        example: false
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      expiresIn:
+                        type: integer
+                        example: 2592000
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "홍길동"
+                          provider:
+                            type: string
+                            example: "google"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users:
+    post:
+      summary: 회원가입 (Google)
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+      responses:
+        "201":
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "회원가입이 성공적으로 완료되었습니다."
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      expiresIn:
+                        type: integer
+                        example: 2592000
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "홍길동"
+                          provider:
+                            type: string
+                            example: "google"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "409":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users/me:
+    get:
+      summary: 내 정보 조회
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "홍길동"
+                          provider:
+                            type: string
+                            example: "google"
+                          createdAt:
+                            type: string
+                            format: date-time
+                            example: "2024-01-01T12:00:00.000Z"
+                          onboardingCompleted:
+                            type: boolean
+                            example: true
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users/me/onboarding:
+    post:
+      summary: 온보딩 정보 저장
+      tags: [User]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goalPeriod:
+                  type: object
+                  required: [title, dateRange]
+                  properties:
+                    title:
+                      type: string
+                      example: "2024 상반기 목표"
+                    dateRange:
+                      type: object
+                      properties:
+                        startDate:
+                          type: string
+                          example: "2024-01-01"
+                        endDate:
+                          type: string
+                          example: "2024-06-30"
+                    ratio:
+                      type: object
+                      properties:
+                        growth:
+                          type: integer
+                          example: 60
+                        rest:
+                          type: integer
+                          example: 40
+                        presetType:
+                          type: string
+                          example: "CUSTOM"
+                profile:
+                  type: object
+                  properties:
+                    interests:
+                      type: array
+                      items:
+                        type: integer
+                      example: [1, 3, 5]
+                calendar:
+                  type: object
+                  properties:
+                    connect:
+                      type: boolean
+                      example: true
+                    provider:
+                      type: string
+                      example: "google"
+      responses:
+        "200":
+          description: 저장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "온보딩 저장이 완료되었습니다."
+                      goalPeriodId:
+                        type: integer
+                        example: 10
+                      onboardingCompleted:
+                        type: boolean
+                        example: true
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "409":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users/me/interests:
+    get:
+      summary: 내 관심사 조회
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      interests:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            name:
+                              type: string
+                              example: "운동"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
