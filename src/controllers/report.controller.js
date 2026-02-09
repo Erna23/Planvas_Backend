@@ -14,14 +14,14 @@ export function registerReportRoutes(app) {
         }
     });
 
-    // app.get("/api/reports/seasons/:goalId", requireAuth, async (req, res) => {
-    //     try {
-    //         const result = await createReport(req.auth.userId, req.params.goalId);
-    //         return res.status(200).json(result);
-    //     } catch (e) {
-    //         return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
-    //     }
-    // });
+    app.get("/api/reports/seasons/:goalId", requireAuth, async (req, res) => {
+        try {
+            const result = await createReport(req.auth.userId, req.params.goalId);
+            return res.status(200).json(result);
+        } catch (e) {
+            return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
+        }
+    });
 }
 
 function defaultReportsFail() {
