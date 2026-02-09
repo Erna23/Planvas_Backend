@@ -1,0 +1,402 @@
+openapi: 3.0.0
+
+tags:
+  - name: Goal
+    description: 목표(Goal Period) 관리 API
+
+components:
+  schemas:
+    ErrorObject:
+      type: object
+      required: [errorCode, reason, data]
+      properties:
+        errorCode:
+          type: string
+          example: "G400"
+        reason:
+          type: string
+          example: "목표 정보를 찾을 수 없습니다."
+        data:
+          nullable: true
+          example: null
+
+    FailResponse:
+      type: object
+      required: [resultType, error, success]
+      properties:
+        resultType:
+          type: string
+          enum: [FAIL]
+          example: "FAIL"
+        error:
+          $ref: "#/components/schemas/ErrorObject"
+        success:
+          nullable: true
+          example: null
+
+  responses:
+    FailResponse:
+      description: 공통 FAIL 응답
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FailResponse"
+
+paths:
+  /api/goals:
+    post:
+      summary: 목표 생성
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, startDate, endDate]
+              properties:
+                presetId:
+                  type: integer
+                  nullable: true
+                  example: 2
+                title:
+                  type: string
+                  example: "2024 상반기 목표"
+                startDate:
+                  type: string
+                  example: "2024-01-01"
+                endDate:
+                  type: string
+                  example: "2024-06-30"
+                targetGrowthRatio:
+                  type: integer
+                  example: 60
+                targetRestRatio:
+                  type: integer
+                  example: 40
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "409":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/current:
+    get:
+      summary: 현재 진행 중 목표 조회
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        nullable: true
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      growthRatio:
+                        type: integer
+                        example: 60
+                      restRatio:
+                        type: integer
+                        example: 40
+                      currentGrowthRatio:
+                        type: integer
+                        example: 55
+                      currentRestRatio:
+                        type: integer
+                        example: 45
+                      presetType:
+                        type: string
+                        example: "CUSTOM"
+                      presetId:
+                        nullable: true
+                        example: null
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/ratio-presets:
+    get:
+      summary: 목표 비율 프리셋 목록
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      presets:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            presetId:
+                              type: integer
+                              example: 1
+                            title:
+                              type: string
+                              example: "파워 갓생러 🔥"
+                            description:
+                              type: string
+                              example: "이번 시즌, 후회 없이 모든 걸 쏟아붓고 싶은 분"
+                            growthRatio:
+                              type: integer
+                              example: 90
+                            restRatio:
+                              type: integer
+                              example: 10
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/{goalId}:
+    get:
+      summary: 목표 상세 조회
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      growthRatio:
+                        type: integer
+                        example: 60
+                      restRatio:
+                        type: integer
+                        example: 40
+                      presetType:
+                        type: string
+                        example: "CUSTOM"
+                      presetId:
+                        nullable: true
+                        example: null
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/{goalId}/ratio:
+    patch:
+      summary: 목표 성장/휴식 비율 수정
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [growthRatio, restRatio]
+              properties:
+                growthRatio:
+                  type: integer
+                  example: 70
+                restRatio:
+                  type: integer
+                  example: 30
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      growthRatio:
+                        type: integer
+                        example: 70
+                      restRatio:
+                        type: integer
+                        example: 30
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/{goalId}/progress:
+    get:
+      summary: 목표 진행 비율 조회
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      currentGrowthRatio:
+                        type: integer
+                        example: 55
+                      currentRestRatio:
+                        type: integer
+                        example: 45
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
