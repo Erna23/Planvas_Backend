@@ -39,7 +39,10 @@ model ActivityCatalog {
   description  String?      @db.Text
   type         ActivityType @default(NORMAL)
   startDate    DateTime?
-  endDate      DateTime?
+  endDate      DateTime?  
+  recruitEndDate   DateTime?  @map("recruit_end_date") 
+  organizer      String?      @db.VarChar(100)
+  tags           Json?                           
   externalUrl  String?      @db.VarChar(2048)
   categoryId   Int?
   createdAt    DateTime     @default(now())

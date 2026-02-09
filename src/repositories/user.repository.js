@@ -97,4 +97,3 @@ export async function findInterestsByIds(ids) {
     orderBy: { id: "asc" },
   });
 }
-

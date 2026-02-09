@@ -1,0 +1,148 @@
+paths:
+  /api/home:
+    get:
+      summary: 홈 화면 정보 조회 (통합)
+      description: |
+        홈 화면에 필요한 목표 정보, 달성 진행률, 주간 캘린더 요약, 오늘의 할 일, 추천 활동을 한 번에 조회합니다.
+      tags:
+        - Home
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    type: object
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      # 1. 목표 정보 (currentGoal)
+                      currentGoal:
+                        type: object
+                        nullable: true
+                        description: "설정된 목표가 없으면 null 반환"
+                        properties:
+                          goalId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: "갓생 살기 프로젝트"
+                          dDay:
+                            type: integer
+                            example: 15
+                            description: "남은 기간 (D-Day)"
+                          growthRatio:
+                            type: integer
+                            example: 70
+                            description: "목표 설정 비율 (성장)"
+                          restRatio:
+                            type: integer
+                            example: 30
+                            description: "목표 설정 비율 (휴식)"
+                      
+                      # 2. 진행률 (progress) - 실제 달성 개수
+                      progress:
+                        type: object
+                        nullable: true
+                        properties:
+                          growthAchieved:
+                            type: integer
+                            example: 5
+                            description: "실제 완료한 성장 활동 개수"
+                          restAchieved:
+                            type: integer
+                            example: 2
+                            description: "실제 완료한 휴식 활동 개수"
+
+                      # 3. 주간 캘린더 요약 (weeklySummary)
+                      weeklySummary:
+                        type: object
+                        properties:
+                          weekStartDate:
+                            type: string
+                            example: "2024-02-04"
+                            description: "이번 주 시작일(보통 일요일)"
+                          days:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                date:
+                                  type: string
+                                  example: "2024-02-05"
+                                hasItems:
+                                  type: boolean
+                                  example: true
+                                  description: "해당 날짜에 일정이 있는지 여부 (점 표시용)"
+                                todoCount:
+                                  type: integer
+                                  example: 3
+
+                      # 4. 오늘의 할 일 (todayTodos)
+                      todayTodos:
+                        type: array
+                        description: "오늘 날짜의 일정 목록"
+                        items:
+                          type: object
+                          properties:
+                            todoId:
+                              type: integer
+                              description: "Schedule ID 또는 Google Event ID"
+                            title:
+                              type: string
+                              example: "자격증 공부하기"
+                            category:
+                              type: string
+                              example: "GROWTH"
+                              description: "GROWTH / REST / FIXED"
+                            scheduleTime:
+                              type: string
+                              example: "14:00 - 16:00"
+                              description: "화면 표시용 시간 문자열"
+                            completed:
+                              type: boolean
+                              example: false
+                              description: "완료 여부"
+
+                      # 5. 추천 활동 (recommendations)
+                      recommendations:
+                        type: array
+                        description: "랜덤 추천 활동 3개"
+                        items:
+                          type: object
+                          properties:
+                            activityId:
+                              type: integer
+                              example: 10
+                            title:
+                              type: string
+                              example: "2024 대학생 마케팅 공모전"
+                            subTitle:
+                              type: string
+                              example: "삼성전자"
+                              description: "주최사 이름"
+                            dDay:
+                              type: string
+                              example: "D-5"
+                              description: "마감 D-Day 문자열"
+                            imageUrl:
+                              type: string
+                              nullable: true
+                              example: "https://..."
+                              description: "썸네일 이미지 URL"
+                            tags:
+                              type: array
+                              items:
+                                type: string
+                              example: ["#공모전", "#마케팅"]

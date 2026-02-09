@@ -238,8 +238,8 @@ export async function getMyInterestsByUserId(userId) {
   // profile.interests 는 온보딩에서 저장된 관심사 ID 배열(Int[])이라고 가정
   const profile = await findUserProfileByUserId(userId);
   const raw = profile?.interests;
-  const interestIds = 
-  Array.isArray(raw) ? raw.map(Number).filter((n) => Number.isInteger(n)) : [];
+  const interestIds =
+    Array.isArray(raw) ? raw.map(Number).filter((n) => Number.isInteger(n)) : [];
 
 
   const interests = await findInterestsByIds(interestIds);
