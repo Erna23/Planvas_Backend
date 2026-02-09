@@ -1,5 +1,3 @@
-openapi: 3.0.0
-
 tags:
   - name: Goal
     description: 목표(Goal Period) 관리 API
@@ -12,12 +10,15 @@ components:
       properties:
         errorCode:
           type: string
+          description: 서비스 에러 코드
           example: "G400"
         reason:
           type: string
+          description: 에러 사유(메시지)
           example: "목표 정보를 찾을 수 없습니다."
         data:
           nullable: true
+          description: 추가 데이터(없으면 null)
           example: null
 
     FailResponse:
@@ -60,21 +61,26 @@ paths:
                 presetId:
                   type: integer
                   nullable: true
+                  description: 프리셋을 쓰는 경우 presetId
                   example: 2
                 title:
                   type: string
                   example: "2024 상반기 목표"
                 startDate:
                   type: string
+                  description: "YYYY-MM-DD"
                   example: "2024-01-01"
                 endDate:
                   type: string
+                  description: "YYYY-MM-DD"
                   example: "2024-06-30"
                 targetGrowthRatio:
                   type: integer
+                  description: 목표 성장 비율 (미입력 시 50)
                   example: 60
                 targetRestRatio:
                   type: integer
+                  description: 목표 휴식 비율 (미입력 시 50)
                   example: 40
       responses:
         "201":
@@ -126,7 +132,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          description: 조회 성공
+          description: 조회 성공 (진행 중 목표 없으면 goalId=null)
           content:
             application/json:
               schema:
@@ -156,15 +162,19 @@ paths:
                         example: "2024-06-30"
                       growthRatio:
                         type: integer
+                        description: 목표(타겟) 성장 비율
                         example: 60
                       restRatio:
                         type: integer
+                        description: 목표(타겟) 휴식 비율
                         example: 40
                       currentGrowthRatio:
                         type: integer
+                        description: 실제 기록 기반 성장 비율
                         example: 55
                       currentRestRatio:
                         type: integer
+                        description: 실제 기록 기반 휴식 비율
                         example: 45
                       presetType:
                         type: string
@@ -227,7 +237,7 @@ paths:
 
   /api/goals/{goalId}:
     get:
-      summary: 목표 상세 조회
+      summary: 목표 상세 조회 (기간 + 타겟 비율)
       tags: [Goal]
       security:
         - bearerAuth: []
@@ -237,6 +247,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: 목표 ID
       responses:
         "200":
           description: 조회 성공
@@ -289,6 +300,86 @@ paths:
         "500":
           $ref: "#/components/responses/FailResponse"
 
+    patch:
+      summary: 목표 기간/이름 수정
+      description: |
+        목표의 title, startDate, endDate를 부분 수정합니다.
+        - 최소 1개 필드는 필수 (title/startDate/endDate 중 하나)
+        - 날짜 형식: YYYY-MM-DD
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+          description: 목표 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "2024 하반기 목표"
+                startDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-07-01"
+                endDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-12-31"
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 하반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-07-01"
+                      endDate:
+                        type: string
+                        example: "2024-12-31"
+                      growthRatio:
+                        type: integer
+                        example: 60
+                      restRatio:
+                        type: integer
+                        example: 40
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
   /api/goals/{goalId}/ratio:
     patch:
       summary: 목표 성장/휴식 비율 수정
@@ -301,6 +392,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: 목표 ID
       requestBody:
         required: true
         content:
@@ -354,7 +446,7 @@ paths:
 
   /api/goals/{goalId}/progress:
     get:
-      summary: 목표 진행 비율 조회
+      summary: 목표 진행 비율 조회 (현재 성장/휴식 비율)
       tags: [Goal]
       security:
         - bearerAuth: []
@@ -364,6 +456,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: 목표 ID
       responses:
         "200":
           description: 조회 성공
