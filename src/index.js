@@ -22,6 +22,7 @@ import { registerPushTokenRoutes } from "./controllers/pushToken.controller.js";
 import { registerDevRoutes } from "./controllers/dev.controller.js";
 import { registerDebugNotificationRoutes } from "./controllers/debug.notification.controller.js";
 
+
 dotenv.config();
 
 const app = express();
@@ -57,4 +58,3 @@ if (process.env.NODE_ENV !== "production") {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
