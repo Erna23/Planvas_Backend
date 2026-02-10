@@ -1,4 +1,5 @@
-import { verifyGoogleIdToken, signAccessToken, EXPIRES_IN_SECONDS } from "../auth.config.js";
+import { verifyGoogleIdToken, signAccessToken, EXPIRES_IN_SECONDS, signRefreshToken,
+  REFRESH_EXPIRES_IN_SECONDS, } from "../auth.config.js";
 import { parseIdTokenBody, validateOnboardingBody } from "../dtos/user.dto.js";
 import {
   findUserByProviderOauthId,
@@ -48,6 +49,7 @@ export async function googleOAuth2(body) {
 
   // 기존 유저: 토큰 발급
   const token = signAccessToken({ userId: existing.id });
+  const refreshToken = signRefreshToken({ userId: existing.id });
 
   return {
     resultType: "SUCCESS",
@@ -55,6 +57,7 @@ export async function googleOAuth2(body) {
     success: {
       signupRequired: false,
       token,
+      refreshToken,
       expiresIn: EXPIRES_IN_SECONDS,
       user: {
         userId: existing.id,
@@ -103,6 +106,7 @@ export async function signupWithGoogle(body) {
   });
 
   const token = signAccessToken({ userId: created.id });
+  const refreshToken = signRefreshToken({ userId: created.id });
 
   return {
     resultType: "SUCCESS",
@@ -110,6 +114,7 @@ export async function signupWithGoogle(body) {
     success: {
       message: "회원가입이 성공적으로 완료되었습니다.",
       token,
+      refreshToken,
       expiresIn: EXPIRES_IN_SECONDS,
       user: {
         userId: created.id,
