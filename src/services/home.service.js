@@ -1,17 +1,13 @@
-import { prisma } from "../db.config.js"; // ActivityCatalog 접근용
+import { prisma } from "../db.config.js";
 import * as homeRepository from "../repositories/home.repository.js";
 
 export const getHomeData = async (userId) => {
   const today = new Date();
 
-  // --------------------------------------------------------
-  // 1. 목표 가져오기 (기존 유지)
-  // --------------------------------------------------------
+  // 1. 최근 목표
   const recentGoal = await homeRepository.findRecentGoal(userId);
 
-  // --------------------------------------------------------
-  // 2. 진행률 계산 (기존 유지)
-  // --------------------------------------------------------
+  // 2. 진행률
   let progress = { growth: 0, rest: 0 };
 
   if (recentGoal) {
@@ -28,11 +24,10 @@ export const getHomeData = async (userId) => {
     progress.rest = restData ? restData._count.id : 0;
   }
 
-  // --------------------------------------------------------
-  // 3. 주간 요약 데이터 (기존 유지)
-  // --------------------------------------------------------
+  // 3. 주간 일정
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - 3);
+
   const endOfWeek = new Date(today);
   endOfWeek.setDate(today.getDate() + 3);
 
@@ -43,27 +38,27 @@ export const getHomeData = async (userId) => {
   );
 
   const weeklyStats = [];
-  for (let d = new Date(startOfWeek); d <= endOfWeek; d.setDate(d.getDate() + 1)) {
+  for (
+    let d = new Date(startOfWeek);
+    d <= endOfWeek;
+    d.setDate(d.getDate() + 1)
+  ) {
     const dateString = d.toISOString().split("T")[0];
-
-    // 해당 날짜의 일정들을 모두 찾음
     const dailySchedules = weeklyRaw.filter((a) => {
       const aDate = new Date(a.startAt);
       return aDate.toISOString().split("T")[0] === dateString;
     });
 
-    // count 대신 schedules 배열 자체를 넣음
     weeklyStats.push({
       date: dateString,
-      schedules: dailySchedules
+      schedules: dailySchedules,
     });
   }
 
-  // --------------------------------------------------------
-  // 4. 오늘의 할 일 (기존 유지)
-  // --------------------------------------------------------
+  // 4. 오늘의 할 일
   const startOfDay = new Date(today);
   startOfDay.setHours(0, 0, 0, 0);
+
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
@@ -73,29 +68,16 @@ export const getHomeData = async (userId) => {
     endOfDay
   );
 
-  // --------------------------------------------------------
-  // 5. [수정됨] 추천 활동 (ActivityCatalog + 랜덤 로직)
-  // --------------------------------------------------------
-  // 기존 Repository 대신 Prisma를 직접 사용하여 'ActivityCatalog' 조회
-  const count = await prisma.activityCatalog.count();
+  // 5. 추천 활동
+  const rawRecommendations = await homeRepository.findRecommendations(3);
 
-  // 데이터가 3개보다 적으면 처음부터, 많으면 랜덤 위치(skip) 계산
-  const skip = count > 3 ? Math.floor(Math.random() * (count - 3)) : 0;
-
-  const rawRecommendations = await prisma.activityCatalog.findMany({
-    take: 3,
-    skip: skip,
-    orderBy: { id: 'asc' } // 랜덤 skip을 위해 정렬 기준 필요
-  });
-
-  // 프론트엔드가 쓰기 좋게 데이터 가공 (D-Day 계산 등)
-  const recommendations = rawRecommendations.map(item => ({
+  const recommendations = rawRecommendations.map((item) => ({
     id: item.id,
     title: item.title,
-    subTitle: item.organizer || "", // 주최사를 부제목으로
+    subTitle: item.organizer || "",
     imageUrl: item.thumbnailUrl,
-    tags: item.tags,                // JSON 태그 배열 그대로 전달
-    dDay: calculateDDay(item.recruitEndDate) // ★ D-Day 계산 함수 사용
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    dDay: calculateDDay(item.recruitEndDate),
   }));
 
   return {
@@ -103,20 +85,17 @@ export const getHomeData = async (userId) => {
     progress,
     weeklyStats,
     todayTodos,
-    recommendations // 가공된 추천 활동 전달
+    recommendations,
   };
 };
 
-// --------------------------------------------------------
-// Helper: D-Day 계산 함수
-// --------------------------------------------------------
+// D-Day 계산
 function calculateDDay(targetDate) {
   if (!targetDate) return null;
 
   const now = new Date();
   const target = new Date(targetDate);
 
-  // 시간 부분 무시하고 날짜만 비교하기 위해 setHours 초기화
   now.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);
 

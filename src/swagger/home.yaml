@@ -3,7 +3,8 @@ paths:
     get:
       summary: 홈 화면 정보 조회 (통합)
       description: |
-        홈 화면에 필요한 목표 정보, 달성 진행률, 주간 캘린더 요약, 오늘의 할 일, 추천 활동을 한 번에 조회합니다.
+        홈 화면에 필요한 목표 정보, 달성 진행률, 주간 캘린더 요약,
+        오늘의 할 일, 추천 활동을 한 번에 조회합니다.
       tags:
         - Home
       security:
@@ -26,11 +27,10 @@ paths:
                   success:
                     type: object
                     properties:
-                      # 1. 목표 정보 (currentGoal)
                       currentGoal:
                         type: object
                         nullable: true
-                        description: "설정된 목표가 없으면 null 반환"
+                        description: "설정된 목표가 없으면 null"
                         properties:
                           goalId:
                             type: integer
@@ -38,40 +38,39 @@ paths:
                           title:
                             type: string
                             example: "갓생 살기 프로젝트"
+                          startDate:
+                            type: string
+                            example: "2026-02-01"
+                          endDate:
+                            type: string
+                            example: "2026-02-28"
                           dDay:
                             type: integer
                             example: 15
-                            description: "남은 기간 (D-Day)"
                           growthRatio:
                             type: integer
                             example: 70
-                            description: "목표 설정 비율 (성장)"
                           restRatio:
                             type: integer
                             example: 30
-                            description: "목표 설정 비율 (휴식)"
-                      
-                      # 2. 진행률 (progress) - 실제 달성 개수
+
                       progress:
                         type: object
-                        nullable: true
+                        description: "목표 기간 내 완료한 활동 개수"
                         properties:
                           growthAchieved:
                             type: integer
                             example: 5
-                            description: "실제 완료한 성장 활동 개수"
                           restAchieved:
                             type: integer
                             example: 2
-                            description: "실제 완료한 휴식 활동 개수"
 
-                      # 3. 주간 캘린더 요약 (weeklySummary)
                       weeklySummary:
                         type: object
                         properties:
                           weekStartDate:
                             type: string
-                            example: "2024-02-04"
+                            example: "2026-02-09"
                           days:
                             type: array
                             items:
@@ -79,17 +78,15 @@ paths:
                               properties:
                                 date:
                                   type: string
-                                  example: "2024-02-05"
+                                  example: "2026-02-10"
                                 hasItems:
                                   type: boolean
                                   example: true
                                 todoCount:
                                   type: integer
                                   example: 3
-                                # [추가된 부분] 날짜별 일정 리스트
                                 schedules:
                                   type: array
-                                  description: "해당 날짜의 일정 목록 (캘린더 표시용)"
                                   items:
                                     type: object
                                     properties:
@@ -102,38 +99,33 @@ paths:
                                       category:
                                         type: string
                                         example: "GROWTH"
-                                        description: "FIXED, GROWTH, REST"
 
-                      # 4. 오늘의 할 일 (todayTodos)
                       todayTodos:
                         type: array
-                        description: "오늘 날짜의 일정 목록"
                         items:
                           type: object
                           properties:
                             todoId:
-                              type: integer
-                              description: "Schedule ID 또는 Google Event ID"
+                              oneOf:
+                                - type: integer
+                                - type: string
+                              example: 12
+                              description: "UserActivity ID 또는 Google Event ID"
                             title:
                               type: string
                               example: "자격증 공부하기"
                             category:
                               type: string
                               example: "GROWTH"
-                              description: "GROWTH / REST / FIXED"
                             scheduleTime:
                               type: string
                               example: "14:00 - 16:00"
-                              description: "화면 표시용 시간 문자열"
                             completed:
                               type: boolean
                               example: false
-                              description: "완료 여부"
 
-                      # 5. 추천 활동 (recommendations)
                       recommendations:
                         type: array
-                        description: "랜덤 추천 활동 3개"
                         items:
                           type: object
                           properties:
@@ -142,22 +134,71 @@ paths:
                               example: 10
                             title:
                               type: string
-                              example: "2024 대학생 마케팅 공모전"
+                              example: "2026 대학생 마케팅 공모전"
                             subTitle:
                               type: string
                               example: "삼성전자"
-                              description: "주최사 이름"
                             dDay:
                               type: string
                               example: "D-5"
-                              description: "마감 D-Day 문자열"
                             imageUrl:
                               type: string
                               nullable: true
-                              example: "https://..."
-                              description: "썸네일 이미지 URL"
+                              example: "https://api.linkareer.com/attachments/750451"
                             tags:
                               type: array
                               items:
                                 type: string
                               example: ["#공모전", "#마케팅"]
+
+        "401":
+          description: 인증 실패 (JWT 문제)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "A003"
+                      reason:
+                        type: string
+                        example: "토큰이 만료되었거나 유효하지 않습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+
+        "500":
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "H001"
+                      reason:
+                        type: string
+                        example: "홈 화면 조회 실패"
+                      data:
+                        type: string
+                        example: "Cannot read properties of undefined (reading 'map')"
+                  success:
+                    nullable: true
+                    example: null
