@@ -1,8 +1,9 @@
+import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import { specs } from "../src/config/swagger.config.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+
 
 import { registerUserRoutes } from "./controllers/user.controller.js";
 import { registerNotificationRoutes } from "./controllers/notification.controller.js";
