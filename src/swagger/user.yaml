@@ -84,65 +84,9 @@ paths:
                       token:
                         type: string
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      expiresIn:
-                        type: integer
-                        example: 2592000
-                      user:
-                        type: object
-                        properties:
-                          userId:
-                            type: integer
-                            example: 1
-                          name:
-                            type: string
-                            example: "홍길동"
-                          provider:
-                            type: string
-                            example: "google"
-        "400":
-          $ref: "#/components/responses/FailResponse"
-        "401":
-          $ref: "#/components/responses/FailResponse"
-        "500":
-          $ref: "#/components/responses/FailResponse"
-
-  /api/users:
-    post:
-      summary: 회원가입 (Google)
-      tags: [User]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [idToken]
-              properties:
-                idToken:
-                  type: string
-                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
-      responses:
-        "201":
-          description: 회원가입 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  error:
-                    nullable: true
-                    example: null
-                  success:
-                    type: object
-                    properties:
-                      message:
+                      refreshToken:
                         type: string
-                        example: "회원가입이 성공적으로 완료되었습니다."
-                      token:
-                        type: string
+                        description: JWT Refresh Token
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       expiresIn:
                         type: integer
@@ -162,57 +106,6 @@ paths:
         "400":
           $ref: "#/components/responses/FailResponse"
         "401":
-          $ref: "#/components/responses/FailResponse"
-        "409":
-          $ref: "#/components/responses/FailResponse"
-        "500":
-          $ref: "#/components/responses/FailResponse"
-
-  /api/users/me:
-    get:
-      summary: 내 정보 조회
-      tags: [User]
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  error:
-                    nullable: true
-                    example: null
-                  success:
-                    type: object
-                    properties:
-                      user:
-                        type: object
-                        properties:
-                          userId:
-                            type: integer
-                            example: 1
-                          name:
-                            type: string
-                            example: "홍길동"
-                          provider:
-                            type: string
-                            example: "google"
-                          createdAt:
-                            type: string
-                            format: date-time
-                            example: "2024-01-01T12:00:00.000Z"
-                          onboardingCompleted:
-                            type: boolean
-                            example: true
-        "401":
-          $ref: "#/components/responses/FailResponse"
-        "404":
           $ref: "#/components/responses/FailResponse"
         "500":
           $ref: "#/components/responses/FailResponse"
@@ -305,9 +198,56 @@ paths:
           $ref: "#/components/responses/FailResponse"
         "401":
           $ref: "#/components/responses/FailResponse"
-        "404":
-          $ref: "#/components/responses/FailResponse"
         "409":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users/me:
+    get:
+      summary: 내 정보 조회
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "홍길동"
+                          provider:
+                            type: string
+                            example: "google"
+                          createdAt:
+                            type: string
+                            format: date-time
+                            example: "2024-01-01T12:00:00.000Z"
+                          onboardingCompleted:
+                            type: boolean
+                            example: true
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "404":
           $ref: "#/components/responses/FailResponse"
         "500":
           $ref: "#/components/responses/FailResponse"
@@ -348,7 +288,71 @@ paths:
                               example: "운동"
         "401":
           $ref: "#/components/responses/FailResponse"
-        "404":
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/users:
+    post:
+      summary: 회원가입 (Google)
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+      responses:
+        "201":
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "회원가입이 성공적으로 완료되었습니다."
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken:
+                        type: string
+                        description: JWT Refresh Token
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      expiresIn:
+                        type: integer
+                        example: 2592000
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "홍길동"
+                          provider:
+                            type: string
+                            example: "google"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "409":
           $ref: "#/components/responses/FailResponse"
         "500":
           $ref: "#/components/responses/FailResponse"
