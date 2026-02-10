@@ -87,7 +87,6 @@ paths:
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       refreshToken:
                         type: string
-                        description: JWT Refresh Token
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       expiresIn:
                         type: integer
@@ -333,7 +332,6 @@ paths:
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       refreshToken:
                         type: string
-                        description: JWT Refresh Token
                         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       expiresIn:
                         type: integer
