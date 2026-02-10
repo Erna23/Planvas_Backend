@@ -372,44 +372,82 @@ export async function getGoalRatioPresets() {
         {
           presetId: 1,
           title: "파워 갓생러 🔥",
-          description: "이번 시즌, 후회 없이 모든 걸 쏟아붓고 싶은 분",
+          description:
+            "잠은 죽어서 잔다!\n" +
+            "이번 시즌, 후회 없이 모든 걸 쏟아붓습니다\n\n" +
+            "지금 편안하게 쉬는 것보다,\n" +
+            "미래의 압도적인 성취를 위해\n" +
+            "성장에 올인(All-in)하는 유형",
           growthRatio: 90,
           restRatio: 10,
+          recommendedFor:
+            "고시, 취준, 공모전 마감이 코앞인 전사들",
         },
         {
           presetId: 2,
           title: "밸런스 챌린저 🏃",
-          description: "열심히 달리되 번아웃은 피하고 싶은 전략형",
+          description:
+            "열심히 달리지만 번아웃은 사절!\n" +
+            "꽉 찬 일정 속, 전략적 휴식\n\n" +
+            "가장 표준적인 '성장 지향형' 모델\n" +
+            "주중엔 달리고 주말에는 확실히 쉬는 유형",
           growthRatio: 70,
           restRatio: 30,
+          recommendedFor:
+            "학점 관리와 대외활동을 병행하는 프로 N잡러",
         },
         {
           presetId: 3,
           title: "황금 밸런스형 ⚖️",
-          description: "성장과 휴식을 완벽하게 반반으로 가져가고 싶은 분",
+          description:
+            "성장도 휴식도 놓칠 수 없어!\n" +
+            "딱 반반, 완벽한 조화를 꿈꿉니다\n\n" +
+            "적극적으로 성장과 휴식을 탐색하는,\n" +
+            "이상적이고 건강한 루틴을 지향하는 유형",
           growthRatio: 50,
           restRatio: 50,
+          recommendedFor:
+            "방학을 알차게 보내고 싶지만, 여행도 다니고 싶은 여유 있는 대학생",
         },
         {
           presetId: 4,
           title: "에너지 충전형 🔋",
-          description: "지친 상태에서 회복을 우선하며 천천히 가고 싶은 분",
+          description:
+            "지난 학기 너무 달린 나,\n" +
+            "이번엔 나를 돌보며 천천히 갑니다\n\n" +
+            "휴식이 메인이지만, '감'을 잃지 않기 위해\n" +
+            "최소한의 자기 개발은 유지하는 유형",
           growthRatio: 30,
           restRatio: 70,
+          recommendedFor:
+            "종강 직후 지친, 번아웃을 피하려는 대학생",
         },
         {
           presetId: 5,
           title: "슬로우 스타터 🐢",
-          description: "무리하지 않고 아주 작은 목표부터 시작하고 싶은 분",
+          description:
+            "무리하지 말고 딱 하나만!\n" +
+            "작은 습관부터 천천히 시작해볼까요?\n\n" +
+            "거창한 목표 대신 '하루 30분 독서' 같은\n" +
+            "작은 목표 하나에 집중이 필요한 유형",
           growthRatio: 20,
           restRatio: 80,
+          recommendedFor:
+            "무기력증을 극복하고 싶은 대학생, 아주 작은 성취부터 맛보고 싶은 입문자",
         },
         {
           presetId: 6,
           title: "갭이어 탐험가 ✈️",
-          description: "이번 시즌은 경험과 휴식이 최우선인 분",
+          description:
+            "이번 시즌의 목표는 경험!\n" +
+            "마음껏 놀고, 보고, 느끼는 게 나의 스펙\n\n" +
+            "단순한 휴식이 아니라\n" +
+            "여행이나 새로운 경험을 통한\n" +
+            "'적극적인 휴식'으로 청춘을 즐기려는 유형",
           growthRatio: 10,
           restRatio: 90,
+          recommendedFor:
+            "배낭 여행, 워킹 홀리데이, 휴학 후 자아를 찾는 여행자",
         },
       ],
     },
