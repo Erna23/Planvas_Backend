@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `user` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NULL,
     `provider` VARCHAR(20) NOT NULL,
     `oauth_id` VARCHAR(255) NOT NULL,
     `name` VARCHAR(50) NOT NULL,
@@ -11,6 +11,27 @@ CREATE TABLE `user` (
 
     UNIQUE INDEX `user_email_key`(`email`),
     UNIQUE INDEX `user_provider_oauth_id_key`(`provider`, `oauth_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Activity` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(191) NOT NULL,
+    `tab` ENUM('GROWTH', 'REST') NOT NULL,
+    `point` INTEGER NOT NULL,
+    `thumbnailUrl` VARCHAR(2048) NULL,
+    `description` TEXT NULL,
+    `type` ENUM('NORMAL', 'CONTEST') NOT NULL DEFAULT 'NORMAL',
+    `startDate` DATETIME(3) NULL,
+    `endDate` DATETIME(3) NULL,
+    `externalUrl` VARCHAR(2048) NULL,
+    `categoryId` INTEGER NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `Activity_tab_idx`(`tab`),
+    INDEX `Activity_categoryId_idx`(`categoryId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -129,16 +150,60 @@ CREATE TABLE `report` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
     `goalId` INTEGER NOT NULL,
-    `growth` INTEGER NOT NULL,
-    `rest` INTEGER NOT NULL,
     `type` VARCHAR(20) NOT NULL,
     `title` VARCHAR(100) NULL,
     `subTitle` VARCHAR(255) NULL,
-    `snapshotData` JSON NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `growth` INTEGER NOT NULL,
+    `rest` INTEGER NOT NULL,
 
     INDEX `report_userId_idx`(`userId`),
     INDEX `report_goalId_idx`(`goalId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `notification_log` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `type` VARCHAR(50) NOT NULL,
+    `refType` VARCHAR(50) NOT NULL,
+    `ref_id` INTEGER NOT NULL,
+    `send_date` DATETIME(3) NOT NULL,
+    `sent_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `notification_log_user_id_idx`(`user_id`),
+    UNIQUE INDEX `notification_log_user_id_type_refType_ref_id_send_date_key`(`user_id`, `type`, `refType`, `ref_id`, `send_date`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CartItem` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `activityId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `CartItem_activityId_fkey`(`activityId`),
+    INDEX `CartItem_userId_idx`(`userId`),
+    UNIQUE INDEX `CartItem_userId_activityId_key`(`userId`, `activityId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `MyActivity` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `goalId` INTEGER NOT NULL,
+    `activityId` INTEGER NOT NULL,
+    `startDate` DATETIME(3) NOT NULL,
+    `endDate` DATETIME(3) NOT NULL,
+    `point` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `MyActivity_activityId_fkey`(`activityId`),
+    INDEX `MyActivity_goalId_idx`(`goalId`),
+    INDEX `MyActivity_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -164,7 +229,16 @@ ALTER TABLE `reminder` ADD CONSTRAINT `reminder_user_id_fkey` FOREIGN KEY (`user
 ALTER TABLE `push_token` ADD CONSTRAINT `push_token_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `report` ADD CONSTRAINT `report_goalId_fkey` FOREIGN KEY (`goalId`) REFERENCES `goal_period`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `report` ADD CONSTRAINT `report_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `report` ADD CONSTRAINT `report_goalId_fkey` FOREIGN KEY (`goalId`) REFERENCES `goal_period`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `notification_log` ADD CONSTRAINT `notification_log_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CartItem` ADD CONSTRAINT `CartItem_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `MyActivity` ADD CONSTRAINT `MyActivity_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
