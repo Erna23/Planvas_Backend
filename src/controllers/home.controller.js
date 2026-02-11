@@ -10,8 +10,9 @@ export function registerHomeRoutes(app) {
 
       const data = await homeService.getHomeData(userId);
 
-      // service 리턴 구조와 정확히 매칭
+      // ✅ goalStatus를 DTO로 같이 넘겨야 프론트에서 구분 가능
       const response = homeResponseDTO(
+        data.goalStatus,              // ✅ 추가
         data.goal ?? null,
         data.progress ?? null,
         data.weeklyStats ?? [],

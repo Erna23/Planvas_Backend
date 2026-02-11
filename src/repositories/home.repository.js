@@ -1,19 +1,33 @@
 import { prisma } from "../db.config.js";
 
-// 1. 최신 목표 조회
+// 1. 최신 목표(가장 최근 생성)
 export const findRecentGoal = async (userId) => {
   return await prisma.goalPeriod.findFirst({
-    where: { userId: userId },
+    where: { userId },
     orderBy: { createdAt: "desc" },
   });
 };
 
-// 2. 주간 일정 조회 (날짜별 일정 유무 확인용)
+// ✅ 1-1. 진행중 목표(오늘이 기간 안)
+export const findCurrentGoal = async (userId, today = new Date()) => {
+  return await prisma.goalPeriod.findFirst({
+    where: {
+      userId,
+      startDate: { lte: today },
+      endDate: { gte: today },
+    },
+    orderBy: { startDate: "desc" },
+  });
+};
+
+// 2. 주간 일정 조회 (✅ 기간 겹치는 일정 포함)
 export const findWeeklyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
       userId,
-      startAt: { gte: startDate, lte: endDate },
+      // (startAt <= endDate) AND (endAt >= startDate)
+      startAt: { lte: endDate },
+      endAt: { gte: startDate },
     },
     select: {
       id: true,
@@ -28,12 +42,13 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
   });
 };
 
-// 3. 오늘의 할 일 조회
+// 3. 오늘의 할 일 조회 (✅ 기간 겹치는 일정 포함)
 export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
       userId,
-      startAt: { gte: startOfDay, lte: endOfDay },
+      startAt: { lte: endOfDay },
+      endAt: { gte: startOfDay },
     },
     select: {
       id: true,
@@ -48,24 +63,18 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-
-// 4. 진행률 계산을 위한 활동 집계
-export const countDoneActivities = async (userId, startDate, endDate) => {
-  return await prisma.userActivity.groupBy({
-    by: ['type'],
-    where: {
-      userId: userId,
-      status: "DONE", // 완료된 것만
-      startAt: { gte: startDate, lte: endDate }
+// ✅ 4. 목표 진행률 계산용 (MyActivity + Activity.tab)
+export const findMyActivitiesForGoal = async (userId, goalId) => {
+  return await prisma.myActivity.findMany({
+    where: { userId, goalId },
+    select: {
+      id: true,
+      Activity: { select: { tab: true } }, // "GROWTH" | "REST"
     },
-    _count: {
-      id: true
-    }
   });
 };
 
-// 5. [수정됨] 추천 활동 조회
-// Recommendation 테이블이 삭제되었으므로 ActivityCatalog 테이블을 조회해야 합니다.
+// 5. 추천 활동 조회
 export const findRecommendations = async (take = 3) => {
   return await prisma.activityCatalog.findMany({
     take,
