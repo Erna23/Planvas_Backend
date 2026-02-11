@@ -160,3 +160,12 @@ export async function findActivitiesForGoalProgress(userId, startInclusive, endE
     },
   });
 }
+
+/**
+ * 목표 삭제
+ */
+export async function deleteGoalPeriod(goalId) {
+  return prisma.goalPeriod.delete({
+    where: { id: goalId },
+  });
+}

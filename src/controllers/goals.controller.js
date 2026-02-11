@@ -7,6 +7,7 @@ import {
   getGoalRatioPresets,
   getGoalDetailByUserId,
   getGoalProgressByUserId,
+  deleteGoalByUserId,
 } from "../services/goals.service.js";
 
 export function registerGoalRoutes(app) {
@@ -18,6 +19,17 @@ export function registerGoalRoutes(app) {
     } catch (e) {
       console.error("[POST /api/goals] error:", e);
       return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail());
+    }
+  });
+
+  // DELETE /api/goals/:goalId (목표 삭제)
+  app.delete("/api/goals/:goalId", requireAuth, async (req, res) => { //
+    try {
+      const result = await deleteGoalByUserId(req.auth.userId, req.params.goalId);
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[DELETE /api/goals/:goalId] error:", e);
+      return res.status(e.statusCode ?? 500).json(e.payload ?? defaultGoalsFail()); //
     }
   });
 
