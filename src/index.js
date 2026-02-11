@@ -1,8 +1,9 @@
+import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import { specs } from "../src/config/swagger.config.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+
 
 import { registerUserRoutes } from "./controllers/user.controller.js";
 import { registerNotificationRoutes } from "./controllers/notification.controller.js";
@@ -22,7 +23,6 @@ import { registerPushTokenRoutes } from "./controllers/pushToken.controller.js";
 import { registerDevRoutes } from "./controllers/dev.controller.js";
 import { registerDebugNotificationRoutes } from "./controllers/debug.notification.controller.js";
 
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;

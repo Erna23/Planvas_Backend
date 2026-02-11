@@ -39,7 +39,10 @@ model ActivityCatalog {
   description  String?      @db.Text
   type         ActivityType @default(NORMAL)
   startDate    DateTime?
-  endDate      DateTime?
+  endDate      DateTime?  
+  recruitEndDate   DateTime?  @map("recruit_end_date") 
+  organizer      String?      @db.VarChar(100)
+  tags           Json?                           
   externalUrl  String?      @db.VarChar(2048)
   categoryId   Int?
   createdAt    DateTime     @default(now())
@@ -59,6 +62,7 @@ model UserActivity {
   title         String   @db.VarChar(200)
   startAt       DateTime @map("start_at")
   endAt         DateTime @map("end_at")
+  category      ActivityTab  @default(GROWTH)
   type          String   @default("FIXED") @db.VarChar(20)
   status        String   @default("TODO") @db.VarChar(20)
   createdAt     DateTime @default(now()) @map("created_at")

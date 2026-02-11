@@ -2,105 +2,180 @@ import { requireAuth } from "../auth.config.js";
 import {
     calendarResponseDTO,
     calendarMonthResponseDTO,
-    calendarDayDetailResponseDTO
+    calendarDayDetailResponseDTO,
 } from "../dtos/calendar.dto.js";
 import * as calendarService from "../services/calendar.service.js";
+import { ok, fail, getAuthUserId } from "../utils/apiResponse.js";
 
 export function registerCalendarRoutes(app) {
-    // 1. 연동 (Connect)
+    // 1) Connect
     app.post("/api/integrations/google-calendar/connect", requireAuth, async (req, res) => {
         try {
-            await calendarService.connectGoogleCalendar(req.auth.userId, req.body.code);
-            res.status(200).json({ resultType: "SUCCESS", success: { message: "연동 성공" } });
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const code = req.body?.code;
+            if (!code) return fail(res, "C400", "code는 필수입니다.", 400);
+
+            await calendarService.connectGoogleCalendar(userId, code);
+            return ok(res, { message: "연동 성공" }, 200);
         } catch (e) {
-            res.status(500).json({ resultType: "FAIL", error: { errorCode: "C001", reason: e.message } });
+            console.error(e);
+            return fail(res, "C001", "연동 실패", 500, e?.message ?? null);
         }
     });
 
-    // 2. 연동 상태 조회 (Status)
+    // 2) Status
     app.get("/api/integrations/google-calendar/status", requireAuth, async (req, res) => {
         try {
-            const status = await calendarService.getCalendarStatus(req.auth.userId);
-            res.status(200).json({ resultType: "SUCCESS", success: status });
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const status = await calendarService.getCalendarStatus(userId); // { isConnected }
+            return ok(res, status, 200);
         } catch (e) {
-            res.status(500).json({ resultType: "FAIL", error: { errorCode: "C005", reason: "상태 조회 실패" } });
+            console.error(e);
+            return fail(res, "C005", "상태 조회 실패", 500, e?.message ?? null);
         }
     });
 
-    // 3. 구글 캘린더 일정 선택 저장 동기화 (Sync)
-    app.post("/api/integrations/google-calendar/sync", requireAuth, async (req, res) => {
-        try {
-            const userId = req.auth.userId;
-            const { events } = req.body;
-
-            console.log("저장 요청된 일정 개수:", events ? events.length : 0);
-
-            const savedCount = await calendarService.syncGoogleEvents(userId, events);
-
-            res.status(200).json({
-                resultType: "SUCCESS",
-                success: { savedCount: savedCount }
-            });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({
-                resultType: "FAIL",
-                error: { errorCode: "C003", reason: "동기화 실패" }
-            });
-        }
-    });
-
-    // 4. 가져올 일정 목록 조회 (Events - 미리보기)
+    // 3) Events Preview
     app.get("/api/integrations/google-calendar/events", requireAuth, async (req, res) => {
         try {
-            const rawEvents = await calendarService.getGoogleEventsList(req.auth.userId);
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const rawEvents = await calendarService.getGoogleEventsList(userId);
             const formattedEvents = calendarResponseDTO(rawEvents);
-            res.status(200).json({ resultType: "SUCCESS", success: { events: formattedEvents } });
+
+            return ok(res, { events: formattedEvents }, 200);
         } catch (e) {
-            if (e.message === "NOT_CONNECTED") {
-                return res.status(400).json({ resultType: "FAIL", error: { errorCode: "C002", reason: "연동 필요" } });
+            console.error(e);
+            if (e?.message === "NOT_CONNECTED") {
+                return fail(res, "C002", "연동 필요", 400);
             }
-            res.status(500).json({ resultType: "FAIL", error: { errorCode: "C006", reason: "목록 조회 실패" } });
+            return fail(res, "C006", "목록 조회 실패", 500, e?.message ?? null);
         }
     });
 
-    // 5. 월간 조회
+    // 4) Sync
+    app.post("/api/integrations/google-calendar/sync", requireAuth, async (req, res) => {
+        try {
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const events = req.body?.events;
+            if (!Array.isArray(events)) return fail(res, "C400", "events는 배열이어야 합니다.", 400);
+
+            const savedCount = await calendarService.syncGoogleEvents(userId, events);
+            return ok(res, { savedCount }, 200);
+        } catch (e) {
+            console.error(e);
+            return fail(res, "C003", "동기화 실패", 500, e?.message ?? null);
+        }
+    });
+
+    // 5) Month
     app.get("/api/calendar/month", requireAuth, async (req, res) => {
         try {
-            const { year, month } = req.query;
-            if (!year || !month) {
-                return res.status(400).json({ resultType: "FAIL", error: { reason: "요청 파라미터가 올바르지 않습니다." } });
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const year = Number(req.query?.year);
+            const month = Number(req.query?.month);
+            if (!Number.isFinite(year) || !Number.isFinite(month)) {
+                return fail(res, "C400", "year, month 파라미터가 올바르지 않습니다.", 400);
             }
 
-            const rawData = await calendarService.getMonthlyEvents(req.auth.userId, year, month);
-            const resultData = calendarMonthResponseDTO(rawData, year, month);
+            const rawData = await calendarService.getMonthlyEvents(userId, year, month);
+            const resultData = calendarMonthResponseDTO(rawData, year, month, 3);
 
-            res.status(200).json({ resultType: "SUCCESS", error: null, success: resultData });
+            return ok(res, resultData, 200);
         } catch (e) {
-            res.status(500).json({ resultType: "FAIL", error: { reason: e.message } });
+            console.error(e);
+            return fail(res, "C007", "월간 조회 실패", 500, e?.message ?? null);
         }
     });
 
-    // 6. 일간 조회
+    // 6) Day
     app.get("/api/calendar/day", requireAuth, async (req, res) => {
         try {
-            const { date } = req.query;
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
-            if (!date) {
-                return res.status(400).json({
-                    resultType: "FAIL",
-                    error: { reason: "요청 파라미터가 올바르지 않습니다.", data: null },
-                    success: null
-                });
-            }
+            const date = req.query?.date;
+            if (!date) return fail(res, "C400", "date 파라미터가 올바르지 않습니다.", 400);
 
-            const rawData = await calendarService.getDailyEvents(req.auth.userId, date);
+            const rawData = await calendarService.getDailyEvents(userId, date);
             const resultData = calendarDayDetailResponseDTO(rawData, date);
 
-            res.status(200).json({ resultType: "SUCCESS", error: null, success: resultData });
-
+            return ok(res, resultData, 200);
         } catch (e) {
-            res.status(500).json({ resultType: "FAIL", error: { reason: e.message, data: null } });
+            console.error(e);
+            return fail(res, "C008", "일간 조회 실패", 500, e?.message ?? null);
+        }
+    });
+
+    // 7) Manual Create
+    app.post("/api/calendar/event", requireAuth, async (req, res) => {
+        try {
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const { title, startAt, endAt, type } = req.body ?? {};
+            if (!title || !startAt || !endAt) {
+                return fail(res, "C400", "title, startAt, endAt는 필수입니다.", 400);
+            }
+
+            const created = await calendarService.createManualEvent(userId, {
+                title,
+                startAt,
+                endAt,
+                type,
+            });
+
+            return ok(res, created, 201);
+        } catch (e) {
+            console.error(e);
+            return fail(res, "C009", "일정 생성 실패", 500, e?.message ?? null);
+        }
+    });
+
+    // 8) Manual Update
+    app.patch("/api/calendar/event/:id", requireAuth, async (req, res) => {
+        try {
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const eventId = Number(req.params.id);
+            if (!Number.isFinite(eventId)) return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
+
+            const updated = await calendarService.updateManualEvent(userId, eventId, req.body ?? {});
+            if (!updated) return fail(res, "C404", "수정할 일정이 없습니다.", 404);
+
+            return ok(res, updated, 200);
+        } catch (e) {
+            console.error(e);
+            return fail(res, "C010", "일정 수정 실패", 500, e?.message ?? null);
+        }
+    });
+
+    // 9) Manual Delete
+    app.delete("/api/calendar/event/:id", requireAuth, async (req, res) => {
+        try {
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const eventId = Number(req.params.id);
+            if (!Number.isFinite(eventId)) return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
+
+            const deleted = await calendarService.deleteManualEvent(userId, eventId);
+            if (!deleted) return fail(res, "C404", "삭제할 일정이 없습니다.", 404);
+
+            return ok(res, { message: "삭제되었습니다." }, 200);
+        } catch (e) {
+            console.error(e);
+            return fail(res, "C011", "일정 삭제 실패", 500, e?.message ?? null);
         }
     });
 }

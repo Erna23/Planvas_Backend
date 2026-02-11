@@ -153,10 +153,19 @@ export async function findActivitiesForGoalProgress(userId, startInclusive, endE
       category: { in: ["GROWTH", "REST"] },
     },
     select: {
-      type: true,
+      category: true,
       startAt: true,
       endAt: true,
       status: true,
     },
+  });
+}
+
+/**
+ * 목표 삭제
+ */
+export async function deleteGoalPeriod(goalId) {
+  return prisma.goalPeriod.delete({
+    where: { id: goalId },
   });
 }

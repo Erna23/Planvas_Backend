@@ -1,9 +1,356 @@
+openapi: 3.0.3
+info:
+  title: Calendar API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Calendar
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: "C001"
+        reason:
+          type: string
+          example: "연동 실패"
+        data:
+          nullable: true
+          example: null
+
+    ApiFail:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "FAIL"
+        error:
+          $ref: "#/components/schemas/ApiError"
+        success:
+          nullable: true
+          example: null
+
+    # ------------- Google Connect -------------
+    GoogleConnectRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          example: "4/0AeaYSH..."
+
+    ApiSuccessMessage:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "연동 성공"
+
+    # ------------- Google Status -------------
+    GoogleStatusSuccess:
+      type: object
+      properties:
+        isConnected:
+          type: boolean
+          example: true
+
+    ApiGoogleStatus:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          $ref: "#/components/schemas/GoogleStatusSuccess"
+
+    # ------------- Google Events Preview -------------
+    GooglePreviewEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "google_evt_abc"
+        title:
+          type: string
+          example: "팀 미팅"
+
+    ApiGoogleEventsPreview:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/GooglePreviewEvent"
+
+    # ------------- Google Sync -------------
+    GoogleSyncEventInput:
+      type: object
+      required: [id, summary, start, end]
+      properties:
+        id:
+          type: string
+        summary:
+          type: string
+        start:
+          type: object
+          additionalProperties: true
+        end:
+          type: object
+          additionalProperties: true
+
+    GoogleSyncRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/GoogleSyncEventInput"
+
+    ApiGoogleSync:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          type: object
+          properties:
+            savedCount:
+              type: integer
+              example: 5
+
+    # ------------- Calendar Month -------------
+    CalendarMonthPreviewItem:
+      type: object
+      properties:
+        itemId:
+          type: string
+          example: "10"
+        title:
+          type: string
+          example: "과제하기"
+        isFixed:
+          type: boolean
+          example: false
+        type:
+          type: string
+          example: "MANUAL"
+
+    CalendarMonthDay:
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2026-02-11"
+        hasItems:
+          type: boolean
+          example: true
+        itemCount:
+          type: integer
+          example: 4
+        schedulesPreview:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarMonthPreviewItem"
+        moreCount:
+          type: integer
+          example: 1
+
+    CalendarMonthSuccess:
+      type: object
+      properties:
+        year:
+          type: integer
+          example: 2026
+        month:
+          type: integer
+          example: 2
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarMonthDay"
+
+    ApiCalendarMonth:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          $ref: "#/components/schemas/CalendarMonthSuccess"
+
+    # ------------- Calendar Day -------------
+    CalendarDayItem:
+      type: object
+      properties:
+        itemId:
+          type: string
+          example: "10"
+        title:
+          type: string
+          example: "과제하기"
+        startAt:
+          type: string
+          example: "2026-02-11T18:00:00+09:00"
+        endAt:
+          type: string
+          example: "2026-02-11T20:00:00+09:00"
+        isFixed:
+          type: boolean
+          example: false
+        type:
+          type: string
+          example: "MANUAL"
+
+    CalendarDaySuccess:
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2026-02-11"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarDayItem"
+
+    ApiCalendarDay:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          $ref: "#/components/schemas/CalendarDaySuccess"
+
+    # ------------- Manual Create/Update -------------
+    ManualCreateRequest:
+      type: object
+      required: [title, startAt, endAt]
+      properties:
+        title:
+          type: string
+        startAt:
+          type: string
+        endAt:
+          type: string
+        type:
+          type: string
+          description: "MANUAL | FIXED"
+          example: "MANUAL"
+
+    ManualUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        startAt:
+          type: string
+        endAt:
+          type: string
+        type:
+          type: string
+          description: "MANUAL | FIXED"
+
+    ManualEventResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        title:
+          type: string
+        startAt:
+          type: string
+        endAt:
+          type: string
+        type:
+          type: string
+          example: "MANUAL"
+        status:
+          type: string
+          example: "TODO"
+        googleEventId:
+          nullable: true
+          example: null
+
+    ApiManualEvent:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          $ref: "#/components/schemas/ManualEventResponse"
+
+    ApiManualDelete:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: "SUCCESS"
+        error:
+          nullable: true
+          example: null
+        success:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "삭제되었습니다."
+
+security:
+  - bearerAuth: []
+
 paths:
   /api/integrations/google-calendar/connect:
     post:
       summary: 구글 캘린더 연동 (Auth Code 전달)
-      tags: 
-        - Calendar
+      tags: [Calendar]
       security:
         - bearerAuth: []
       requestBody:
@@ -11,35 +358,37 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  description: 구글 로그인 후 받은 인증 코드
-                  example: "4/0AeaYSH..."
+              $ref: "#/components/schemas/GoogleConnectRequest"
       responses:
         "200":
           description: 연동 성공
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "연동 성공"
+                $ref: "#/components/schemas/ApiSuccessMessage"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
 
   /api/integrations/google-calendar/status:
     get:
       summary: 연동 상태 조회
-      tags: 
-        - Calendar
+      tags: [Calendar]
       security:
         - bearerAuth: []
       responses:
@@ -48,24 +397,56 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      isConnected:
-                        type: boolean
-                        example: true
+                $ref: "#/components/schemas/ApiGoogleStatus"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/integrations/google-calendar/events:
+    get:
+      summary: 구글 캘린더 일정 목록 조회 (미리보기)
+      tags: [Calendar]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiGoogleEventsPreview"
+        "400":
+          description: 연동 필요
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
 
   /api/integrations/google-calendar/sync:
     post:
       summary: 구글 캘린더 일정 선택 저장 (동기화)
-      description: 프론트엔드에서 선택한 일정 리스트를 받아 DB에 저장합니다.
-      tags: 
-        - Calendar
+      tags: [Calendar]
       security:
         - bearerAuth: []
       requestBody:
@@ -73,78 +454,37 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                events:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: 구글 이벤트 ID
-                      summary:
-                        type: string
-                        description: 일정 제목
-                      start:
-                        type: object
-                      end:
-                        type: object
+              $ref: "#/components/schemas/GoogleSyncRequest"
       responses:
         "200":
           description: 저장 성공
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      savedCount:
-                        type: integer
-                        example: 5
-
-  /api/integrations/google-calendar/events:
-    get:
-      summary: 구글 캘린더 일정 목록 조회 (미리보기)
-      description: DB 저장 전, 구글에서 직접 가져오는 미리보기 목록입니다.
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
+                $ref: "#/components/schemas/ApiGoogleSync"
+        "400":
+          description: 파라미터 오류
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      events:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            title:
-                              type: string
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/month:
     get:
       summary: 월간 일정 조회 (캘린더 뷰)
-      tags: 
-        - Calendar
+      tags: [Calendar]
       security:
         - bearerAuth: []
       parameters:
@@ -161,21 +501,195 @@ paths:
       responses:
         "200":
           description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiCalendarMonth"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/day:
     get:
       summary: 일간 일정 상세 조회 (리스트 뷰)
-      tags: 
-        - Calendar
+      tags: [Calendar]
       security:
         - bearerAuth: []
       parameters:
         - in: query
           name: date
           required: true
-          description: "YYYY-MM-DD 형식"
           schema:
             type: string
+            example: "2026-02-11"
       responses:
         "200":
           description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiCalendarDay"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/calendar/event:
+    post:
+      summary: 직접 일정 추가 (Manual Create)
+      tags: [Calendar]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualCreateRequest"
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiManualEvent"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/calendar/event/{id}:
+    patch:
+      summary: 직접 일정 수정 (Manual Update)
+      tags: [Calendar]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualUpdateRequest"
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiManualEvent"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: 대상 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    delete:
+      summary: 직접 일정 삭제 (Manual Delete)
+      tags: [Calendar]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiManualDelete"
+        "400":
+          description: 파라미터 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: 대상 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"

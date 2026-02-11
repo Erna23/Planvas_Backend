@@ -1,52 +1,91 @@
-// src/repositories/calendar.repository.js
 import { prisma } from "../db.config.js";
 
-// 1. 유저 찾기 (토큰 확인용)
+// 1. 유저 찾기
 export const findUserById = async (userId) => {
-  return await prisma.user.findUnique({
+  return prisma.user.findUnique({
     where: { id: userId },
   });
 };
 
-// 2. 유저 정보 업데이트 (리프레시 토큰 저장)
+// 2. 리프레시 토큰 저장
 export const updateUserRefreshToken = async (userId, refreshToken) => {
-  return await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
-    data: { refreshToken: refreshToken },
+    data: { refreshToken },
   });
 };
 
-// 3. 일정 저장 (Upsert)
-// 서비스가 반복문 돌면서 이 함수를 여러 번 호출하거나, 
-// createMany를 쓸 수도 있지만, 여기선 하나씩 처리하는 로직을 감쌉니다.
+// 내부 유틸: Google event start/end 파싱
+const parseGoogleStartEnd = (event) => {
+  const start = event?.start?.dateTime ?? event?.start?.date ?? null;
+  const end = event?.end?.dateTime ?? event?.end?.date ?? null;
+
+  const startAt = start ? new Date(start) : null;
+  const endAt = end ? new Date(end) : null;
+
+  if (!startAt || Number.isNaN(startAt.getTime())) return { startAt: null, endAt: null };
+  if (!endAt || Number.isNaN(endAt.getTime())) return { startAt: null, endAt: null };
+
+  return { startAt, endAt };
+};
+
+// 3. 구글 일정 Upsert (userId 보호 포함)
 export const upsertUserActivity = async (userId, event) => {
-  const start = event.start.dateTime || event.start.date;
-  const end = event.end.dateTime || event.end.date;
+  const googleEventId = event?.id;
+  if (!googleEventId) throw new Error("INVALID_GOOGLE_EVENT");
 
-  return await prisma.userActivity.upsert({
-    where: { googleEventId: event.id },
-    update: {
-      title: event.summary || "제목 없음",
-      startAt: new Date(start),
-      endAt: new Date(end),
-    },
-    create: {
-      userId: userId,
-      googleEventId: event.id,
-      title: event.summary || "제목 없음",
-      startAt: new Date(start),
-      endAt: new Date(end)
+  const { startAt, endAt } = parseGoogleStartEnd(event);
+  if (!startAt || !endAt) throw new Error("INVALID_GOOGLE_EVENT_TIME");
+
+  const title = event?.summary ?? "제목 없음";
+
+  // upsert(where unique)만 쓰면 userId 분리가 안 되므로, 먼저 조회 후 userId 검증
+  const existing = await prisma.userActivity.findUnique({
+    where: { googleEventId },
+  });
+
+  if (existing) {
+    if (existing.userId !== userId) {
+      // 다른 user의 row를 덮어쓰는 사고 방지
+      throw new Error("GOOGLE_EVENT_OWNERSHIP_MISMATCH");
+    }
+
+    return prisma.userActivity.update({
+      where: { id: existing.id },
+      data: {
+        title,
+        startAt,
+        endAt,
+        type: "GOOGLE",
+      },
+    });
+  }
+
+  return prisma.userActivity.create({
+    data: {
+      userId,
+      googleEventId,
+      title,
+      startAt,
+      endAt,
+      type: "GOOGLE",
+      status: "TODO",
     },
   });
 };
 
-// 4. 월간 일정 조회
+// 4. 월간 일정 조회 (기간 겹치는 모든 일정)
 export const findMonthlyActivities = async (userId, startDate, endDate) => {
-  return await prisma.userActivity.findMany({
+  if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
+    throw new Error("INVALID_START_DATE");
+  }
+  if (!(endDate instanceof Date) || Number.isNaN(endDate.getTime())) {
+    throw new Error("INVALID_END_DATE");
+  }
+
+  return prisma.userActivity.findMany({
     where: {
-      userId: userId,
-      // 로직 변경: "기간이 겹치는 모든 일정"
-      // (일정 시작일 <= 조회 종료일) AND (일정 종료일 >= 조회 시작일)
+      userId,
       startAt: { lte: endDate },
       endAt: { gte: startDate },
     },
@@ -54,15 +93,70 @@ export const findMonthlyActivities = async (userId, startDate, endDate) => {
   });
 };
 
-// 5. 일간 일정 조회
+// 5. 일간 일정 조회 (기간 겹치는 모든 일정)
 export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
-  return await prisma.userActivity.findMany({
+  if (!(startOfDay instanceof Date) || Number.isNaN(startOfDay.getTime())) {
+    throw new Error("INVALID_START_OF_DAY");
+  }
+  if (!(endOfDay instanceof Date) || Number.isNaN(endOfDay.getTime())) {
+    throw new Error("INVALID_END_OF_DAY");
+  }
+
+  return prisma.userActivity.findMany({
     where: {
-      userId: userId,
-      // 로직 변경: 어제 시작해서 내일까지 가는 일정도 오늘 조회됨
+      userId,
       startAt: { lte: endOfDay },
       endAt: { gte: startOfDay },
     },
     orderBy: { startAt: "asc" },
   });
+};
+
+// 6. 직접 일정 생성
+export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL" }) => {
+  // 최소 검증
+  const allowed = new Set(["MANUAL", "FIXED"]);
+  const finalType = allowed.has(type) ? type : "MANUAL";
+
+  return prisma.userActivity.create({
+    data: {
+      userId,
+      title,
+      startAt,
+      endAt,
+      type: finalType,
+      status: "TODO",
+    },
+  });
+};
+
+// 7. 직접 일정 수정 (구글 일정 수정 막기 옵션 포함)
+export const updateUserActivity = async (userId, eventId, data) => {
+  const result = await prisma.userActivity.updateMany({
+    where: {
+      id: eventId,
+      userId,
+      googleEventId: null, // ✅ 구글 일정 수정 막기 (원하면 주석 제거하지 말고 유지)
+    },
+    data,
+  });
+
+  if (result.count === 0) return null;
+
+  return prisma.userActivity.findFirst({
+    where: { id: eventId, userId },
+  });
+};
+
+// 8. 직접 일정 삭제 (구글 일정 삭제 막기 옵션 포함)
+export const deleteUserActivity = async (userId, eventId) => {
+  const result = await prisma.userActivity.deleteMany({
+    where: {
+      id: eventId,
+      userId,
+      googleEventId: null, // ✅ 구글 일정 삭제 막기
+    },
+  });
+
+  return result.count > 0;
 };
