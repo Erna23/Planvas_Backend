@@ -116,13 +116,14 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 7) Manual Create
+    // 7) Manual Create (색상 및 반복 규칙 추가)
     app.post("/api/calendar/event", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
             if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
-            const { title, startAt, endAt, type } = req.body ?? {};
+            // ✅ eventColor, recurrenceRule 추가 추출
+            const { title, startAt, endAt, type, eventColor, recurrenceRule } = req.body ?? {};
             if (!title || !startAt || !endAt) {
                 return fail(res, "C400", "title, startAt, endAt는 필수입니다.", 400);
             }
@@ -132,6 +133,8 @@ export function registerCalendarRoutes(app) {
                 startAt,
                 endAt,
                 type,
+                eventColor,      // ✅ 서비스 레이어로 전달
+                recurrenceRule,   // ✅ 서비스 레이어로 전달
             });
 
             return ok(res, created, 201);
@@ -141,7 +144,7 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 8) Manual Update
+    // 8) Manual Update (필드 유연성 확보)
     app.patch("/api/calendar/event/:id", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
@@ -150,6 +153,7 @@ export function registerCalendarRoutes(app) {
             const eventId = Number(req.params.id);
             if (!Number.isFinite(eventId)) return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
 
+            // ✅ req.body 전체를 넘기도록 하여 eventColor, recurrenceRule 수정 대응
             const updated = await calendarService.updateManualEvent(userId, eventId, req.body ?? {});
             if (!updated) return fail(res, "C404", "수정할 일정이 없습니다.", 404);
 

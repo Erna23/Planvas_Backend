@@ -77,8 +77,8 @@ export const getDailyEvents = async (userId, dateStr) => {
   return await calendarRepository.findDailyActivities(userId, startOfDay, endOfDay);
 };
 
-// 7. 직접 일정 생성
-export const createManualEvent = async (userId, { title, startAt, endAt, type }) => {
+// 7. 직접 일정 생성 (색상 및 반복 규칙 추가)
+export const createManualEvent = async (userId, { title, startAt, endAt, type, eventColor, recurrenceRule }) => {
   const eventType = type === "FIXED" ? "FIXED" : "MANUAL";
 
   const s = new Date(startAt);
@@ -91,16 +91,20 @@ export const createManualEvent = async (userId, { title, startAt, endAt, type })
     throw new Error("endAt은 startAt보다 빠를 수 없습니다.");
   }
 
+  // ✅ 리포지토리 호출 시 신규 필드 전달
   return await calendarRepository.createUserActivity(userId, {
     title,
     startAt: s,
     endAt: e,
     type: eventType,
+    eventColor,
+    recurrenceRule
   });
 };
 
-// 8. 직접 일정 수정
-export const updateManualEvent = async (userId, eventId, { title, startAt, endAt, type }) => {
+// 8. 직접 일정 수정 (색상 및 반복 규칙 수정 대응)
+export const updateManualEvent = async (userId, eventId, payload) => {
+  const { title, startAt, endAt, type, eventColor, recurrenceRule } = payload;
   const data = {};
 
   if (title !== undefined) data.title = title;
@@ -127,6 +131,10 @@ export const updateManualEvent = async (userId, eventId, { title, startAt, endAt
     }
     data.type = type;
   }
+
+  // ✅ 신규 필드 업데이트 허용
+  if (eventColor !== undefined) data.eventColor = eventColor;
+  if (recurrenceRule !== undefined) data.recurrenceRule = recurrenceRule;
 
   const updated = await calendarRepository.updateUserActivity(userId, eventId, data);
   if (!updated) throw new Error("수정할 일정이 없거나 권한이 없습니다.");

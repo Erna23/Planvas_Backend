@@ -171,6 +171,10 @@ components:
         type:
           type: string
           example: "MANUAL"
+        eventColor:
+          type: integer
+          description: "1~10 사이의 색상 인덱스"
+          example: 3
 
     CalendarMonthDay:
       type: object
@@ -240,6 +244,14 @@ components:
         type:
           type: string
           example: "MANUAL"
+        eventColor:
+          type: integer
+          example: 3
+        recurrenceRule:
+          type: string
+          nullable: true
+          description: "반복 규칙 (RRULE)"
+          example: "FREQ=WEEKLY;BYDAY=WE"
 
     CalendarDaySuccess:
       type: object
@@ -271,14 +283,26 @@ components:
       properties:
         title:
           type: string
+          example: "과제 제출"
         startAt:
           type: string
+          example: "2026-02-11T18:00:00+09:00"
         endAt:
           type: string
+          example: "2026-02-11T20:00:00+09:00"
         type:
           type: string
           description: "MANUAL | FIXED"
           example: "MANUAL"
+        eventColor:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 3
+        recurrenceRule:
+          type: string
+          nullable: true
+          example: "FREQ=DAILY"
 
     ManualUpdateRequest:
       type: object
@@ -291,7 +315,11 @@ components:
           type: string
         type:
           type: string
-          description: "MANUAL | FIXED"
+        eventColor:
+          type: integer
+        recurrenceRule:
+          type: string
+          nullable: true
 
     ManualEventResponse:
       type: object
@@ -308,6 +336,12 @@ components:
         type:
           type: string
           example: "MANUAL"
+        eventColor:
+          type: integer
+          example: 3
+        recurrenceRule:
+          type: string
+          nullable: true
         status:
           type: string
           example: "TODO"
@@ -366,24 +400,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiSuccessMessage"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/integrations/google-calendar/status:
     get:
@@ -398,18 +414,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiGoogleStatus"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/integrations/google-calendar/events:
     get:
@@ -424,24 +428,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiGoogleEventsPreview"
-        "400":
-          description: 연동 필요
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/integrations/google-calendar/sync:
     post:
@@ -462,24 +448,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiGoogleSync"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/month:
     get:
@@ -505,24 +473,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiCalendarMonth"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/day:
     get:
@@ -544,24 +494,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiCalendarDay"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/event:
     post:
@@ -582,24 +514,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiManualEvent"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
   /api/calendar/event/{id}:
     patch:
@@ -626,30 +540,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiManualEvent"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "404":
-          description: 대상 없음
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
 
     delete:
       summary: 직접 일정 삭제 (Manual Delete)
@@ -669,27 +559,3 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiManualDelete"
-        "400":
-          description: 파라미터 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "401":
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "404":
-          description: 대상 없음
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
-        "500":
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiFail"
