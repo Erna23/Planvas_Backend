@@ -1,4 +1,5 @@
 export const homeResponseDTO = (
+  userName,
   goalStatus,   // ✅ 추가
   goal,
   progress,
@@ -80,6 +81,7 @@ export const homeResponseDTO = (
   }));
 
   return {
+    userName,
     goalStatus, // ✅ 프론트가 구분 가능
 
     currentGoal,
