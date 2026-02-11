@@ -1,93 +1,93 @@
-export const homeResponseDTO = (
-  goalStatus,   // ✅ 추가
-  goal,
-  progress,
-  weeklyStats,
-  todayTodos,
-  recommendations
-) => {
-  const weekly = Array.isArray(weeklyStats) ? weeklyStats : [];
-  const todos = Array.isArray(todayTodos) ? todayTodos : [];
-  const recs = Array.isArray(recommendations) ? recommendations : [];
+const safeArray = (v) => (Array.isArray(v) ? v : []);
 
-  // 1. 현재 목표
+const safeDate = (v) => {
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const formatYMD = (v) => {
+  const d = safeDate(v);
+  return d ? d.toISOString().split("T")[0] : null;
+};
+
+const formatTime = (v) => {
+  const d = safeDate(v);
+  return d ? d.toTimeString().slice(0, 5) : "00:00";
+};
+
+export const homeResponseDTO = (goalStatus, goal, progress, weeklyStats, todayTodos, recommendations) => {
+  const weekly = safeArray(weeklyStats);
+  const todos = safeArray(todayTodos);
+  const recs = safeArray(recommendations);
+
   let currentGoal = null;
-
   if (goal) {
     const now = new Date();
-    const end = new Date(goal.endDate);
+    const end = safeDate(goal.endDate);
 
-    now.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
+    const now0 = new Date(now); now0.setHours(0, 0, 0, 0);
+    const end0 = end ? new Date(end) : null;
+    if (end0) end0.setHours(0, 0, 0, 0);
 
-    const diffTime = end - now;
-    const dDayValue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = end0 ? (end0 - now0) : 0;
+    const dDayValue = end0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : null;
 
     currentGoal = {
       goalId: goal.id,
       title: goal.title,
-      startDate: goal.startDate.toISOString().split("T")[0],
-      endDate: goal.endDate.toISOString().split("T")[0],
+      startDate: formatYMD(goal.startDate),
+      endDate: formatYMD(goal.endDate),
       dDay: dDayValue,
       growthRatio: goal.growth,
       restRatio: goal.rest,
     };
   }
 
-  // ✅ 1-1. 진행률 (서비스 키에 맞춤)
   const progressData = {
     growthAchieved: progress?.growthAchieved ?? 0,
     restAchieved: progress?.restAchieved ?? 0,
   };
 
-  // 2. 주간 캘린더 요약
   const days = weekly.map((stat) => {
-    const schedules = Array.isArray(stat?.schedules) ? stat.schedules : [];
+    const schedules = safeArray(stat?.schedules);
 
     return {
-      date: stat?.date,
+      date: stat?.date ?? null,
       hasItems: schedules.length > 0,
       todoCount: schedules.length,
       schedules: schedules.map((s) => ({
-        id: s.id,
-        title: s.title,
-        category: s.type === "FIXED" ? "FIXED" : s.type || "GROWTH",
+        id: s?.id ?? null,
+        title: s?.title ?? "제목 없음",
+        category: s?.type === "FIXED" ? "FIXED" : (s?.type ?? "GROWTH"),
       })),
     };
   });
 
-  // 3. 오늘의 할 일
-  const formatTime = (date) => new Date(date).toTimeString().slice(0, 5);
-
   const formattedTodos = todos.map((todo) => ({
-    todoId: todo.id || todo.googleEventId,
-    title: todo.title,
-    category: todo.type === "FIXED" ? "FIXED" : todo.type || "GROWTH",
-    scheduleTime: `${formatTime(todo.startAt)} - ${formatTime(todo.endAt)}`,
-    completed: todo.status === "DONE",
+    todoId: todo?.id ?? todo?.googleEventId ?? null,
+    title: todo?.title ?? "제목 없음",
+    category: todo?.type === "FIXED" ? "FIXED" : (todo?.type ?? "GROWTH"),
+    scheduleTime: `${formatTime(todo?.startAt)} - ${formatTime(todo?.endAt)}`,
+    completed: todo?.status === "DONE",
   }));
 
-  // 4. 추천 활동
   const formattedRecommendations = recs.map((rec) => ({
-    activityId: rec.id,
-    title: rec.title,
-    subTitle: rec.subTitle,
-    dDay: rec.dDay,
-    imageUrl: rec.imageUrl,
-    tags: Array.isArray(rec.tags) ? rec.tags : [],
+    activityId: rec?.id ?? null,
+    title: rec?.title ?? "제목 없음",
+    subTitle: rec?.subTitle ?? "",
+    dDay: rec?.dDay ?? null,
+    imageUrl: rec?.imageUrl ?? null,
+    tags: safeArray(rec?.tags),
   }));
 
   return {
-    goalStatus, // ✅ 프론트가 구분 가능
-
+    goalStatus,
     currentGoal,
     progress: progressData,
-
     weeklySummary: {
-      weekStartDate: days[0]?.date || new Date().toISOString().split("T")[0],
+      weekStartDate: days[0]?.date ?? new Date().toISOString().split("T")[0],
       days,
     },
-
     todayTodos: formattedTodos,
     recommendations: formattedRecommendations,
   };
