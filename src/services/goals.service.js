@@ -14,6 +14,7 @@ import {
   updateGoalPeriod,
   updateGoalPeriodRatio,
   findActivitiesForGoalProgress,
+  deleteGoalPeriod,
 } from "../repositories/goals.repository.js";
 
 const formatDateOnly = (d) => d.toISOString().slice(0, 10);
@@ -455,3 +456,44 @@ export async function getGoalRatioPresets() {
   };
 }
 
+
+export async function deleteGoalByUserId(userId, goalIdParam) {
+  const goalId = parseGoalIdParam(goalIdParam); //
+
+  // 1) 목표 존재 확인
+  const goal = await findGoalPeriodById(goalId); //
+  if (!goal) {
+    const err = new Error("Goal not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "목표 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // 2) 소유권 체크 (보안)
+  if (goal.userId !== userId) { //
+    const err = new Error("Forbidden");
+    err.statusCode = 403;
+    err.payload = {
+      resultType: "FAIL",
+      error: { reason: "해당 목표에 대한 권한이 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // 3) 삭제 수행
+  await deleteGoalPeriod(goalId);
+
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success: {
+      message: "목표가 성공적으로 삭제되었습니다.",
+      deletedGoalId: goalId
+    }
+  };
+}
