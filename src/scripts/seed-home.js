@@ -14,7 +14,7 @@ async function main() {
     console.log("[Home Seed] JSON 데이터를 DB로 옮기는 작업을 시작합니다...");
 
     // process.cwd() 대신 "현재 스크립트 파일 기준" 경로
-    const jsonPath = path.join(__dirname, "linkareer_activities.json");
+    const jsonPath = path.join(__dirname, "../../linkareer_activities.json");
 
     if (!fs.existsSync(jsonPath)) {
         console.error("[Error] linkareer_activities.json 파일을 찾을 수 없습니다!");
