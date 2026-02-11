@@ -8,14 +8,23 @@ const toLocalDateString = (d) => {
   return `${y}-${m}-${day}`;
 };
 
+// ✅ 배열 방어
+const safeArray = (v) => (Array.isArray(v) ? v : []);
+
 // ✅ 일정이 특정 날짜(YYYY-MM-DD)와 "겹치는지" (KST 안전)
 function overlapsDate(event, dateString) {
+  // dateString 방어(혹시라도)
+  if (typeof dateString !== "string") return false;
+
   const [y, m, d] = dateString.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return false;
+
   const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
   const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
 
-  const s = new Date(event.startAt);
-  const e = new Date(event.endAt);
+  const s = new Date(event?.startAt);
+  const e = new Date(event?.endAt);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return false;
 
   return s <= dayEnd && e >= dayStart;
 }
@@ -26,6 +35,8 @@ function calculateDDay(targetDate) {
 
   const now = new Date();
   const target = new Date(targetDate);
+
+  if (Number.isNaN(target.getTime())) return null;
 
   now.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);
@@ -55,10 +66,10 @@ export const getHomeData = async (userId) => {
   let progress = { growthAchieved: 0, restAchieved: 0 };
 
   if (goal) {
-    const myActs = await homeRepository.findMyActivitiesForGoal(userId, goal.id);
+    const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
     for (const a of myActs) {
-      if (a.Activity?.tab === "GROWTH") progress.growthAchieved += 1;
-      if (a.Activity?.tab === "REST") progress.restAchieved += 1;
+      if (a?.Activity?.tab === "GROWTH") progress.growthAchieved += 1;
+      if (a?.Activity?.tab === "REST") progress.restAchieved += 1;
     }
   }
 
@@ -71,7 +82,9 @@ export const getHomeData = async (userId) => {
   endOfWeek.setDate(today.getDate() + 3);
   endOfWeek.setHours(23, 59, 59, 999);
 
-  const weeklyRaw = await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek);
+  const weeklyRaw = safeArray(
+    await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek)
+  );
 
   const weeklyStats = [];
   for (let d = new Date(startOfWeek); d <= endOfWeek; d.setDate(d.getDate() + 1)) {
@@ -93,10 +106,11 @@ export const getHomeData = async (userId) => {
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const todayTodos = await homeRepository.findTodayActivities(userId, startOfDay, endOfDay);
+  const todayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
 
-  // ✅ 추천 활동
-  const rawRecommendations = await homeRepository.findRecommendations(3);
+  // ✅ 추천 활동 (여기가 에러 원인 → 무조건 배열로 방어)
+  const rawRecommendations = safeArray(await homeRepository.findRecommendations(3));
+
   const recommendations = rawRecommendations.map((item) => ({
     id: item.id,
     title: item.title,
@@ -107,7 +121,7 @@ export const getHomeData = async (userId) => {
   }));
 
   return {
-    goalStatus, // ✅ 추가
+    goalStatus,
     goal,
     progress,
     weeklyStats,
