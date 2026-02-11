@@ -1,18 +1,17 @@
 export const homeResponseDTO = (
+  goalStatus,   // ✅ 추가
   goal,
   progress,
   weeklyStats,
   todayTodos,
   recommendations
 ) => {
-  // map 안전장치
   const weekly = Array.isArray(weeklyStats) ? weeklyStats : [];
   const todos = Array.isArray(todayTodos) ? todayTodos : [];
   const recs = Array.isArray(recommendations) ? recommendations : [];
 
   // 1. 현재 목표
   let currentGoal = null;
-  let progressData = null;
 
   if (goal) {
     const now = new Date();
@@ -33,20 +32,17 @@ export const homeResponseDTO = (
       growthRatio: goal.growth,
       restRatio: goal.rest,
     };
-
-    progressData = {
-      growthAchieved: progress?.growth ?? 0,
-      restAchieved: progress?.rest ?? 0,
-    };
-  } else {
-    progressData = { growthAchieved: 0, restAchieved: 0 };
   }
+
+  // ✅ 1-1. 진행률 (서비스 키에 맞춤)
+  const progressData = {
+    growthAchieved: progress?.growthAchieved ?? 0,
+    restAchieved: progress?.restAchieved ?? 0,
+  };
 
   // 2. 주간 캘린더 요약
   const days = weekly.map((stat) => {
-    const schedules = Array.isArray(stat?.schedules)
-      ? stat.schedules
-      : [];
+    const schedules = Array.isArray(stat?.schedules) ? stat.schedules : [];
 
     return {
       date: stat?.date,
@@ -55,24 +51,19 @@ export const homeResponseDTO = (
       schedules: schedules.map((s) => ({
         id: s.id,
         title: s.title,
-        category:
-          s.type === "FIXED" ? "FIXED" : s.type || "GROWTH",
+        category: s.type === "FIXED" ? "FIXED" : s.type || "GROWTH",
       })),
     };
   });
 
   // 3. 오늘의 할 일
-  const formatTime = (date) =>
-    new Date(date).toTimeString().slice(0, 5);
+  const formatTime = (date) => new Date(date).toTimeString().slice(0, 5);
 
   const formattedTodos = todos.map((todo) => ({
     todoId: todo.id || todo.googleEventId,
     title: todo.title,
-    category:
-      todo.type === "FIXED" ? "FIXED" : todo.type || "GROWTH",
-    scheduleTime: `${formatTime(todo.startAt)} - ${formatTime(
-      todo.endAt
-    )}`,
+    category: todo.type === "FIXED" ? "FIXED" : todo.type || "GROWTH",
+    scheduleTime: `${formatTime(todo.startAt)} - ${formatTime(todo.endAt)}`,
     completed: todo.status === "DONE",
   }));
 
@@ -87,14 +78,16 @@ export const homeResponseDTO = (
   }));
 
   return {
+    goalStatus, // ✅ 프론트가 구분 가능
+
     currentGoal,
     progress: progressData,
+
     weeklySummary: {
-      weekStartDate:
-        days[0]?.date ||
-        new Date().toISOString().split("T")[0],
+      weekStartDate: days[0]?.date || new Date().toISOString().split("T")[0],
       days,
     },
+
     todayTodos: formattedTodos,
     recommendations: formattedRecommendations,
   };
