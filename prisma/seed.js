@@ -2,6 +2,24 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+
+  console.log('유저 4의 목표 데이터(GoalPeriod) 삽입 중...');
+
+  await prisma.goalPeriod.upsert({
+    where: { id: 4 },
+    update: {},
+    create: {
+      id: 1,
+      userId: 4,
+      title: "데모데이 성공하기",
+      startDate: new Date("2026-02-01T00:00:00Z"), // 이미 시작된 날짜
+      endDate: new Date("2026-02-28T23:59:59Z"),   // 넉넉한 종료 날짜
+      growth: 80,
+      rest: 20,
+      presetType: "CUSTOM"
+    }
+  });
+
   console.log('유저 4(서영) 데이터 삽입 프로세스 시작...');
 
   // 1. 유저 4번이 있는지 확인하고, 없으면 생성 (에러 방지용)
