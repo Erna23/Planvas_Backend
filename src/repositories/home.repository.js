@@ -1,6 +1,6 @@
 import { prisma } from "../db.config.js";
 
-// 1. 최신 목표(가장 최근 생성)
+// 1. 최신 목표 조회
 export const findRecentGoal = async (userId) => {
   return await prisma.goalPeriod.findFirst({
     where: { userId },
@@ -8,7 +8,7 @@ export const findRecentGoal = async (userId) => {
   });
 };
 
-// ✅ 1-1. 진행중 목표(오늘이 기간 안)
+// 1-1. 현재 진행 중인 목표 조회
 export const findCurrentGoal = async (userId, today = new Date()) => {
   return await prisma.goalPeriod.findFirst({
     where: {
@@ -62,30 +62,30 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// ✅ 4. 목표 진행률 계산용 (myactivity + activity 관계 이용)
+// 4. 진행률 계산 (MyActivity 모델 사용)
 export const findMyActivitiesForGoal = async (userId, goalId) => {
-  return await prisma.myactivity.findMany({
+  return await prisma.myActivity.findMany({
     where: { userId, goalId },
     select: {
       id: true,
-      activity: { // 스키마의 관계 설정에 따라 소문자 activity
+      Activity: { // 스키마 정의에 따른 관계 필드명 (대문자 A)
         select: { tab: true }
       },
     },
   });
 };
 
-// 5. 추천 활동 조회 (스키마 필드명에 맞춤)
+// 5. 추천 활동 (ActivityCatalog 모델 사용)
 export const findRecommendations = async () => {
-  return await prisma.activity.findMany({
+  return await prisma.activityCatalog.findMany({
     take: 3,
     select: {
       id: true,
       title: true,
       organizer: true,
-      thumbnailUrl: true, // 스키마의 thumbnail_url @map 반영됨
+      thumbnailUrl: true,
       tags: true,
-      recruit_end_date: true, // 스키마의 실제 필드명
+      recruitEndDate: true, // @map("recruit_end_date")에 따른 카멜케이스 사용
       tab: true,
     },
     orderBy: {
