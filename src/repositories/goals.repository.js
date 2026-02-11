@@ -150,7 +150,7 @@ export async function findActivitiesForGoalProgress(userId, startInclusive, endE
     where: {
       userId,
       startAt: { gte: startInclusive, lt: endExclusive },
-      type: { in: ["GROWTH", "REST"] },
+      category: { in: ["GROWTH", "REST"] },
     },
     select: {
       type: true,
