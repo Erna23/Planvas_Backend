@@ -13,7 +13,6 @@ const safeArray = (v) => (Array.isArray(v) ? v : []);
 
 // ✅ 일정이 특정 날짜(YYYY-MM-DD)와 "겹치는지" (KST 안전)
 function overlapsDate(event, dateString) {
-  // dateString 방어(혹시라도)
   if (typeof dateString !== "string") return false;
 
   const [y, m, d] = dateString.split("-").map(Number);
@@ -52,19 +51,25 @@ function calculateDDay(targetDate) {
 export const getHomeData = async (userId) => {
   const today = new Date();
 
-  // ✅ 목표 상태 구분
-  const currentGoal = await homeRepository.findCurrentGoal(userId, today);
+  // ✅ [수정] 시간 값을 제거한 "오늘 날짜의 정오(12:00)" 혹은 "00:00" 기준으로 조회
+  // 시간대(UTC/KST) 문제를 방지하기 위해 오늘 날짜의 0시 0분 0초 객체를 생성합니다.
+  const checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+
+  // ✅ 목표 상태 구분 (now 대신 날짜 기준인 checkDate 전달)
+  const currentGoal = await homeRepository.findCurrentGoal(userId, checkDate);
   const recentGoal = await homeRepository.findRecentGoal(userId);
 
-  let goalStatus = "NONE"; // NONE | ACTIVE | ENDED
-  if (currentGoal) goalStatus = "ACTIVE";
-  else if (recentGoal) goalStatus = "ENDED";
+  let goalStatus = "NONE";
+  if (currentGoal) {
+    goalStatus = "ACTIVE";
+  } else if (recentGoal) {
+    goalStatus = "ENDED";
+  }
 
   const goal = currentGoal || null;
 
-  // ✅ 진행률: MyActivity + Activity.tab (GROWTH/REST)
+  // 진행률 계산
   let progress = { growthAchieved: 0, restAchieved: 0 };
-
   if (goal) {
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
     for (const a of myActs) {
@@ -73,13 +78,15 @@ export const getHomeData = async (userId) => {
     }
   }
 
-  // ✅ 주간 일정: 오늘 기준 -3 ~ +3 (총 7일)
+  // 주간 일정: 이번 주 일요일부터 토요일까지 (7일)
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - 3);
+  const day = startOfWeek.getDay();
+
+  startOfWeek.setDate(today.getDate() - day);
   startOfWeek.setHours(0, 0, 0, 0);
 
-  const endOfWeek = new Date(today);
-  endOfWeek.setDate(today.getDate() + 3);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
 
   const weeklyRaw = safeArray(
@@ -87,30 +94,38 @@ export const getHomeData = async (userId) => {
   );
 
   const weeklyStats = [];
-  for (let d = new Date(startOfWeek); d <= endOfWeek; d.setDate(d.getDate() + 1)) {
-    const dateString = toLocalDateString(d);
+  let currentLoopDate = new Date(startOfWeek);
+  for (let i = 0; i < 7; i++) {
+    const dateString = toLocalDateString(currentLoopDate);
 
-    // ✅ 겹치는 일정 포함해서 날짜별 분배
     const dailySchedules = weeklyRaw.filter((a) => overlapsDate(a, dateString));
+    const hasFixedItem = dailySchedules.some(a => a.type === "FIXED");
 
     weeklyStats.push({
       date: dateString,
-      schedules: dailySchedules,
+      hasItems: hasFixedItem,
+      todoCount: dailySchedules.length,
+      schedules: dailySchedules.map(s => ({
+        id: s.id,
+        title: s.title,
+        type: s.type,
+        category: s.category
+      })),
     });
+
+    currentLoopDate.setDate(currentLoopDate.getDate() + 1);
   }
 
-  // ✅ 오늘의 할 일
+  // 오늘의 할 일
   const startOfDay = new Date(today);
   startOfDay.setHours(0, 0, 0, 0);
-
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
   const todayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
 
-  // ✅ 추천 활동 (여기가 에러 원인 → 무조건 배열로 방어)
+  // 추천 활동
   const rawRecommendations = safeArray(await homeRepository.findRecommendations(3));
-
   const recommendations = rawRecommendations.map((item) => ({
     id: item.id,
     title: item.title,
@@ -124,6 +139,7 @@ export const getHomeData = async (userId) => {
     goalStatus,
     goal,
     progress,
+    weekStartDate: toLocalDateString(startOfWeek),
     weeklyStats,
     todayTodos,
     recommendations,
