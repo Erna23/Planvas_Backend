@@ -20,6 +20,8 @@ export async function findCurrentGoalPeriodByUserId(userId, now = new Date()) {
       endDate: true,
       growth: true,
       rest: true,
+      presetType: true,
+      presetId: true,
       createdAt: true,
     },
   });
@@ -90,6 +92,8 @@ export async function findGoalPeriodById(goalId) {
       endDate: true,
       growth: true,
       rest: true,
+      presetType: true,
+      presetId: true,
       createdAt: true,
     },
   });
