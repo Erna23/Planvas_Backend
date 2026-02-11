@@ -45,7 +45,6 @@ jobs:
           ssh umc9thworkbook 'sudo chown ubuntu:ubuntu /opt/app'
           scp -r ./[!.]* umc9thworkbook:/opt/app
 
-      # ✅ .env를 서버에 생성(점파일 scp 제외 문제 해결)
       - name: Write .env on server
         run: |
           ssh umc9thworkbook 'cat > /opt/app/.env << "EOF"
@@ -60,11 +59,9 @@ jobs:
           ssh umc9thworkbook 'cd /opt/app; npx prisma generate'
 
       - name: Apply prisma migrations
-        if: steps.paths-filter.outputs.prisma == 'true'
         run: |
           ssh umc9thworkbook 'cd /opt/app; npx prisma migrate deploy'
 
-      # ✅ systemd에 WorkingDirectory 추가 + User 고정
       - name: Copy systemd service file
         run: |
           ssh umc9thworkbook '
