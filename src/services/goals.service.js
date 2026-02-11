@@ -37,8 +37,8 @@ function calcCurrentRatios(activities) {
     if (!Number.isFinite(ms) || ms <= 0) continue;
 
     const minutes = ms / (1000 * 60);
-    if (a.type === "GROWTH") growthMin += minutes;
-    if (a.type === "REST") restMin += minutes;
+    if (a.category === "GROWTH") growthMin += minutes;
+    if (a.category === "REST") restMin += minutes;
   }
 
   const total = growthMin + restMin;
