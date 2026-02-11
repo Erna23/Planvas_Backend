@@ -13,7 +13,6 @@ const __dirname = path.dirname(__filename);
 async function main() {
     console.log("[Home Seed] JSON 데이터를 DB로 옮기는 작업을 시작합니다...");
 
-    // process.cwd() 대신 "현재 스크립트 파일 기준" 경로
     const jsonPath = path.join(__dirname, "../../linkareer_activities.json");
 
     if (!fs.existsSync(jsonPath)) {
@@ -35,40 +34,39 @@ async function main() {
     };
 
     const activityData = jsonData.map((item) => {
-        // 탭 자동 분류
+        // 탭 자동 분류 (DB의 Enum 타입명이 activity_tab으로 바뀌었을 수 있으므로 주의)
         let targetTab = "GROWTH";
-        const keywords =
-            JSON.stringify(item.tags ?? []) + JSON.stringify(item.category ?? []);
-        if (
-            keywords.includes("여행") ||
-            keywords.includes("휴식") ||
-            keywords.includes("힐링")
-        ) {
+        const keywords = JSON.stringify(item.tags ?? []) + JSON.stringify(item.category ?? []);
+        if (keywords.includes("여행") || keywords.includes("휴식") || keywords.includes("힐링")) {
             targetTab = "REST";
         }
 
         return {
             title: item.title,
-            organizer: item.organizer ?? "",         // ✅ undefined 방지
+            organizer: item.organizer ?? "",
             description: item.description ?? null,
             thumbnailUrl: item.thumbnailUrl ?? null,
             externalUrl: item.url ?? null,
 
             startDate: parseDate(item.startDate),
             endDate: parseDate(item.endDate),
-            recruitEndDate: parseDate(item.endDate2),
+            // ✅ 필드명 변경: recruitEndDate -> recruit_end_date
+            recruit_end_date: parseDate(item.endDate2),
 
-            tags: item.tags ?? [],                    // ✅ Json 필드 undefined 방지
+            tags: item.tags ?? [],
             point: item.point ?? 10,
 
             tab: targetTab,
             type: "NORMAL",
             categoryId: null,
+            // ✅ db pull 이후 updatedAt 필드가 필수라면 현재 시간 추가
+            updatedAt: new Date(),
         };
     });
 
     try {
-        const result = await prisma.activityCatalog.createMany({
+        // ✅ 모델명 변경: activityCatalog -> activity
+        const result = await prisma.activity.createMany({
             data: activityData,
             skipDuplicates: true,
         });
