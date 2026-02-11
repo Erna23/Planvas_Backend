@@ -251,7 +251,8 @@ paths:
                               주중엔 달리고 주말에는 확실히 쉬는 유형
                             growthRatio: 70
                             restRatio: 30
-                            recommendedFor: "학점 관리와 대외활동을 병행하는 프로 N잡러"
+                            recommendedFor: "학점 관리와 대외활동을 병행하는 
+                                             프로 N잡러"
 
                           - presetId: 3
                             title: "황금 밸런스형 ⚖️"
@@ -263,7 +264,8 @@ paths:
                               이상적이고 건강한 루틴을 지향하는 유형
                             growthRatio: 50
                             restRatio: 50
-                            recommendedFor: "방학을 알차게 보내고 싶지만, 여행도 다니고 싶은 여유 있는 대학생"
+                            recommendedFor: "방학을 알차게 보내고 싶지만,
+                                             여행도 다니고 싶은 여유 있는 대학생"
 
                           - presetId: 4
                             title: "에너지 충전형 🔋"
@@ -287,7 +289,8 @@ paths:
                               작은 목표 하나에 집중이 필요한 유형
                             growthRatio: 20
                             restRatio: 80
-                            recommendedFor: "무기력증을 극복하고 싶은 대학생, 아주 작은 성취부터 맛보고 싶은 입문자"
+                            recommendedFor: "무기력증을 극복하고 싶은 대학생, 
+                                             아주 작은 성취부터 맛보고 싶은 입문자"
 
                           - presetId: 6
                             title: "갭이어 탐험가 ✈️"
@@ -300,7 +303,8 @@ paths:
                               '적극적인 휴식'으로 청춘을 즐기려는 유형
                             growthRatio: 10
                             restRatio: 90
-                            recommendedFor: "배낭 여행, 워킹 홀리데이, 휴학 후 자아를 찾는 여행자"
+                            recommendedFor: "배낭 여행, 워킹 홀리데이, 휴학 후 
+                                             자아를 찾는 여행자"
         "401":
           $ref: "#/components/responses/FailResponse"
         "500":
