@@ -347,6 +347,7 @@ export async function getGoalProgressByUserId(userId, goalIdParam) {
 
   const endExclusive = endDateToExclusive(goal.endDate);
   const activities = await findActivitiesForGoalProgress(userId, goal.startDate, endExclusive);
+  console.log("조회된 활동 데이터:", activities);
   const { currentGrowthRatio, currentRestRatio } = calcCurrentRatios(activities);
 
   return {
