@@ -51,6 +51,10 @@ function calculateDDay(targetDate) {
 export const getHomeData = async (userId) => {
   const today = new Date();
 
+  // 0. 사용자 이름 조회 추가
+  const userInfo = await homeRepository.findUserInfo(userId);
+  const userName = userInfo?.name || "사용자";
+
   // 시간대 문제를 방지하기 위한 기준 날짜 생성
   const checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
 
@@ -72,8 +76,6 @@ export const getHomeData = async (userId) => {
   if (goal) {
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
     for (const a of myActs) {
-      // ✅ DB Pull 이후 바뀐 관계 필드명 확인 (Activity -> activity 등 주의)
-      // 현재 스키마 기준으로는 a.Activity 혹은 a.activity 일 수 있습니다.
       const tab = a?.Activity?.tab || a?.activity?.tab;
       if (tab === "GROWTH") progress.growthAchieved += 1;
       if (tab === "REST") progress.restAchieved += 1;
@@ -126,7 +128,7 @@ export const getHomeData = async (userId) => {
 
   const todayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
 
-  // 5. 추천 활동 (🚨 중요: DB Pull 필드명 recruit_end_date 반영)
+  // 5. 추천 활동
   const rawRecommendations = safeArray(await homeRepository.findRecommendations(3));
   const recommendations = rawRecommendations.map((item) => ({
     id: item.id,
@@ -134,11 +136,11 @@ export const getHomeData = async (userId) => {
     subTitle: item.organizer || "",
     imageUrl: item.thumbnailUrl,
     tags: Array.isArray(item.tags) ? item.tags : [],
-    // ✅ item.recruitEndDate 대신 DB 실제 필드명인 item.recruit_end_date 사용
     dDay: calculateDDay(item.recruit_end_date || item.recruitEndDate),
   }));
 
   return {
+    userName, // 💡 최종 응답에 userName 포함
     goalStatus,
     goal,
     progress,

@@ -67,9 +67,11 @@ model UserActivity {
   category      ActivityTab @default(GROWTH)
   type          String      @default("FIXED") @db.VarChar(20)
   status        String      @default("TODO") @db.VarChar(20)
+  eventColor     Int         @default(1) @map("event_color")
+  recurrenceRule String?     @map("recurrence_rule")
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "user_activity_user_fkey")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_user_activity_user")
 
   @@index([userId])
   @@map("user_activity")
@@ -84,7 +86,7 @@ model CalendarSetting {
   selectedEventIds     Json?    @map("selected_event_ids")
   manualFixedSchedules Json?    @map("manual_fixed_schedules")
   updatedAt            DateTime @updatedAt @map("updated_at")
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "calendar_user_fkey")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_calendar_user")
 
   @@map("calendar_setting")
 }
@@ -100,7 +102,7 @@ model GoalPeriod {
   presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
   presetId   Int?
   createdAt  DateTime @default(now()) @map("created_at")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "goal_period_user_fkey")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_goal_period_user")
   reports    Report[]
 
   @@index([userId])
@@ -124,7 +126,7 @@ model NotificationSetting {
   activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled")
   fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
   updatedAt                 DateTime @updatedAt @map("updated_at")
-  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "notif_setting_user_fkey")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_notif_setting_user")
 
   @@map("notification_setting")
 }
@@ -164,8 +166,8 @@ model Report {
   createdAt  DateTime   @default(now()) @map("created_at")
   growth     Int
   rest       Int
-  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "report_goal_fkey")
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, map: "report_user_fkey")
+  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "fk_report_goal_period")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_report_user")
 
   @@index([userId])
   @@index([goalId])
@@ -192,10 +194,10 @@ model CartItem {
   userId     Int
   activityId Int
   createdAt  DateTime        @default(now())
-  Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
+  Activity ActivityCatalog @relation(fields: [activityId], references: [id], map: "fk_cart_item_activity")
 
   @@unique([userId, activityId])
-  @@index([activityId], map: "CartItem_activityId_fkey")
+  @@index([activityId], map: "CartItem_activity_catalog_idx")
   @@index([userId])
 }
 
@@ -208,9 +210,9 @@ model MyActivity {
   endDate    DateTime
   point      Int
   createdAt  DateTime        @default(now())
-  Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
+  Activity ActivityCatalog @relation(fields: [activityId], references: [id], map: "fk_my_activity_activity")
 
-  @@index([activityId], map: "MyActivity_activityId_fkey")
+  @@index([activityId], map: "MyActivity_activity_catalog_idx")
   @@index([goalId])
   @@index([userId])
 }
