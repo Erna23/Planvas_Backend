@@ -1,17 +1,6 @@
 /**
- * 시간 포맷 변환 (Date -> "HH:mm")
- * - 종일 일정/날짜 문자열 등 방어
+ * 로컬 기준 YYYY-MM-DD 키
  */
-const formatTime = (date) => {
-    if (!date) return "00:00";
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return "00:00";
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${hh}:${mm}`;
-};
-
-// 로컬 기준 YYYY-MM-DD
 const toLocalDateKey = (dateObj) => {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -19,26 +8,41 @@ const toLocalDateKey = (dateObj) => {
     return `${y}-${m}-${d}`;
 };
 
-// 고정 여부(Prisma: type String)
+// 고정 여부: FIXED만 고정으로 취급
 const isFixedType = (type) => type === "FIXED";
 
+// 안전한 Date 변환
+const toDate = (v) => {
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+};
+
+// ISO 문자열(스웨거 예시 형식에 맞게). invalid면 null
+const toIsoString = (v) => {
+    const d = toDate(v);
+    return d ? d.toISOString() : null;
+};
+
 /**
- * 1) 일간 상세 조회 DTO
+ * 1) 일간 상세 조회 DTO (Swagger 정합)
+ * success: { date, items: [{itemId,title,startAt,endAt,isFixed,type}] }
  */
 export const calendarDayDetailResponseDTO = (events, dateStr) => {
-    const items = events.map((event) => {
+    const items = (events ?? []).map((event) => {
         const type = event.type || (event.googleEventId ? "GOOGLE" : "MANUAL");
 
-        const startVal = event.startAt || event.start?.dateTime || event.start?.date;
-        const endVal = event.endAt || event.end?.dateTime || event.end?.date;
+        // DB(UserActivity)는 startAt/endAt, 구글 원본은 start/end일 수 있어 방어
+        const startVal = event.startAt ?? event.start?.dateTime ?? event.start?.date ?? null;
+        const endVal = event.endAt ?? event.end?.dateTime ?? event.end?.date ?? null;
 
         return {
-            itemId: String(event.id || event.googleEventId),
-            type, // "MANUAL" | "GOOGLE" | "FIXED"
-            title: event.title || event.summary || "제목 없음",
-            startTime: formatTime(startVal),
-            endTime: formatTime(endVal),
-            completed: event.status === "DONE",
+            itemId: String(event.id ?? event.googleEventId),
+            title: event.title ?? event.summary ?? "제목 없음",
+            startAt: toIsoString(startVal),
+            endAt: toIsoString(endVal),
+            isFixed: isFixedType(type),
+            type,
         };
     });
 
@@ -46,9 +50,11 @@ export const calendarDayDetailResponseDTO = (events, dateStr) => {
 };
 
 /**
- * 2) 월간 조회 DTO
- * - 날짜별 itemCount + schedulesPreview([{itemId,title,isFixed,type}]) + moreCount
- * - "겹치는 일정"도 날짜별로 분배해서 월간 누락 방지
+ * 2) 월간 조회 DTO (Swagger 정합)
+ * success: { year, month, days:[{date,hasItems,itemCount,schedulesPreview,moreCount}] }
+ *
+ * - "겹치는 일정"도 날짜별로 분배
+ * - schedulesPreview: [{itemId,title,isFixed,type}]
  */
 export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) => {
     const y = Number(year);
@@ -65,23 +71,33 @@ export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) 
         return map[dateKey];
     };
 
-    for (const event of events) {
-        const startAt = new Date(event.startAt);
-        const endAt = new Date(event.endAt);
-        if (isNaN(startAt.getTime()) || isNaN(endAt.getTime())) continue;
+    for (const event of events ?? []) {
+        const startAt = toDate(event.startAt);
+        const endAt = toDate(event.endAt);
+        if (!startAt || !endAt) continue;
 
         // 월 범위와 겹치는 구간으로 클램프
         const rangeStart = startAt > monthStart ? startAt : monthStart;
         const rangeEnd = endAt < monthEnd ? endAt : monthEnd;
 
         // 날짜 단위 순회(로컬 자정)
-        let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0);
-        const endCursor = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate(), 0, 0, 0, 0);
+        let cursor = new Date(
+            rangeStart.getFullYear(),
+            rangeStart.getMonth(),
+            rangeStart.getDate(),
+            0, 0, 0, 0
+        );
+        const endCursor = new Date(
+            rangeEnd.getFullYear(),
+            rangeEnd.getMonth(),
+            rangeEnd.getDate(),
+            0, 0, 0, 0
+        );
 
-        const title = event.title || "제목 없음";
+        const title = event.title ?? "제목 없음";
         const type = event.type || (event.googleEventId ? "GOOGLE" : "MANUAL");
         const fixed = isFixedType(type);
-        const itemId = String(event.id);
+        const itemId = String(event.id ?? event.googleEventId);
 
         while (cursor <= endCursor) {
             if (cursor.getFullYear() === y && cursor.getMonth() === m - 1) {
@@ -104,8 +120,8 @@ export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) 
         const dateStr = `${y}-${monthString}-${dayString}`;
 
         const bucket = map[dateStr];
-        const itemCount = bucket?.count || 0;
-        const schedulesPreview = bucket?.previews || [];
+        const itemCount = bucket?.count ?? 0;
+        const schedulesPreview = bucket?.previews ?? [];
         const moreCount = Math.max(0, itemCount - schedulesPreview.length);
 
         days.push({
@@ -121,15 +137,12 @@ export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) 
 };
 
 /**
- * 3) 구글 미리보기 DTO
+ * 3) 구글 일정 미리보기 DTO (Swagger 정합)
+ * success: { events: [{id, title}] }
  */
 export const calendarResponseDTO = (events) => {
-    return events.map((event) => ({
+    return (events ?? []).map((event) => ({
         id: event.id,
-        title: event.summary || "제목 없음",
-        start: event.start?.dateTime || event.start?.date,
-        end: event.end?.dateTime || event.end?.date,
-        isDone: false,
-        type: "GOOGLE",
+        title: event.summary ?? "제목 없음",
     }));
 };

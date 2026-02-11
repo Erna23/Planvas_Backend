@@ -5,14 +5,13 @@ import { homeResponseDTO } from "../dtos/home.dto.js";
 export function registerHomeRoutes(app) {
   app.get("/api/home", requireAuth, async (req, res) => {
     try {
-      // 토큰 payload가 userId / id 어떤 형태든 대응
-      const userId = req.auth?.userId ?? req.auth?.id ?? 1;
+      const userId = getAuthUserId(req);
+      if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
       const data = await homeService.getHomeData(userId);
 
-      // ✅ goalStatus를 DTO로 같이 넘겨야 프론트에서 구분 가능
       const response = homeResponseDTO(
-        data.goalStatus,              // ✅ 추가
+        data.goalStatus,
         data.goal ?? null,
         data.progress ?? null,
         data.weeklyStats ?? [],
@@ -20,22 +19,10 @@ export function registerHomeRoutes(app) {
         data.recommendations ?? []
       );
 
-      return res.status(200).json({
-        resultType: "SUCCESS",
-        error: null,
-        success: response,
-      });
+      return ok(res, response, 200);
     } catch (e) {
       console.error(e);
-      return res.status(500).json({
-        resultType: "FAIL",
-        error: {
-          errorCode: "H001",
-          reason: "홈 화면 조회 실패",
-          data: e?.message ?? null,
-        },
-        success: null,
-      });
+      return fail(res, "H001", "홈 화면 조회 실패", 500, e?.message ?? null);
     }
   });
 }
