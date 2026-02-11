@@ -75,17 +75,20 @@ export const findMyActivitiesForGoal = async (userId, goalId) => {
 };
 
 // 5. 추천 활동 조회
-export const findRecommendations = async (take = 3) => {
-  return await prisma.activityCatalog.findMany({
-    take,
-    select: {
-      id: true,
-      title: true,
-      organizer: true,
-      thumbnailUrl: true,
-      tags: true,
-      recruitEndDate: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export const findRecommendations = async () => {
+    return await prisma.activity.findMany({
+        take: 3,
+        select: {
+            id: true,
+            title: true,
+            organizer: true,
+            thumbnailUrl: true,
+            tags: true,
+            recruit_end_date: true, 
+            tab: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
 };
