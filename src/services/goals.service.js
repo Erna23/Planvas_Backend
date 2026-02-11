@@ -395,7 +395,7 @@ export async function getGoalRatioPresets() {
           growthRatio: 70,
           restRatio: 30,
           recommendedFor:
-            "학점 관리와 대외활동을 병행하는 프로 N잡러",
+            "학점 관리와 대외활동을 병행하는\n" + "프로 N잡러",
         },
         {
           presetId: 3,
@@ -408,7 +408,7 @@ export async function getGoalRatioPresets() {
           growthRatio: 50,
           restRatio: 50,
           recommendedFor:
-            "방학을 알차게 보내고 싶지만, 여행도 다니고 싶은 여유 있는 대학생",
+            "방학을 알차게 보내고 싶지만,\n" + "여행도 다니고 싶은 여유 있는 대학생",
         },
         {
           presetId: 4,
@@ -434,7 +434,7 @@ export async function getGoalRatioPresets() {
           growthRatio: 20,
           restRatio: 80,
           recommendedFor:
-            "무기력증을 극복하고 싶은 대학생, 아주 작은 성취부터 맛보고 싶은 입문자",
+            "무기력증을 극복하고 싶은 대학생,\n" + "아주 작은 성취부터 맛보고 싶은 입문자",
         },
         {
           presetId: 6,
@@ -448,7 +448,7 @@ export async function getGoalRatioPresets() {
           growthRatio: 10,
           restRatio: 90,
           recommendedFor:
-            "배낭 여행, 워킹 홀리데이, 휴학 후 자아를 찾는 여행자",
+            "배낭 여행, 워킹 홀리데이, 휴학 후\n" + "자아를 찾는 여행자",
         },
       ],
     },
