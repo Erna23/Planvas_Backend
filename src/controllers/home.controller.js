@@ -1,6 +1,7 @@
 import { requireAuth } from "../auth.config.js";
 import * as homeService from "../services/home.service.js";
 import { homeResponseDTO } from "../dtos/home.dto.js";
+import { ok, fail, getAuthUserId } from "../utils/apiResponse.js";
 
 export function registerHomeRoutes(app) {
   app.get("/api/home", requireAuth, async (req, res) => {
