@@ -78,9 +78,6 @@ export const findMyActivitiesForGoal = async (userId, goalId) => {
 export const findRecommendations = async (take = 3) => {
   return await prisma.activityCatalog.findMany({
     take,
-    where: {
-      recruitEndDate: { gte: new Date() },
-    },
     select: {
       id: true,
       title: true,
