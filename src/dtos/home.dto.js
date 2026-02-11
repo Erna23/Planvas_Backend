@@ -46,12 +46,14 @@ export const homeResponseDTO = (
 
     return {
       date: stat?.date,
-      hasItems: schedules.length > 0,
-      todoCount: schedules.length,
+      // 서비스단에서 계산해온 결과(FIXED 존재 여부)를 그대로 사용합니다.
+      hasItems: stat?.hasItems ?? false,
+      todoCount: stat?.todoCount ?? schedules.length,
       schedules: schedules.map((s) => ({
         id: s.id,
         title: s.title,
-        category: s.type === "FIXED" ? "FIXED" : s.type || "GROWTH",
+        // 삼항 연산자 정리
+        category: s.type === "FIXED" ? "FIXED" : (s.type || "TODO"),
       })),
     };
   });
