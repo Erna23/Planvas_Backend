@@ -50,16 +50,17 @@ function calculateDDay(targetDate) {
 
 export const getHomeData = async (userId) => {
   const today = new Date();
+  console.log("[디버그] 현재 서버 시간:", today.toLocaleString());
+  console.log("[디버그] 조회 유저 ID:", userId);
 
-  // 0. 사용자 이름 조회 추가
   const userInfo = await homeRepository.findUserInfo(userId);
   const userName = userInfo?.name || "사용자";
 
-  // 시간대 문제를 방지하기 위한 기준 날짜 생성
-  const checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+  // 날짜 범위를 앞뒤로 1일씩 더 넉넉하게 잡아서 조회해봅니다.
+  const checkDate = new Date(); 
 
-  // 1. 목표 데이터 조회
   const currentGoal = await homeRepository.findCurrentGoal(userId, checkDate);
+  console.log("[디버그] 조회된 목표:", currentGoal ? currentGoal.title : "없음");
   const recentGoal = await homeRepository.findRecentGoal(userId);
 
   let goalStatus = "NONE";
