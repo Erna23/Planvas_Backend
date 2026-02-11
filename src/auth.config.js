@@ -5,11 +5,15 @@ import { OAuth2Client } from "google-auth-library";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET; // ★ 추가됨
 
 const ACCESS_EXPIRES_IN = "30d";
 export const EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30;
+
+const REFRESH_EXPIRES_IN = "90d";
+export const REFRESH_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 90;
 
 const googleClient = new OAuth2Client(
   GOOGLE_CLIENT_ID,
@@ -19,6 +23,9 @@ const googleClient = new OAuth2Client(
 
 if (!JWT_SECRET) {
   throw new Error("Missing env: JWT_SECRET");
+}
+if (!JWT_REFRESH_SECRET) {
+  throw new Error("Missing env: JWT_REFRESH_SECRET");
 }
 if (!GOOGLE_CLIENT_ID) {
   throw new Error("Missing env: GOOGLE_CLIENT_ID");
@@ -79,7 +86,15 @@ export function getGoogleClient(refreshToken) {
  * JWT Access Token 생성 (우리 서비스용)
  */
 export function signAccessToken({ userId }) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
+  return jwt.sign({ userId, tokenType: "access" }, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
+}
+
+export function signRefreshToken({ userId }) {
+  return jwt.sign(
+    { userId, tokenType: "refresh" },
+    JWT_REFRESH_SECRET,
+    { expiresIn: REFRESH_EXPIRES_IN }
+  );
 }
 
 /**
@@ -108,6 +123,16 @@ export function requireAuth(req, res, next) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // refresh 토큰으로 접근하는 실수 방지
+    if (decoded?.tokenType && decoded.tokenType !== "access") {
+      return res.status(401).json({
+        resultType: "FAIL",
+        error: { errorCode: "A003", reason: "유효하지 않은 토큰 타입입니다.", data: null },
+        success: null,
+      });
+    }
+
     req.auth = decoded;
     return next();
   } catch (e) {
