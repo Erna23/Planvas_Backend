@@ -2,28 +2,42 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  // --- 1. 유저 1 데이터 (활동 + 목표) ---
+  console.log('유저 1 데이터 삽입 중...');
 
-  console.log('유저 4의 목표 데이터(GoalPeriod) 삽입 중...');
+  // 기존 활동 삭제
+  await prisma.userActivity.deleteMany({ where: { userId: 1 } });
 
+  // 유저 1의 목표 (GoalPeriod) - ID 중복 방지를 위해 upsert 사용
   await prisma.goalPeriod.upsert({
-    where: { id: 4 },
-    update: {},
+    where: { id: 1 }, // 유저 1의 목표 ID를 1로 가정
+    update: { title: "유저 1의 갓생 살기", startDate: new Date("2026-02-01"), endDate: new Date("2026-02-28") },
     create: {
       id: 1,
-      userId: 4,
-      title: "데모데이 성공하기",
-      startDate: new Date("2026-02-01T00:00:00Z"), // 이미 시작된 날짜
-      endDate: new Date("2026-02-28T23:59:59Z"),   // 넉넉한 종료 날짜
-      growth: 80,
-      rest: 20,
+      userId: 1,
+      title: "유저 1의 갓생 살기",
+      startDate: new Date("2026-02-01T00:00:00Z"),
+      endDate: new Date("2026-02-28T23:59:59Z"),
+      growth: 70,
+      rest: 30,
       presetType: "CUSTOM"
     }
   });
 
+  const activityDataUser1 = [
+    { userId: 1, title: "오전 운동 (유저1)", type: "FIXED", category: "GROWTH", startAt: new Date("2026-02-12T07:00:00Z"), endAt: new Date("2026-02-12T08:30:00Z"), eventColor: 3, status: "DONE" },
+    { userId: 1, title: "팀 프로젝트 회의 (유저1)", type: "FIXED", category: "GROWTH", startAt: new Date("2026-02-12T13:00:00Z"), endAt: new Date("2026-02-12T15:00:00Z"), eventColor: 7, status: "TODO" },
+    { userId: 1, title: "독서하기 (유저1)", type: "MANUAL", category: "GROWTH", startAt: new Date("2026-02-12T21:00:00Z"), endAt: new Date("2026-02-12T22:00:00Z"), eventColor: 8, status: "TODO" }
+  ];
+
+  for (const act of activityDataUser1) {
+    await prisma.userActivity.create({ data: act });
+  }
+  console.log('유저 1 반영 완료');
+
+  // --- 2. 유저 4 데이터 (유저 생성 + 활동 + 목표) ---
   console.log('유저 4(서영) 데이터 삽입 프로세스 시작...');
 
-  // 1. 유저 4번이 있는지 확인하고, 없으면 생성 (에러 방지용)
-  // 이미 있다면 update 로직을 통해 이름이 '서영'으로 유지됩니다.
   const targetUser = await prisma.user.upsert({
     where: { id: 4 },
     update: { name: '서영' },
@@ -36,46 +50,38 @@ async function main() {
     },
   });
 
-  console.log(`대상 유저 확인 완료: ${targetUser.name} (ID: ${targetUser.id})`);
-
-  // 2. 기존 활동 데이터 삭제 (유저 4번의 데이터만 깔끔하게 새로 세팅)
-  await prisma.userActivity.deleteMany({
-    where: { userId: 4 }
+  // 유저 4의 목표 (ID 충복 방지를 위해 ID 4번으로 지정)
+  await prisma.goalPeriod.upsert({
+    where: { id: 4 },
+    update: { title: "데모데이 성공하기" },
+    create: {
+      id: 4,
+      userId: 4,
+      title: "데모데이 성공하기",
+      startDate: new Date("2026-02-01T00:00:00Z"),
+      endDate: new Date("2026-02-28T23:59:59Z"),
+      growth: 80,
+      rest: 20,
+      presetType: "CUSTOM"
+    }
   });
-  console.log('유저 4의 기존 활동 데이터를 정리했습니다.');
 
-  // 3. 홈 화면 기획안 기반 데이터 (고정 일정, 일반 일정, 할 일)
-  const activityData = [
-    // 고정 일정 (FIXED)
-    { userId: 4, title: "카페 알바 (고정)", type: "FIXED", category: "GROWTH", startAt: "2026-02-12T18:00:00Z", endAt: "2026-02-12T22:00:00Z", eventColor: 1, status: "TODO" },
-    { userId: 4, title: "데모데이 발표 세션", type: "FIXED", category: "GROWTH", startAt: "2026-02-12T14:00:00Z", endAt: "2026-02-12T15:30:00Z", eventColor: 10, status: "TODO" },
+  await prisma.userActivity.deleteMany({ where: { userId: 4 } });
 
-    // 일반 일정 (FIXED)
-    { userId: 4, title: "방탈출 카페 (휴식)", type: "FIXED", category: "REST", startAt: "2026-02-12T17:00:00Z", endAt: "2026-02-12T18:00:00Z", eventColor: 2, status: "DONE" },
-
-    // 할 일 (MANUAL)
-    { userId: 4, title: "발표 대본 최종 암기", type: "MANUAL", category: "GROWTH", startAt: "2026-02-12T09:00:00Z", endAt: "2026-02-12T09:30:00Z", eventColor: 4, status: "TODO" },
-    { userId: 4, title: "서버 로그 모니터링", type: "MANUAL", category: "GROWTH", startAt: "2026-02-12T10:00:00Z", endAt: "2026-02-12T10:30:00Z", eventColor: 5, status: "DONE" },
-    { userId: 4, title: "팀 피드백 정리", type: "MANUAL", category: "GROWTH", startAt: "2026-02-12T16:00:00Z", endAt: "2026-02-12T16:30:00Z", eventColor: 6, status: "TODO" }
+  const activityDataUser4 = [
+    { userId: 4, title: "카페 알바 (고정)", type: "FIXED", category: "GROWTH", startAt: new Date("2026-02-12T18:00:00Z"), endAt: new Date("2026-02-12T22:00:00Z"), eventColor: 1, status: "TODO" },
+    { userId: 4, title: "데모데이 발표 세션", type: "FIXED", category: "GROWTH", startAt: new Date("2026-02-12T14:00:00Z"), endAt: new Date("2026-02-12T15:30:00Z"), eventColor: 10, status: "TODO" },
+    { userId: 4, title: "방탈출 카페 (휴식)", type: "FIXED", category: "REST", startAt: new Date("2026-02-12T17:00:00Z"), endAt: new Date("2026-02-12T18:00:00Z"), eventColor: 2, status: "DONE" },
+    { userId: 4, title: "발표 대본 최종 암기", type: "MANUAL", category: "GROWTH", startAt: new Date("2026-02-12T09:00:00Z"), endAt: new Date("2026-02-12T09:30:00Z"), eventColor: 4, status: "TODO" },
+    { userId: 4, title: "서버 로그 모니터링", type: "MANUAL", category: "GROWTH", startAt: new Date("2026-02-12T10:00:00Z"), endAt: new Date("2026-02-12T10:30:00Z"), eventColor: 5, status: "DONE" },
+    { userId: 4, title: "팀 피드백 정리", type: "MANUAL", category: "GROWTH", startAt: new Date("2026-02-12T16:00:00Z"), endAt: new Date("2026-02-12T16:30:00Z"), eventColor: 6, status: "TODO" }
   ];
 
-  // 4. 데이터 삽입
-  for (const act of activityData) {
-    await prisma.userActivity.create({
-      data: {
-        userId: act.userId,
-        title: act.title,
-        type: act.type,
-        category: act.category,
-        startAt: new Date(act.startAt),
-        endAt: new Date(act.endAt),
-        eventColor: act.eventColor,
-        status: act.status
-      }
-    });
+  for (const act of activityDataUser4) {
+    await prisma.userActivity.create({ data: act });
   }
 
-  console.log('데모 데이터가 성공적으로 반영되었습니다!');
+  console.log('모든 데모 데이터 반영 완료!');
 }
 
 main()
