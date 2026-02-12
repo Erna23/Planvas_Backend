@@ -99,3 +99,10 @@ export async function findInterestsByIds(ids) {
     orderBy: { id: "asc" },
   });
 }
+
+export async function updateOnboardingStatus(id, status) {
+  return prisma.user.update({
+    where: { id: Number(id) },
+    data: { onboardingCompleted: status },
+  });
+}
