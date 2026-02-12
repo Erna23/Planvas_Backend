@@ -4,6 +4,7 @@ import {
   getMeByUserId,
   saveOnboardingByUserId,
   getMyInterestsByUserId,
+  patchMyInterestsByUserId,
 } from "../services/user.service.js";
 
 import { requireAuth } from "../auth.config.js";
@@ -68,6 +69,21 @@ app.post("/api/users", async (req, res) => {
     }
   });
 
+    // PATCH /api/users/me/interests
+  app.patch("/api/users/me/interests", requireAuth, async (req, res) => {
+    console.log("auth userId:", req.auth?.userId, typeof req.auth?.userId);
+    try {
+      const result = await patchMyInterestsByUserId(req.auth.userId, req.body);
+      return res.status(200).json(result);
+    } catch (e) {
+      console.error("[PATCH /api/users/me/interests] error:", e);
+      return res
+        .status(e.statusCode ?? 500)
+        .json(e.payload ?? defaultInterestsPatchFail());
+    }
+  });
+
+
   // POST /api/users/me/onboarding
 app.post("/api/users/me/onboarding", requireAuth, async (req, res) => {
   console.log("[ONBOARDING] req.auth =", req.auth);
@@ -111,6 +127,14 @@ function defaultOnboardingFail() {
   return {
     resultType: "FAIL",
     error: { errorCode: "O500", reason: "온보딩 저장 중 서버 오류가 발생했습니다.", data: null },
+    success: null,
+  };
+}
+
+function defaultInterestsPatchFail() {
+  return {
+    resultType: "FAIL",
+    error: { errorCode: "I500", reason: "관심사 수정 중 서버 오류가 발생했습니다.", data: null },
     success: null,
   };
 }

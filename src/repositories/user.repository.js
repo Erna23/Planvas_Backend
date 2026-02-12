@@ -12,7 +12,7 @@ export async function createUser({ email, provider, oauthId, name }) {
 }
 
 export async function findUserById(id) {
-  return prisma.user.findFirst({ where: { id } });
+  return prisma.user.findFirst({ where: { id: Number(id) } });
 }
 
 export async function markOnboardingCompleted(id) {
@@ -44,9 +44,9 @@ export async function createGoalPeriod({
  */
 export async function upsertUserProfileInterests(userId, interests) {
   return prisma.userProfile.upsert({
-    where: { userId },
+    where: { userId: Number(userId) },
     update: { interests },
-    create: { userId, interests },
+    create: { userId: Number(userId), interests },
   });
 }
 
