@@ -81,7 +81,9 @@ export async function upsertCalendarSetting(userId, calendar) {
  * - interests 필드: Int[] (혹은 Json)
  */
 export async function findUserProfileByUserId(userId) {
-  return prisma.userProfile.findFirst({ where: { userId } });
+  return prisma.userProfile.findFirst({
+    where: { userId: Number(userId) },
+  });
 }
 
 /**
