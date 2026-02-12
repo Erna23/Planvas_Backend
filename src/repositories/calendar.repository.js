@@ -127,14 +127,19 @@ export const createUserActivity = async (userId, { title, startAt, endAt, type =
   });
 };
 
-// 7. 직접 일정 수정 (eventColor 필터링 로직 제거)
+// 7. 직접 일정 수정 (수정됨)
 export const updateUserActivity = async (userId, eventId, data) => {
-  // 만약 data 객체 안에 eventColor가 넘어온다면 Prisma 에러를 방지하기 위해 삭제
+  // 1. 제외할 필드들을 확실히 골라냅니다.
   const { eventColor, recurrenceRule, ...cleanData } = data;
 
+  // 2. [수정 포인트] Prisma에 데이터를 전달할 때는 { data: cleanData } 형식이어야 합니다.
   const result = await prisma.userActivity.updateMany({
-    where: { id: eventId, userId, googleEventId: null },
-    cleanData,
+    where: {
+      id: eventId,
+      userId,
+      googleEventId: null
+    },
+    data: cleanData, // 'cleanData'만 적으면 안 되고 'data: cleanData'라고 명시해야 합니다.
   });
 
   if (result.count === 0) return null;
