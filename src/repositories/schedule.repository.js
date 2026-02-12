@@ -11,7 +11,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
     const rows = await prisma.MyActivity.findMany({
         where: {
             userId,
-            activity: { isNot: null },
+            Activity: { isNot: null },
             startAt: { lt: e },
             endAt: { gt: s }
         },
