@@ -154,6 +154,13 @@ model PushToken {
   @@map("push_token")
 }
 
+model Interest {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  @@map("interest")
+}
+
 model Report {
   id         Int        @id @default(autoincrement())
   userId     Int
