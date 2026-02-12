@@ -44,7 +44,7 @@ export async function createReport(userId, goalId = null) {
     }
   
     const goal = goalId
-      ? await findGoalPeriodById(goalId)
+      ? await findGoalPeriodById(Number(goalId))
       : await findCurrentGoalPeriodByUserId(userId);
   
     if (!goal) {
