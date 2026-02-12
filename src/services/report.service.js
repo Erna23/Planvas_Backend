@@ -18,13 +18,13 @@ export async function getSeasonsReports(userId, year = 0) {
         throw err;
     }
 
-    const reports = await findGoalReports(userId).map((report) => ({
-        ...report, 
-        year: new Date(report.endDate).getFullYear()
+    const reportsRaw = await findGoalReports(userId);
+    const reports = reportsRaw.map((report) => ({
+        ...report,
+        year: new Date(report.endDate).getFullYear(),
     }));
 
     if(year != 0) {
-        year
         return reports.filter((report) => report.year === year);
     }
     return reports;
