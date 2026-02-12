@@ -41,6 +41,31 @@ export async function findOngoingGoalPeriodByUserId(userId, now = new Date()) {
   });
 }
 
+
+/**
+ * (정책) 기간 겹침 목표 존재 여부 체크
+ * overlap 조건: existing.startDate <= newEnd  AND  existing.endDate >= newStart
+ * excludeGoalId: PATCH 시 자기 자신 제외용
+ */
+export async function findOverlappingGoalPeriodByUserId(userId, newStart, newEnd, excludeGoalId = null) {
+  return prisma.goalPeriod.findFirst({
+    where: {
+      userId,
+      ...(excludeGoalId ? { id: { not: excludeGoalId } } : {}),
+      startDate: { lte: newEnd },
+      endDate: { gte: newStart },
+    },
+    select: {
+      id: true,
+      startDate: true,
+      endDate: true,
+      title: true,
+    },
+    orderBy: { startDate: "desc" },
+  });
+}
+
+
 /**
  * 목표 생성
  * - schema에 presetType 기본값이 없다면, service에서 presetType을 넣거나 schema default를 추가해야 함.
