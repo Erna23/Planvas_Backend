@@ -5,7 +5,7 @@ import {
   validateUpdateGoalRatioBody,
 } from "../dtos/goals.dto.js";
 
-import { findUserById } from "../repositories/user.repository.js";
+import { findUserById, updateOnboardingStatus } from "../repositories/user.repository.js";
 import {
   findCurrentGoalPeriodByUserId,
   findOngoingGoalPeriodByUserId,
@@ -520,6 +520,9 @@ export async function deleteGoalByUserId(userId, goalIdParam) {
   // 3) 삭제 수행
   await deleteGoalPeriod(goalId);
 
+  // 4) 온보딩 상태 초기화 (다시 온보딩을 할 수 있도록!)
+  await updateOnboardingStatus(userId, false);
+
   return {
     resultType: "SUCCESS",
     error: null,
@@ -529,3 +532,5 @@ export async function deleteGoalByUserId(userId, goalIdParam) {
     }
   };
 }
+
+
