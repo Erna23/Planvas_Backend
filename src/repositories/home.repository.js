@@ -28,7 +28,7 @@ export const findCurrentGoal = async (userId, today = new Date()) => {
   });
 };
 
-// 주간 일정 조회
+// 주간 일정 조회 (category 필드 추가)
 export const findWeeklyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
@@ -40,6 +40,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       id: true,
       title: true,
       type: true,
+      category: true, // 💡 디자인 구분을 위해 추가
       startAt: true,
       endAt: true,
       status: true,
@@ -49,7 +50,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
   });
 };
 
-// 오늘의 할 일 조회
+// 오늘의 할 일 조회 (category 필드 추가)
 export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
@@ -61,6 +62,7 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
       id: true,
       title: true,
       type: true,
+      category: true, // 💡 추가
       status: true,
       startAt: true,
       endAt: true,
@@ -70,12 +72,11 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// 진행률 계산
+// 진행률 계산 - include를 사용하여 관계 데이터를 더 명확히 가져옴
 export const findMyActivitiesForGoal = async (userId, goalId) => {
   return await prisma.myActivity.findMany({
     where: { userId, goalId },
-    select: {
-      id: true,
+    include: {
       Activity: {
         select: { tab: true }
       },

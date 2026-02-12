@@ -110,7 +110,7 @@ export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// 6. 직접 일정 생성 (eventColor, recurrenceRule 제거)
+// 6. 직접 일정 생성 (eventColor, recurrenceRule 제거 버전 선택)
 export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL" }) => {
   const allowed = new Set(["MANUAL", "FIXED"]);
   const finalType = allowed.has(type) ? type : "MANUAL";
@@ -127,19 +127,19 @@ export const createUserActivity = async (userId, { title, startAt, endAt, type =
   });
 };
 
-// 7. 직접 일정 수정 (수정됨)
+// 7. 직접 일정 수정 (수정됨 - cleanData 로직 선택)
 export const updateUserActivity = async (userId, eventId, data) => {
   // 1. 제외할 필드들을 확실히 골라냅니다.
   const { eventColor, recurrenceRule, ...cleanData } = data;
 
-  // 2. [수정 포인트] Prisma에 데이터를 전달할 때는 { data: cleanData } 형식이어야 합니다.
+  // 2. Prisma에 데이터를 전달할 때는 { data: cleanData } 형식으로 전달
   const result = await prisma.userActivity.updateMany({
     where: {
       id: eventId,
       userId,
       googleEventId: null
     },
-    data: cleanData, // 'cleanData'만 적으면 안 되고 'data: cleanData'라고 명시해야 합니다.
+    data: cleanData,
   });
 
   if (result.count === 0) return null;
