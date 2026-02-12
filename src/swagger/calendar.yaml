@@ -171,10 +171,7 @@ components:
         type:
           type: string
           example: "MANUAL"
-        eventColor:
-          type: integer
-          description: "1~10 사이의 색상 인덱스"
-          example: 3
+        # ❌ 배포 서버 DB 컬럼 부재로 eventColor 제거
 
     CalendarMonthDay:
       type: object
@@ -244,14 +241,7 @@ components:
         type:
           type: string
           example: "MANUAL"
-        eventColor:
-          type: integer
-          example: 3
-        recurrenceRule:
-          type: string
-          nullable: true
-          description: "반복 규칙 (RRULE)"
-          example: "FREQ=WEEKLY;BYDAY=WE"
+        # ❌ 배포 서버 DB 컬럼 부재로 eventColor, recurrenceRule 제거
 
     CalendarDaySuccess:
       type: object
@@ -294,15 +284,7 @@ components:
           type: string
           description: "MANUAL | FIXED"
           example: "MANUAL"
-        eventColor:
-          type: integer
-          minimum: 1
-          maximum: 10
-          example: 3
-        recurrenceRule:
-          type: string
-          nullable: true
-          example: "FREQ=DAILY"
+        # ❌ eventColor, recurrenceRule 제거
 
     ManualUpdateRequest:
       type: object
@@ -315,11 +297,7 @@ components:
           type: string
         type:
           type: string
-        eventColor:
-          type: integer
-        recurrenceRule:
-          type: string
-          nullable: true
+        # ❌ eventColor, recurrenceRule 제거
 
     ManualEventResponse:
       type: object
@@ -336,18 +314,13 @@ components:
         type:
           type: string
           example: "MANUAL"
-        eventColor:
-          type: integer
-          example: 3
-        recurrenceRule:
-          type: string
-          nullable: true
         status:
           type: string
           example: "TODO"
         googleEventId:
           nullable: true
           example: null
+        # ❌ eventColor, recurrenceRule 제거
 
     ApiManualEvent:
       type: object

@@ -116,14 +116,13 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 7) Manual Create (색상 및 반복 규칙 추가)
     app.post("/api/calendar/event", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
             if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
-            // ✅ eventColor, recurrenceRule 추가 추출
-            const { title, startAt, endAt, type, eventColor, recurrenceRule } = req.body ?? {};
+            // ✅ eventColor, recurrenceRule 추출 및 전달 제거
+            const { title, startAt, endAt, type } = req.body ?? {};
             if (!title || !startAt || !endAt) {
                 return fail(res, "C400", "title, startAt, endAt는 필수입니다.", 400);
             }
@@ -133,8 +132,8 @@ export function registerCalendarRoutes(app) {
                 startAt,
                 endAt,
                 type,
-                eventColor,      // ✅ 서비스 레이어로 전달
-                recurrenceRule,   // ✅ 서비스 레이어로 전달
+                // eventColor: eventColor, // ❌ 제거
+                // recurrenceRule: recurrenceRule, // ❌ 제거
             });
 
             return ok(res, created, 201);
@@ -144,7 +143,7 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 8) Manual Update (필드 유연성 확보)
+    // 8) Manual Update (필드 유연성 확보 및 위험 필드 차단)
     app.patch("/api/calendar/event/:id", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
@@ -153,8 +152,10 @@ export function registerCalendarRoutes(app) {
             const eventId = Number(req.params.id);
             if (!Number.isFinite(eventId)) return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
 
-            // ✅ req.body 전체를 넘기도록 하여 eventColor, recurrenceRule 수정 대응
-            const updated = await calendarService.updateManualEvent(userId, eventId, req.body ?? {});
+            // ✅ req.body에서 DB에 없는 필드(eventColor, recurrenceRule)가 섞여 들어오지 않도록 방어
+            const { eventColor, recurrenceRule, ...updateData } = req.body ?? {};
+
+            const updated = await calendarService.updateManualEvent(userId, eventId, updateData);
             if (!updated) return fail(res, "C404", "수정할 일정이 없습니다.", 404);
 
             return ok(res, updated, 200);
@@ -164,7 +165,7 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 9) Manual Delete
+    // 9) Manual Delete (기존과 동일)
     app.delete("/api/calendar/event/:id", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
