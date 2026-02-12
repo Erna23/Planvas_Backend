@@ -48,25 +48,6 @@ paths:
                       type: integer
                       description: 리포트가 속한 연도 (endDate 기준)
                       example: 2024
-                    summary:
-                      type: object
-                      nullable: true
-                      description: 리포트 요약 정보 (서비스 로직에 따라 구성)
-                      properties:
-                        title:
-                          type: string
-                          example: "성장과 휴식의 균형 잡힌 한 해"
-                        description:
-                          type: string
-                          example: "상반기 동안 성장 70%, 휴식 30%의 비율로 목표를 수행했습니다."
-                    growth:
-                      type: integer
-                      description: 해당 기간 동안 달성한 성장 포인트 합계
-                      example: 120
-                    rest:
-                      type: integer
-                      description: 해당 기간 동안 달성한 휴식 포인트 합계
-                      example: 80
 
   /api/reports/seasons/{goalId}:
     get:
