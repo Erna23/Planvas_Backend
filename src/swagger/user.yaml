@@ -291,7 +291,7 @@ paths:
         "500":
           $ref: "#/components/responses/FailResponse"
 
-    patch: 
+    patch:
       summary: 내 관심사 수정
       tags: [User]
       security:
@@ -345,6 +345,7 @@ paths:
           $ref: "#/components/responses/FailResponse"
         "500":
           $ref: "#/components/responses/FailResponse"
+
 
   /api/users:
     post:
