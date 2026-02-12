@@ -110,11 +110,10 @@ export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// 6. 직접 일정 생성
-export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL", eventColor, recurrenceRule }) => {
+// 6. 직접 일정 생성 (eventColor, recurrenceRule 제거)
+export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL" }) => {
   const allowed = new Set(["MANUAL", "FIXED"]);
   const finalType = allowed.has(type) ? type : "MANUAL";
-  const finalColor = (eventColor >= 1 && eventColor <= 10) ? eventColor : 1;
 
   return prisma.userActivity.create({
     data: {
@@ -123,22 +122,19 @@ export const createUserActivity = async (userId, { title, startAt, endAt, type =
       startAt: new Date(startAt),
       endAt: new Date(endAt),
       type: finalType,
-      eventColor: finalColor, // 다시 추가
-      recurrenceRule: recurrenceRule ?? null, // 다시 추가
       status: "TODO",
     },
   });
 };
 
-// 7. 직접 일정 수정
+// 7. 직접 일정 수정 (eventColor 필터링 로직 제거)
 export const updateUserActivity = async (userId, eventId, data) => {
-  if (data.eventColor && (data.eventColor < 1 || data.eventColor > 10)) {
-    data.eventColor = 1;
-  }
+  // 만약 data 객체 안에 eventColor가 넘어온다면 Prisma 에러를 방지하기 위해 삭제
+  const { eventColor, recurrenceRule, ...cleanData } = data;
 
   const result = await prisma.userActivity.updateMany({
     where: { id: eventId, userId, googleEventId: null },
-    data, // 이제 data 안에 eventColor가 있어도 에러가 나지 않습니다.
+    cleanData,
   });
 
   if (result.count === 0) return null;
