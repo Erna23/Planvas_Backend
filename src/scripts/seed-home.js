@@ -50,8 +50,7 @@ async function main() {
 
             startDate: parseDate(item.startDate),
             endDate: parseDate(item.endDate),
-            // ✅ 필드명 변경: recruitEndDate -> recruit_end_date
-            recruit_end_date: parseDate(item.endDate2),
+            recruitEndDate: parseDate(item.endDate2),
 
             tags: item.tags ?? [],
             point: item.point ?? 10,
@@ -59,14 +58,13 @@ async function main() {
             tab: targetTab,
             type: "NORMAL",
             categoryId: null,
-            // ✅ db pull 이후 updatedAt 필드가 필수라면 현재 시간 추가
-            updatedAt: new Date(),
+            // db pull 이후 updatedAt 필드가 필수라면 현재 시간 추가
+            //updatedAt: new Date(),
         };
     });
 
     try {
-        // ✅ 모델명 변경: activityCatalog -> activity
-        const result = await prisma.activity.createMany({
+        const result = await prisma.activityCatalog.createMany({
             data: activityData,
             skipDuplicates: true,
         });
