@@ -12,6 +12,7 @@ import {
   findUserProfileByUserId,
   findInterestsByIds,
 } from "../repositories/user.repository.js";
+import { findOverlappingGoalPeriodByUserId } from "../repositories/goals.repository.js";
 
 
 /**
@@ -184,6 +185,22 @@ export async function saveOnboardingByUserId(userId, body) {
     err.payload = {
       resultType: "FAIL",
       error: { errorCode: "O002", reason: "이미 온보딩이 저장된 사용자입니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // 온보딩 시 생성하려는 목표가 기존 목표와 겹치는지 체크
+  const start = new Date(goalPeriod.dateRange.startDate);
+  const end = new Date(goalPeriod.dateRange.endDate);
+  
+  const overlap = await findOverlappingGoalPeriodByUserId(userId, start, end);
+  if (overlap) {
+    const err = new Error("Overlapping goal exists during onboarding");
+    err.statusCode = 409;
+    err.payload = {
+      resultType: "FAIL",
+      error: { errorCode: "O003", reason: "이미 해당 기간에 목표가 존재합니다.", data: null },
       success: null,
     };
     throw err;
