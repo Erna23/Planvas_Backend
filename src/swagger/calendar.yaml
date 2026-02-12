@@ -1,10 +1,13 @@
 openapi: 3.0.3
 info:
   title: Planvas Calendar API
-  version: 1.1.0
-  description: 일정 관리 및 구글 캘린더 연동 API (색상 인덱스 및 반복 규칙 지원)
+  version: 1.2.0
+  description: 일정 관리 및 구글 캘린더 연동 API (todayTodos 필드명 반영 및 색상/반복 지원)
 servers:
+  - url: http://3.36.66.26:3000
+    description: 배포 서버
   - url: http://localhost:3000
+    description: 로컬 서버
 
 tags:
   - name: Calendar
@@ -22,249 +25,125 @@ components:
     ApiError:
       type: object
       properties:
-        errorCode:
-          type: string
-          example: "C001"
-        reason:
-          type: string
-          example: "연동 실패"
-        data:
-          nullable: true
-          example: null
+        errorCode: { type: string, example: "C001" }
+        reason: { type: string, example: "연동 실패" }
+        data: { nullable: true, example: null }
 
     ApiFail:
       type: object
       properties:
-        resultType:
-          type: string
-          example: "FAIL"
-        error:
-          $ref: "#/components/schemas/ApiError"
-        success:
-          nullable: true
-          example: null
+        resultType: { type: string, example: "FAIL" }
+        error: { $ref: "#/components/schemas/ApiError" }
+        success: { nullable: true, example: null }
 
     # ------------- 구글 연동 관련 -------------
     GoogleConnectRequest:
       type: object
       required: [code]
       properties:
-        code:
-          type: string
-          description: "구글 OAuth 승인 코드"
-          example: "4/0AeaYSH..."
+        code: { type: string, example: "4/0AeaYSH..." }
 
     ApiSuccessMessage:
       type: object
       properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
+        resultType: { type: string, example: "SUCCESS" }
         success:
           type: object
           properties:
-            message:
-              type: string
-              example: "연동 성공"
+            message: { type: string, example: "성공적으로 처리되었습니다." }
 
-    GoogleStatusSuccess:
-      type: object
-      properties:
-        isConnected:
-          type: boolean
-          example: true
-
-    ApiGoogleStatus:
-      type: object
-      properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        success:
-          $ref: "#/components/schemas/GoogleStatusSuccess"
-
-    # ------------- 월간/일간 조회 아이템 (Base) -------------
+    # ------------- 캘린더 아이템 (Base) -------------
     CalendarItemBase:
       type: object
       properties:
-        itemId:
-          type: string
-          example: "10"
-        title:
-          type: string
-          example: "과제하기"
-        isFixed:
-          type: boolean
-          example: false
-        type:
-          type: string
-          description: "MANUAL | FIXED | GOOGLE"
-          example: "MANUAL"
-        category:
-          type: string
-          description: "GROWTH | REST"
-          example: "GROWTH"
-        eventColor:
-          type: integer
-          description: "1~10 사이의 색상 인덱스"
-          example: 3
-        recurrenceRule:
-          type: string
-          nullable: true
-          description: "RRULE 형식의 반복 규칙"
-          example: "FREQ=WEEKLY;BYDAY=MO"
+        itemId: { type: string, example: "10" }
+        title: { type: string, example: "과제하기" }
+        isFixed: { type: boolean, example: false }
+        type: { type: string, example: "MANUAL" }
+        category: { type: string, example: "GROWTH" }
+        eventColor: { type: integer, example: 3 }
+        recurrenceRule: { type: string, nullable: true, example: "FREQ=WEEKLY;BYDAY=MO" }
 
     # ------------- 월간 조회 응답 -------------
     CalendarMonthPreviewItem:
       allOf:
         - $ref: "#/components/schemas/CalendarItemBase"
-        - type: object
-          properties:
-            # 프리뷰에서는 필수 정보만 노출 (Base 필드 재사용)
-            recurrenceRule:
-              readOnly: true
 
     CalendarMonthDay:
       type: object
       properties:
-        date:
-          type: string
-          example: "2026-02-12"
-        hasItems:
-          type: boolean
-          example: true
-        itemCount:
-          type: integer
+        date: { type: string, example: "2026-02-12" }
+        hasItems: { type: boolean, example: true }
+        itemCount: { type: integer, example: 3 }
         schedulesPreview:
           type: array
-          items:
-            $ref: "#/components/schemas/CalendarMonthPreviewItem"
-        moreCount:
-          type: integer
+          items: { $ref: "#/components/schemas/CalendarMonthPreviewItem" }
+        moreCount: { type: integer, example: 1 }
 
     ApiCalendarMonth:
       type: object
       properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
+        resultType: { type: string, example: "SUCCESS" }
         success:
           type: object
           properties:
-            year:
-              type: integer
-            month:
-              type: integer
-            days:
-              type: array
-              items:
-                $ref: "#/components/schemas/CalendarMonthDay"
+            year: { type: integer }
+            month: { type: integer }
+            days: { type: array, items: { $ref: "#/components/schemas/CalendarMonthDay" } }
 
-    # ------------- 일간 상세 조회 응답 -------------
+    # ------------- 일간 상세 조회 응답 (✅ todayTodos 반영) -------------
     CalendarDayItem:
       allOf:
         - $ref: "#/components/schemas/CalendarItemBase"
         - type: object
           properties:
-            startAt:
-              type: string
-              format: date-time
-            endAt:
-              type: string
-              format: date-time
-            status:
-              type: string
-              example: "TODO"
+            startAt: { type: string, format: date-time }
+            endAt: { type: string, format: date-time }
+            status: { type: string, example: "TODO" }
 
     ApiCalendarDay:
       type: object
       properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
+        resultType: { type: string, example: "SUCCESS" }
         success:
           type: object
           properties:
-            date:
-              type: string
-            items:
+            date: { type: string, example: "2026-02-12" }
+            # ✅ 지은님이 요청한 필드명으로 변경
+            todayTodos:
               type: array
-              items:
-                $ref: "#/components/schemas/CalendarDayItem"
+              items: { $ref: "#/components/schemas/CalendarDayItem" }
 
-    # ------------- 직접 일정 생성/수정 -------------
+    # ------------- 직접 일정 생성/수정 요청 -------------
     ManualCreateRequest:
       type: object
       required: [title, startAt, endAt]
       properties:
-        title:
-          type: string
-          example: "기획서 작성"
-        startAt:
-          type: string
-          format: date-time
-          example: "2026-02-12T14:00:00+09:00"
-        endAt:
-          type: string
-          format: date-time
-          example: "2026-02-12T16:00:00+09:00"
-        type:
-          type: string
-          enum: [MANUAL, FIXED]
-          default: "MANUAL"
-        category:
-          type: string
-          enum: [GROWTH, REST]
-          default: "GROWTH"
-        eventColor:
-          type: integer
-          minimum: 1
-          maximum: 10
-          default: 1
-        recurrenceRule:
-          type: string
-          nullable: true
-          example: "FREQ=DAILY;INTERVAL=1"
+        title: { type: string, example: "기획서 작성" }
+        startAt: { type: string, format: date-time, example: "2026-02-12T14:00:00+09:00" }
+        endAt: { type: string, format: date-time, example: "2026-02-12T16:00:00+09:00" }
+        type: { type: string, enum: [MANUAL, FIXED], default: "MANUAL" }
+        category: { type: string, enum: [GROWTH, REST], default: "GROWTH" }
+        eventColor: { type: integer, minimum: 1, maximum: 10, default: 1 }
+        recurrenceRule: { type: string, nullable: true, example: "FREQ=DAILY;INTERVAL=1" }
 
     ManualUpdateRequest:
       type: object
       properties:
-        title:
-          type: string
-        startAt:
-          type: string
-          format: date-time
-        endAt:
-          type: string
-          format: date-time
-        type:
-          type: string
-          enum: [MANUAL, FIXED]
-        category:
-          type: string
-          enum: [GROWTH, REST]
-        eventColor:
-          type: integer
-          minimum: 1
-          maximum: 10
-        recurrenceRule:
-          type: string
-          nullable: true
-        status:
-          type: string
-          enum: [TODO, DONE]
+        title: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        type: { type: string, enum: [MANUAL, FIXED] }
+        category: { type: string, enum: [GROWTH, REST] }
+        eventColor: { type: integer, minimum: 1, maximum: 10 }
+        recurrenceRule: { type: string, nullable: true }
+        status: { type: string, enum: [TODO, DONE] }
 
     ApiManualEvent:
       type: object
       properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        success:
-          $ref: "#/components/schemas/CalendarDayItem"
+        resultType: { type: string, example: "SUCCESS" }
+        success: { $ref: "#/components/schemas/CalendarDayItem" }
 
 security:
   - bearerAuth: []
@@ -278,27 +157,13 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/GoogleConnectRequest"
+            schema: { $ref: "#/components/schemas/GoogleConnectRequest" }
       responses:
         "200":
           description: 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiSuccessMessage"
-
-  /api/integrations/google-calendar/status:
-    get:
-      summary: 연동 상태 조회
-      tags: [Calendar]
-      responses:
-        "200":
-          description: 성공
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiGoogleStatus"
+              schema: { $ref: "#/components/schemas/ApiSuccessMessage" }
 
   /api/calendar/month:
     get:
@@ -308,20 +173,17 @@ paths:
         - in: query
           name: year
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
         - in: query
           name: month
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
           description: 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiCalendarMonth"
+              schema: { $ref: "#/components/schemas/ApiCalendarMonth" }
 
   /api/calendar/day:
     get:
@@ -331,16 +193,13 @@ paths:
         - in: query
           name: date
           required: true
-          schema:
-            type: string
-            example: "2026-02-12"
+          schema: { type: string, example: "2026-02-12" }
       responses:
         "200":
           description: 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiCalendarDay"
+              schema: { $ref: "#/components/schemas/ApiCalendarDay" }
 
   /api/calendar/event:
     post:
@@ -350,15 +209,13 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ManualCreateRequest"
+            schema: { $ref: "#/components/schemas/ManualCreateRequest" }
       responses:
         "201":
           description: 생성 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiManualEvent"
+              schema: { $ref: "#/components/schemas/ApiManualEvent" }
 
   /api/calendar/event/{id}:
     patch:
@@ -368,21 +225,18 @@ paths:
         - in: path
           name: id
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ManualUpdateRequest"
+            schema: { $ref: "#/components/schemas/ManualUpdateRequest" }
       responses:
         "200":
           description: 수정 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiManualEvent"
+              schema: { $ref: "#/components/schemas/ApiManualEvent" }
     delete:
       summary: 직접 일정 삭제
       tags: [Calendar]
@@ -390,12 +244,10 @@ paths:
         - in: path
           name: id
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
           description: 삭제 성공
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ApiSuccessMessage"
+              schema: { $ref: "#/components/schemas/ApiSuccessMessage" }
