@@ -37,7 +37,6 @@ export function fail(res, errorCode, reason, status = 500, data = null) {
  * @param {object} req - Express request object
  * @param {number} fallback - 인증 정보가 없을 때 사용할 기본값
  */
-export function getAuthUserId(req, fallback = 1) {
-    // 다양한 인증 방식(Passport, Express-jwt 등)에서 유저 ID를 안전하게 추출합니다.
-    return req?.user?.id ?? req?.auth?.userId ?? req?.auth?.id ?? fallback;
+export function getAuthUserId(req) {
+    return req?.auth?.userId ?? req?.user?.id ?? req?.auth?.id ?? null;
 }

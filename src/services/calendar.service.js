@@ -72,9 +72,10 @@ export const getDailyEvents = async (userId, dateStr) => {
   return await calendarRepository.findDailyActivities(userId, startOfDay, endOfDay);
 };
 
-// 7. 직접 일정 생성 (✅ eventColor, recurrenceRule 제거)
-export const createManualEvent = async (userId, { title, startAt, endAt, type }) => {
+// 7. 직접 일정 생성 (eventColor, recurrenceRule 복구)
+export const createManualEvent = async (userId, { title, startAt, endAt, type, eventColor, recurrenceRule, category }) => {
   const eventType = type === "FIXED" ? "FIXED" : "MANUAL";
+  const eventCategory = category === "REST" ? "REST" : "GROWTH";
 
   const s = new Date(startAt);
   const e = new Date(endAt);
@@ -86,22 +87,30 @@ export const createManualEvent = async (userId, { title, startAt, endAt, type })
     throw new Error("endAt은 startAt보다 빠를 수 없습니다.");
   }
 
-  // 리포지토리에는 필수 필드만 전달
+  // 리포지토리에 새 필드들을 함께 전달
   return await calendarRepository.createUserActivity(userId, {
     title,
     startAt: s,
     endAt: e,
     type: eventType,
+    category: eventCategory,
+    eventColor: eventColor || 1,      // 💡 기본값 1 설정
+    recurrenceRule: recurrenceRule || null, // 💡 반복 규칙 전달
   });
 };
 
-// 8. 직접 일정 수정 (✅ eventColor, recurrenceRule 제거)
+// 8. 직접 일정 수정 (eventColor, recurrenceRule 필드 허용)
 export const updateManualEvent = async (userId, eventId, payload) => {
-  // payload에서 안전한 필드만 추출
-  const { title, startAt, endAt, type } = payload;
+  const { title, startAt, endAt, type, eventColor, recurrenceRule, category, status } = payload;
   const data = {};
 
   if (title !== undefined) data.title = title;
+  if (category !== undefined) data.category = category;
+  if (status !== undefined) data.status = status;
+
+  // 색상 및 반복 규칙 업데이트 허용
+  if (eventColor !== undefined) data.eventColor = eventColor;
+  if (recurrenceRule !== undefined) data.recurrenceRule = recurrenceRule;
 
   if (startAt !== undefined) {
     const s = new Date(startAt);
@@ -126,14 +135,14 @@ export const updateManualEvent = async (userId, eventId, payload) => {
     data.type = type;
   }
 
-  // 리포지토리에 eventColor 등이 포함되지 않도록 함
+  // 수정된 데이터를 리포지토리로 전달
   const updated = await calendarRepository.updateUserActivity(userId, eventId, data);
   if (!updated) throw new Error("수정할 일정이 없거나 권한이 없습니다.");
 
   return updated;
 };
 
-// 9. 직접 일정 삭제 (기존과 동일)
+// 9. 직접 일정 삭제
 export const deleteManualEvent = async (userId, eventId) => {
   const ok = await calendarRepository.deleteUserActivity(userId, eventId);
   if (!ok) throw new Error("삭제할 일정이 없거나 권한이 없습니다.");

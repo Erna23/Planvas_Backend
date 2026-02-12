@@ -26,7 +26,7 @@ const toIsoString = (v) => {
 
 /**
  * 1) 일간 상세 조회 DTO
- * 수정사항: eventColor, recurrenceRule을 DB에서 직접 참조하지 않고 기본값 처리
+ * 수정사항: DB에서 가져온 실제 eventColor와 recurrenceRule을 반환합니다.
  */
 export const calendarDayDetailResponseDTO = (events, dateStr) => {
     const items = (events ?? []).map((event) => {
@@ -42,10 +42,9 @@ export const calendarDayDetailResponseDTO = (events, dateStr) => {
             endAt: toIsoString(endVal),
             isFixed: isFixedType(type),
             type,
-            // ✅ DB 필드가 없을 수 있으므로 기본값 1 고정
-            eventColor: 1,
-            // ✅ DB 필드가 없을 수 있으므로 null 고정
-            recurrenceRule: null
+            // ✅ DB 필드의 실제 값을 반환하되, 없을 경우만 기본값 처리
+            eventColor: event.eventColor ?? 1,
+            recurrenceRule: event.recurrenceRule ?? null
         };
     });
 
@@ -56,34 +55,10 @@ export const calendarDayDetailResponseDTO = (events, dateStr) => {
  * 2) 월간 조회 DTO (캘린더 뷰 메인)
  */
 export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) => {
-    const y = Number(year);
-    const m = Number(month);
-
-    const monthStart = new Date(y, m - 1, 1, 0, 0, 0, 0);
-    const monthEnd = new Date(y, m, 0, 23, 59, 59, 999);
-    const lastDay = new Date(y, m, 0).getDate();
-
-    const map = {};
-    const ensure = (dateKey) => {
-        if (!map[dateKey]) map[dateKey] = { count: 0, previews: [] };
-        return map[dateKey];
-    };
+    // ... (상단 로직 동일)
 
     for (const event of events ?? []) {
-        const startAt = toDate(event.startAt);
-        const endAt = toDate(event.endAt);
-        if (!startAt || !endAt) continue;
-
-        const rangeStart = startAt > monthStart ? startAt : monthStart;
-        const rangeEnd = endAt < monthEnd ? endAt : monthEnd;
-
-        let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0);
-        const endCursor = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate(), 0, 0, 0, 0);
-
-        const title = event.title ?? "제목 없음";
-        const type = event.type || (event.googleEventId ? "GOOGLE" : "MANUAL");
-        const fixed = isFixedType(type);
-        const itemId = String(event.id ?? event.googleEventId);
+        // ... (중간 로직 동일)
 
         while (cursor <= endCursor) {
             if (cursor.getFullYear() === y && cursor.getMonth() === m - 1) {
@@ -97,8 +72,8 @@ export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) 
                         title,
                         isFixed: fixed,
                         type,
-                        // ✅ 프리뷰에서도 기본값 사용
-                        eventColor: 1
+                        // ✅ 프리뷰에서도 DB에 저장된 실제 색상 인덱스 반환
+                        eventColor: event.eventColor ?? 1
                     });
                 }
             }
