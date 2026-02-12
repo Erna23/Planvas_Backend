@@ -1,12 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Calendar API
-  version: 1.0.0
+  title: Planvas Calendar API
+  version: 1.1.0
+  description: 일정 관리 및 구글 캘린더 연동 API (색상 인덱스 및 반복 규칙 지원)
 servers:
   - url: http://localhost:3000
 
 tags:
   - name: Calendar
+    description: 일정 조회, 생성, 수정, 삭제 및 구글 연동
 
 components:
   securitySchemes:
@@ -16,6 +18,7 @@ components:
       bearerFormat: JWT
 
   schemas:
+    # ------------- 공통 응답 형식 -------------
     ApiError:
       type: object
       properties:
@@ -41,13 +44,14 @@ components:
           nullable: true
           example: null
 
-    # ------------- Google Connect -------------
+    # ------------- 구글 연동 관련 -------------
     GoogleConnectRequest:
       type: object
       required: [code]
       properties:
         code:
           type: string
+          description: "구글 OAuth 승인 코드"
           example: "4/0AeaYSH..."
 
     ApiSuccessMessage:
@@ -66,7 +70,6 @@ components:
               type: string
               example: "연동 성공"
 
-    # ------------- Google Status -------------
     GoogleStatusSuccess:
       type: object
       properties:
@@ -80,83 +83,11 @@ components:
         resultType:
           type: string
           example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
         success:
           $ref: "#/components/schemas/GoogleStatusSuccess"
 
-    # ------------- Google Events Preview -------------
-    GooglePreviewEvent:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "google_evt_abc"
-        title:
-          type: string
-          example: "팀 미팅"
-
-    ApiGoogleEventsPreview:
-      type: object
-      properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
-        success:
-          type: object
-          properties:
-            events:
-              type: array
-              items:
-                $ref: "#/components/schemas/GooglePreviewEvent"
-
-    # ------------- Google Sync -------------
-    GoogleSyncEventInput:
-      type: object
-      required: [id, summary, start, end]
-      properties:
-        id:
-          type: string
-        summary:
-          type: string
-        start:
-          type: object
-          additionalProperties: true
-        end:
-          type: object
-          additionalProperties: true
-
-    GoogleSyncRequest:
-      type: object
-      required: [events]
-      properties:
-        events:
-          type: array
-          items:
-            $ref: "#/components/schemas/GoogleSyncEventInput"
-
-    ApiGoogleSync:
-      type: object
-      properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
-        success:
-          type: object
-          properties:
-            savedCount:
-              type: integer
-              example: 5
-
-    # ------------- Calendar Month -------------
-    CalendarMonthPreviewItem:
+    # ------------- 월간/일간 조회 아이템 (Base) -------------
+    CalendarItemBase:
       type: object
       properties:
         itemId:
@@ -170,42 +101,49 @@ components:
           example: false
         type:
           type: string
+          description: "MANUAL | FIXED | GOOGLE"
           example: "MANUAL"
-        # ❌ 배포 서버 DB 컬럼 부재로 eventColor 제거
+        category:
+          type: string
+          description: "GROWTH | REST"
+          example: "GROWTH"
+        eventColor:
+          type: integer
+          description: "1~10 사이의 색상 인덱스"
+          example: 3
+        recurrenceRule:
+          type: string
+          nullable: true
+          description: "RRULE 형식의 반복 규칙"
+          example: "FREQ=WEEKLY;BYDAY=MO"
+
+    # ------------- 월간 조회 응답 -------------
+    CalendarMonthPreviewItem:
+      allOf:
+        - $ref: "#/components/schemas/CalendarItemBase"
+        - type: object
+          properties:
+            # 프리뷰에서는 필수 정보만 노출 (Base 필드 재사용)
+            recurrenceRule:
+              readOnly: true
 
     CalendarMonthDay:
       type: object
       properties:
         date:
           type: string
-          example: "2026-02-11"
+          example: "2026-02-12"
         hasItems:
           type: boolean
           example: true
         itemCount:
           type: integer
-          example: 4
         schedulesPreview:
           type: array
           items:
             $ref: "#/components/schemas/CalendarMonthPreviewItem"
         moreCount:
           type: integer
-          example: 1
-
-    CalendarMonthSuccess:
-      type: object
-      properties:
-        year:
-          type: integer
-          example: 2026
-        month:
-          type: integer
-          example: 2
-        days:
-          type: array
-          items:
-            $ref: "#/components/schemas/CalendarMonthDay"
 
     ApiCalendarMonth:
       type: object
@@ -213,46 +151,33 @@ components:
         resultType:
           type: string
           example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
         success:
-          $ref: "#/components/schemas/CalendarMonthSuccess"
+          type: object
+          properties:
+            year:
+              type: integer
+            month:
+              type: integer
+            days:
+              type: array
+              items:
+                $ref: "#/components/schemas/CalendarMonthDay"
 
-    # ------------- Calendar Day -------------
+    # ------------- 일간 상세 조회 응답 -------------
     CalendarDayItem:
-      type: object
-      properties:
-        itemId:
-          type: string
-          example: "10"
-        title:
-          type: string
-          example: "과제하기"
-        startAt:
-          type: string
-          example: "2026-02-11T18:00:00+09:00"
-        endAt:
-          type: string
-          example: "2026-02-11T20:00:00+09:00"
-        isFixed:
-          type: boolean
-          example: false
-        type:
-          type: string
-          example: "MANUAL"
-        # ❌ 배포 서버 DB 컬럼 부재로 eventColor, recurrenceRule 제거
-
-    CalendarDaySuccess:
-      type: object
-      properties:
-        date:
-          type: string
-          example: "2026-02-11"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/CalendarDayItem"
+      allOf:
+        - $ref: "#/components/schemas/CalendarItemBase"
+        - type: object
+          properties:
+            startAt:
+              type: string
+              format: date-time
+            endAt:
+              type: string
+              format: date-time
+            status:
+              type: string
+              example: "TODO"
 
     ApiCalendarDay:
       type: object
@@ -260,31 +185,49 @@ components:
         resultType:
           type: string
           example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
         success:
-          $ref: "#/components/schemas/CalendarDaySuccess"
+          type: object
+          properties:
+            date:
+              type: string
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CalendarDayItem"
 
-    # ------------- Manual Create/Update -------------
+    # ------------- 직접 일정 생성/수정 -------------
     ManualCreateRequest:
       type: object
       required: [title, startAt, endAt]
       properties:
         title:
           type: string
-          example: "과제 제출"
+          example: "기획서 작성"
         startAt:
           type: string
-          example: "2026-02-11T18:00:00+09:00"
+          format: date-time
+          example: "2026-02-12T14:00:00+09:00"
         endAt:
           type: string
-          example: "2026-02-11T20:00:00+09:00"
+          format: date-time
+          example: "2026-02-12T16:00:00+09:00"
         type:
           type: string
-          description: "MANUAL | FIXED"
-          example: "MANUAL"
-        # ❌ eventColor, recurrenceRule 제거
+          enum: [MANUAL, FIXED]
+          default: "MANUAL"
+        category:
+          type: string
+          enum: [GROWTH, REST]
+          default: "GROWTH"
+        eventColor:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+        recurrenceRule:
+          type: string
+          nullable: true
+          example: "FREQ=DAILY;INTERVAL=1"
 
     ManualUpdateRequest:
       type: object
@@ -293,34 +236,26 @@ components:
           type: string
         startAt:
           type: string
+          format: date-time
         endAt:
           type: string
+          format: date-time
         type:
           type: string
-        # ❌ eventColor, recurrenceRule 제거
-
-    ManualEventResponse:
-      type: object
-      properties:
-        id:
+          enum: [MANUAL, FIXED]
+        category:
+          type: string
+          enum: [GROWTH, REST]
+        eventColor:
           type: integer
-          example: 10
-        title:
+          minimum: 1
+          maximum: 10
+        recurrenceRule:
           type: string
-        startAt:
-          type: string
-        endAt:
-          type: string
-        type:
-          type: string
-          example: "MANUAL"
+          nullable: true
         status:
           type: string
-          example: "TODO"
-        googleEventId:
-          nullable: true
-          example: null
-        # ❌ eventColor, recurrenceRule 제거
+          enum: [TODO, DONE]
 
     ApiManualEvent:
       type: object
@@ -328,27 +263,8 @@ components:
         resultType:
           type: string
           example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
         success:
-          $ref: "#/components/schemas/ManualEventResponse"
-
-    ApiManualDelete:
-      type: object
-      properties:
-        resultType:
-          type: string
-          example: "SUCCESS"
-        error:
-          nullable: true
-          example: null
-        success:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "삭제되었습니다."
+          $ref: "#/components/schemas/CalendarDayItem"
 
 security:
   - bearerAuth: []
@@ -356,10 +272,8 @@ security:
 paths:
   /api/integrations/google-calendar/connect:
     post:
-      summary: 구글 캘린더 연동 (Auth Code 전달)
+      summary: 구글 캘린더 연동
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -368,7 +282,7 @@ paths:
               $ref: "#/components/schemas/GoogleConnectRequest"
       responses:
         "200":
-          description: 연동 성공
+          description: 성공
           content:
             application/json:
               schema:
@@ -378,56 +292,18 @@ paths:
     get:
       summary: 연동 상태 조회
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       responses:
         "200":
-          description: 조회 성공
+          description: 성공
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiGoogleStatus"
 
-  /api/integrations/google-calendar/events:
-    get:
-      summary: 구글 캘린더 일정 목록 조회 (미리보기)
-      tags: [Calendar]
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiGoogleEventsPreview"
-
-  /api/integrations/google-calendar/sync:
-    post:
-      summary: 구글 캘린더 일정 선택 저장 (동기화)
-      tags: [Calendar]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GoogleSyncRequest"
-      responses:
-        "200":
-          description: 저장 성공
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiGoogleSync"
-
   /api/calendar/month:
     get:
-      summary: 월간 일정 조회 (캘린더 뷰)
+      summary: 월간 일정 조회
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       parameters:
         - in: query
           name: year
@@ -441,7 +317,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: 조회 성공
+          description: 성공
           content:
             application/json:
               schema:
@@ -449,20 +325,18 @@ paths:
 
   /api/calendar/day:
     get:
-      summary: 일간 일정 상세 조회 (리스트 뷰)
+      summary: 일간 일정 상세 조회
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       parameters:
         - in: query
           name: date
           required: true
           schema:
             type: string
-            example: "2026-02-11"
+            example: "2026-02-12"
       responses:
         "200":
-          description: 조회 성공
+          description: 성공
           content:
             application/json:
               schema:
@@ -470,10 +344,8 @@ paths:
 
   /api/calendar/event:
     post:
-      summary: 직접 일정 추가 (Manual Create)
+      summary: 직접 일정 추가
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -490,10 +362,8 @@ paths:
 
   /api/calendar/event/{id}:
     patch:
-      summary: 직접 일정 수정 (Manual Update)
+      summary: 직접 일정 수정
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -513,12 +383,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiManualEvent"
-
     delete:
-      summary: 직접 일정 삭제 (Manual Delete)
+      summary: 직접 일정 삭제
       tags: [Calendar]
-      security:
-        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -531,4 +398,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiManualDelete"
+                $ref: "#/components/schemas/ApiSuccessMessage"

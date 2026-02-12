@@ -110,10 +110,13 @@ export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// 6. 직접 일정 생성 (eventColor, recurrenceRule 제거 버전 선택)
-export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL" }) => {
+// 6. 직접 일정 생성 (eventColor, recurrenceRule 필드 복구)
+export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL", category = "GROWTH", eventColor = 1, recurrenceRule = null }) => {
   const allowed = new Set(["MANUAL", "FIXED"]);
   const finalType = allowed.has(type) ? type : "MANUAL";
+
+  // 색상 방어 로직 (1~10 사이가 아니면 기본값 1)
+  const finalColor = (eventColor >= 1 && eventColor <= 10) ? eventColor : 1;
 
   return prisma.userActivity.create({
     data: {
@@ -121,25 +124,36 @@ export const createUserActivity = async (userId, { title, startAt, endAt, type =
       title,
       startAt: new Date(startAt),
       endAt: new Date(endAt),
+      category: category,
       type: finalType,
       status: "TODO",
+      eventColor: finalColor,
+      recurrenceRule: recurrenceRule,
     },
   });
 };
 
-// 7. 직접 일정 수정 (수정됨 - cleanData 로직 선택)
+// 7. 직접 일정 수정 (필드 제외 로직 제거 및 데이터 반영)
 export const updateUserActivity = async (userId, eventId, data) => {
-  // 1. 제외할 필드들을 확실히 골라냅니다.
-  const { eventColor, recurrenceRule, ...cleanData } = data;
+  const updateData = { ...data };
 
-  // 2. Prisma에 데이터를 전달할 때는 { data: cleanData } 형식으로 전달
+  // 날짜 데이터 객체화
+  if (data.startAt) updateData.startAt = new Date(data.startAt);
+  if (data.endAt) updateData.endAt = new Date(data.endAt);
+
+  // 색상 수정 시 범위 체크
+  if (data.eventColor !== undefined) {
+    updateData.eventColor = (data.eventColor >= 1 && data.eventColor <= 10) ? data.eventColor : 1;
+  }
+
+  // 이제 cleanData로 제외하지 않고 eventColor, recurrenceRule 등을 모두 포함하여 업데이트합니다.
   const result = await prisma.userActivity.updateMany({
     where: {
       id: eventId,
       userId,
-      googleEventId: null
+      googleEventId: null // 직접 생성한 일정만 수정 가능하도록 보호
     },
-    data: cleanData,
+    data: updateData,
   });
 
   if (result.count === 0) return null;
