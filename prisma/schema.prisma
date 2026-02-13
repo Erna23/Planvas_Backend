@@ -139,6 +139,7 @@ model Reminder {
   updatedAt    DateTime @updatedAt @map("updated_at")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "reminder_user_fkey")
 
+  @@unique([userId, reminderType])
   @@index([userId])
   @@map("reminder")
 }

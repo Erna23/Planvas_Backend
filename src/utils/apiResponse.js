@@ -1,42 +1,67 @@
-/**
- * 성공 응답 형식
- * @param {object} res - Express response object
- * @param {object} success - 응답 데이터
- * @param {number} status - HTTP 상태 코드 (기본값 200)
- */
-export function ok(res, success, status = 200) {
-    return res.status(status).json({
-        resultType: "SUCCESS",
-        error: null,
-        success,
-    });
+// src/utils/apiResponse.js
+
+function isExpressRes(obj) {
+  return !!obj && typeof obj.status === "function" && typeof obj.json === "function";
 }
 
 /**
- * 실패 응답 형식
- * @param {object} res - Express response object
- * @param {string} errorCode - 에러 코드 (예: 'H001')
- * @param {string} reason - 에러 사유
- * @param {number} status - HTTP 상태 코드 (기본값 500)
- * @param {object} data - 추가 에러 데이터 (선택 사항)
+ * ok(data)  또는  ok(res, data, status)
  */
-export function fail(res, errorCode, reason, status = 500, data = null) {
+export function ok(a, b, c = 200) {
+  // ok(res, data, status)
+  if (isExpressRes(a)) {
+    const res = a;
+    const success = b;
+    const status = c ?? 200;
     return res.status(status).json({
-        resultType: "FAIL",
-        error: {
-            errorCode,
-            reason,
-            data,
-        },
-        success: null,
+      resultType: "SUCCESS",
+      error: null,
+      success,
     });
+  }
+
+  // ok(data)
+  const success = a;
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success,
+  };
 }
 
 /**
- * 인증된 유저 ID 추출 함수
- * @param {object} req - Express request object
- * @param {number} fallback - 인증 정보가 없을 때 사용할 기본값
+ * fail(reason, data)  또는  fail(res, errorCode, reason, status, data)
+ */
+export function fail(a, b, c, d = 500, e = null) {
+  // fail(res, errorCode, reason, status, data)
+  if (isExpressRes(a)) {
+    const res = a;
+    const errorCode = b ?? "COMMON";
+    const reason = c ?? "요청 처리 중 오류가 발생했습니다.";
+    const status = d ?? 500;
+    const data = e ?? null;
+
+    return res.status(status).json({
+      resultType: "FAIL",
+      error: { errorCode, reason, data },
+      success: null,
+    });
+  }
+
+  // fail(reason, data) 구식
+  const reason = a ?? "요청 처리 중 오류가 발생했습니다.";
+  const data = b ?? null;
+
+  return {
+    resultType: "FAIL",
+    error: { errorCode: "COMMON", reason, data },
+    success: null,
+  };
+}
+
+/**
+ * 인증된 유저 ID 추출
  */
 export function getAuthUserId(req) {
-    return req?.auth?.userId ?? req?.user?.id ?? req?.auth?.id ?? null;
+  return req?.auth?.userId ?? req?.user?.id ?? req?.auth?.id ?? null;
 }
