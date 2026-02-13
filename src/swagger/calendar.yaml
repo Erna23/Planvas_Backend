@@ -1,181 +1,253 @@
+openapi: 3.0.3
+info:
+  title: Planvas Calendar API
+  version: 1.2.0
+  description: 일정 관리 및 구글 캘린더 연동 API (todayTodos 필드명 반영 및 색상/반복 지원)
+servers:
+  - url: http://3.36.66.26:3000
+    description: 배포 서버
+  - url: http://localhost:3000
+    description: 로컬 서버
+
+tags:
+  - name: Calendar
+    description: 일정 조회, 생성, 수정, 삭제 및 구글 연동
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ------------- 공통 응답 형식 -------------
+    ApiError:
+      type: object
+      properties:
+        errorCode: { type: string, example: "C001" }
+        reason: { type: string, example: "연동 실패" }
+        data: { nullable: true, example: null }
+
+    ApiFail:
+      type: object
+      properties:
+        resultType: { type: string, example: "FAIL" }
+        error: { $ref: "#/components/schemas/ApiError" }
+        success: { nullable: true, example: null }
+
+    # ------------- 구글 연동 관련 -------------
+    GoogleConnectRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, example: "4/0AeaYSH..." }
+
+    ApiSuccessMessage:
+      type: object
+      properties:
+        resultType: { type: string, example: "SUCCESS" }
+        success:
+          type: object
+          properties:
+            message: { type: string, example: "성공적으로 처리되었습니다." }
+
+    # ------------- 캘린더 아이템 (Base) -------------
+    CalendarItemBase:
+      type: object
+      properties:
+        itemId: { type: string, example: "10" }
+        title: { type: string, example: "과제하기" }
+        isFixed: { type: boolean, example: false }
+        type: { type: string, example: "MANUAL" }
+        category: { type: string, example: "GROWTH" }
+        eventColor: { type: integer, example: 3 }
+        recurrenceRule: { type: string, nullable: true, example: "FREQ=WEEKLY;BYDAY=MO" }
+
+    # ------------- 월간 조회 응답 -------------
+    CalendarMonthPreviewItem:
+      allOf:
+        - $ref: "#/components/schemas/CalendarItemBase"
+
+    CalendarMonthDay:
+      type: object
+      properties:
+        date: { type: string, example: "2026-02-12" }
+        hasItems: { type: boolean, example: true }
+        itemCount: { type: integer, example: 3 }
+        schedulesPreview:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarMonthPreviewItem" }
+        moreCount: { type: integer, example: 1 }
+
+    ApiCalendarMonth:
+      type: object
+      properties:
+        resultType: { type: string, example: "SUCCESS" }
+        success:
+          type: object
+          properties:
+            year: { type: integer }
+            month: { type: integer }
+            days: { type: array, items: { $ref: "#/components/schemas/CalendarMonthDay" } }
+
+    # ------------- 일간 상세 조회 응답 (✅ todayTodos 반영) -------------
+    CalendarDayItem:
+      allOf:
+        - $ref: "#/components/schemas/CalendarItemBase"
+        - type: object
+          properties:
+            startAt: { type: string, format: date-time }
+            endAt: { type: string, format: date-time }
+            status: { type: string, example: "TODO" }
+
+    ApiCalendarDay:
+      type: object
+      properties:
+        resultType: { type: string, example: "SUCCESS" }
+        success:
+          type: object
+          properties:
+            date: { type: string, example: "2026-02-12" }
+            # ✅ 지은님이 요청한 필드명으로 변경
+            todayTodos:
+              type: array
+              items: { $ref: "#/components/schemas/CalendarDayItem" }
+
+    # ------------- 직접 일정 생성/수정 요청 -------------
+    ManualCreateRequest:
+      type: object
+      required: [title, startAt, endAt]
+      properties:
+        title: { type: string, example: "기획서 작성" }
+        startAt: { type: string, format: date-time, example: "2026-02-12T14:00:00+09:00" }
+        endAt: { type: string, format: date-time, example: "2026-02-12T16:00:00+09:00" }
+        type: { type: string, enum: [MANUAL, FIXED], default: "MANUAL" }
+        category: { type: string, enum: [GROWTH, REST], default: "GROWTH" }
+        eventColor: { type: integer, minimum: 1, maximum: 10, default: 1 }
+        recurrenceRule: { type: string, nullable: true, example: "FREQ=DAILY;INTERVAL=1" }
+
+    ManualUpdateRequest:
+      type: object
+      properties:
+        title: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        type: { type: string, enum: [MANUAL, FIXED] }
+        category: { type: string, enum: [GROWTH, REST] }
+        eventColor: { type: integer, minimum: 1, maximum: 10 }
+        recurrenceRule: { type: string, nullable: true }
+        status: { type: string, enum: [TODO, DONE] }
+
+    ApiManualEvent:
+      type: object
+      properties:
+        resultType: { type: string, example: "SUCCESS" }
+        success: { $ref: "#/components/schemas/CalendarDayItem" }
+
+security:
+  - bearerAuth: []
+
 paths:
   /api/integrations/google-calendar/connect:
     post:
-      summary: 구글 캘린더 연동 (Auth Code 전달)
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
+      summary: 구글 캘린더 연동
+      tags: [Calendar]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  description: 구글 로그인 후 받은 인증 코드
-                  example: "4/0AeaYSH..."
+            schema: { $ref: "#/components/schemas/GoogleConnectRequest" }
       responses:
         "200":
-          description: 연동 성공
+          description: 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "연동 성공"
-
-  /api/integrations/google-calendar/status:
-    get:
-      summary: 연동 상태 조회
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      isConnected:
-                        type: boolean
-                        example: true
-
-  /api/integrations/google-calendar/sync:
-    post:
-      summary: 구글 캘린더 일정 선택 저장 (동기화)
-      description: 프론트엔드에서 선택한 일정 리스트를 받아 DB에 저장합니다.
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                events:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: 구글 이벤트 ID
-                      summary:
-                        type: string
-                        description: 일정 제목
-                      start:
-                        type: object
-                      end:
-                        type: object
-      responses:
-        "200":
-          description: 저장 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      savedCount:
-                        type: integer
-                        example: 5
-
-  /api/integrations/google-calendar/events:
-    get:
-      summary: 구글 캘린더 일정 목록 조회 (미리보기)
-      description: DB 저장 전, 구글에서 직접 가져오는 미리보기 목록입니다.
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  success:
-                    type: object
-                    properties:
-                      events:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            title:
-                              type: string
+              schema: { $ref: "#/components/schemas/ApiSuccessMessage" }
 
   /api/calendar/month:
     get:
-      summary: 월간 일정 조회 (캘린더 뷰)
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
+      summary: 월간 일정 조회
+      tags: [Calendar]
       parameters:
         - in: query
           name: year
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
         - in: query
           name: month
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
-          description: 조회 성공
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiCalendarMonth" }
 
   /api/calendar/day:
     get:
-      summary: 일간 일정 상세 조회 (리스트 뷰)
-      tags: 
-        - Calendar
-      security:
-        - bearerAuth: []
+      summary: 일간 일정 상세 조회
+      tags: [Calendar]
       parameters:
         - in: query
           name: date
           required: true
-          description: "YYYY-MM-DD 형식"
-          schema:
-            type: string
+          schema: { type: string, example: "2026-02-12" }
       responses:
         "200":
-          description: 조회 성공
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiCalendarDay" }
+
+  /api/calendar/event:
+    post:
+      summary: 직접 일정 추가
+      tags: [Calendar]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManualCreateRequest" }
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiManualEvent" }
+
+  /api/calendar/event/{id}:
+    patch:
+      summary: 직접 일정 수정
+      tags: [Calendar]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManualUpdateRequest" }
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiManualEvent" }
+    delete:
+      summary: 직접 일정 삭제
+      tags: [Calendar]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiSuccessMessage" }

@@ -11,7 +11,6 @@ import {
   findUserActivityById,
 } from "../repositories/schedule.repository.js";
 
-// ✅ activity.repository.js에 있는 export만 사용 (findById)
 import { findById as findCatalogActivityById } from "../repositories/activity.repository.js";
 
 const dayMap = {
@@ -36,7 +35,7 @@ export async function addFixedSchedule(userId, body) {
     const dayOfWeek = date.getDay();
 
     if (targetDays.includes(dayOfWeek)) {
-      const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
+      const dateStr = date.toISOString().split("T")[0];
 
       schedules.push({
         title: body.title,
@@ -99,20 +98,17 @@ export async function completeTodos(id) {
   return { id: (await completeActivity(id)).id };
 }
 
-// ✅ 여기만 “필수 수정”
 export async function createMyActivity(userId, body) {
   let baseActivity;
 
-  // 1) activityId 없으면: body 기반 “임시 activity”를 만들어서 넘김
   if (body.activityId == null) {
     baseActivity = {
       id: null,
       title: body.title,
-      tab: body.category ?? body.tab, // (너 코드에서 category 쓰길래 둘 다 받게)
+      tab: body.category ?? body.tab,
       point: body.point,
     };
   } else {
-    // 2) activityId 있으면: 카탈로그(ActivityCatalog)에서 조회 (findById 사용)
     baseActivity = await findCatalogActivityById(Number(body.activityId));
     if (!baseActivity) {
       const err = new Error("Activity not found");
@@ -126,7 +122,6 @@ export async function createMyActivity(userId, body) {
     }
   }
 
-  // addOwnUserActivity는 기존 로직 그대로 활용
   return await addOwnUserActivity(userId, baseActivity, body);
 }
 
@@ -168,7 +163,7 @@ export async function deleteMyActivity(userId, id) {
     message: "고정 일정이 삭제되었습니다.",
   };
 }
-// ✅ controller가 찾는 이름 맞춰주는 별칭 함수
+
 export async function deleteFixedSchedule(userId, id) {
   return deleteMyActivity(userId, id);
 }

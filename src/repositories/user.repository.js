@@ -12,7 +12,7 @@ export async function createUser({ email, provider, oauthId, name }) {
 }
 
 export async function findUserById(id) {
-  return prisma.user.findFirst({ where: { id } });
+  return prisma.user.findFirst({ where: { id: Number(id) } });
 }
 
 export async function markOnboardingCompleted(id) {
@@ -44,9 +44,9 @@ export async function createGoalPeriod({
  */
 export async function upsertUserProfileInterests(userId, interests) {
   return prisma.userProfile.upsert({
-    where: { userId },
+    where: { userId: Number(userId) },
     update: { interests },
-    create: { userId, interests },
+    create: { userId: Number(userId), interests },
   });
 }
 
@@ -81,7 +81,9 @@ export async function upsertCalendarSetting(userId, calendar) {
  * - interests 필드: Int[] (혹은 Json)
  */
 export async function findUserProfileByUserId(userId) {
-  return prisma.userProfile.findFirst({ where: { userId } });
+  return prisma.userProfile.findFirst({
+    where: { userId: Number(userId) },
+  });
 }
 
 /**
@@ -98,3 +100,9 @@ export async function findInterestsByIds(ids) {
   });
 }
 
+export async function updateOnboardingStatus(id, status) {
+  return prisma.user.update({
+    where: { id: Number(id) },
+    data: { onboardingCompleted: status },
+  });
+}

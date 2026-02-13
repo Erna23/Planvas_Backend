@@ -6,9 +6,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js",
-    "dev": "nodemon --exec node src/index.js",
+    "start": "prisma generate && prisma migrate deploy && node src/index.js",
+    "dev": "nodemon --exec \"prisma generate && node src/index.js\"",
+    "postinstall": "prisma generate",
     "seed:activity": "node src/scripts/seed-activity.js",
+    "seed:interest": "node src/scripts/seed-interest.js",
     "import:contests": "node src/scripts/import-contests.js"
   },
   "repository": {

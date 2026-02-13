@@ -41,3 +41,29 @@ export function validateOnboardingBody(body) {
 
   return { goalPeriod, calendar, profile };
 }
+
+/**
+ * Interests PATCH DTO
+ * body: { interestIds: number[] }
+ */
+export function validatePatchInterestsBody(body) {
+  const interestIds = body?.interestIds;
+
+  if (!Array.isArray(interestIds)) {
+    const err = new Error("interestIds must be array");
+    err.statusCode = 400;
+    err.payload = {
+      resultType: "FAIL",
+      error: { errorCode: "I400", reason: "interestIds는 배열이어야 합니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // 숫자 배열로 정규화 (정수만)
+  const normalized = interestIds
+    .map((v) => Number(v))
+    .filter((n) => Number.isInteger(n) && n > 0);
+
+  return { interestIds: normalized };
+}

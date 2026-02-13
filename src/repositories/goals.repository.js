@@ -8,10 +8,9 @@ export async function findCurrentGoalPeriodByUserId(userId, now = new Date()) {
   return prisma.goalPeriod.findFirst({
     where: {
       userId,
-      startDate: { lte: now },
       endDate: { gte: now },
     },
-    orderBy: { startDate: "desc" },
+    orderBy: { startDate: "asc" },
     select: {
       id: true,
       userId: true,
@@ -20,6 +19,8 @@ export async function findCurrentGoalPeriodByUserId(userId, now = new Date()) {
       endDate: true,
       growth: true,
       rest: true,
+      presetType: true,
+      presetId: true,
       createdAt: true,
     },
   });
@@ -38,6 +39,31 @@ export async function findOngoingGoalPeriodByUserId(userId, now = new Date()) {
     select: { id: true },
   });
 }
+
+
+/**
+ * (정책) 기간 겹침 목표 존재 여부 체크
+ * overlap 조건: existing.startDate <= newEnd  AND  existing.endDate >= newStart
+ * excludeGoalId: PATCH 시 자기 자신 제외용
+ */
+export async function findOverlappingGoalPeriodByUserId(userId, newStart, newEnd, excludeGoalId = null) {
+  return prisma.goalPeriod.findFirst({
+    where: {
+      userId,
+      ...(excludeGoalId ? { id: { not: excludeGoalId } } : {}),
+      startDate: { lte: newEnd },
+      endDate: { gte: newStart },
+    },
+    select: {
+      id: true,
+      startDate: true,
+      endDate: true,
+      title: true,
+    },
+    orderBy: { startDate: "desc" },
+  });
+}
+
 
 /**
  * 목표 생성
@@ -90,6 +116,8 @@ export async function findGoalPeriodById(goalId) {
       endDate: true,
       growth: true,
       rest: true,
+      presetType: true,
+      presetId: true,
       createdAt: true,
     },
   });
@@ -153,10 +181,19 @@ export async function findActivitiesForGoalProgress(userId, startInclusive, endE
       category: { in: ["GROWTH", "REST"] },
     },
     select: {
-      type: true,
+      category: true,
       startAt: true,
       endAt: true,
       status: true,
     },
+  });
+}
+
+/**
+ * 목표 삭제
+ */
+export async function deleteGoalPeriod(goalId) {
+  return prisma.goalPeriod.delete({
+    where: { id: goalId },
   });
 }

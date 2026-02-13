@@ -1,117 +1,134 @@
 /**
- * 시간 포맷 변환 (Date -> "HH:mm")
- * - 수정사항: "2024-01-25" 처럼 날짜만 있는 경우(종일 일정) 시간 파싱 에러 방지
+ * 로컬 기준 YYYY-MM-DD 키 생성
  */
-const formatTime = (date) => {
-    if (!date) return "00:00"; 
-    
-    // Date 객체가 아니라 문자열로 들어올 수도 있음
-    const d = new Date(date);
-    
-    // 유효하지 않은 날짜(Invalid Date)인 경우 처리
-    if (isNaN(d.getTime())) return "00:00";
+const toLocalDateKey = (dateObj) => {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const d = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+};
 
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
+// 고정 여부 판별: FIXED 타입만 True
+const isFixedType = (type) => type === "FIXED";
+
+// 안전한 Date 객체 변환
+const toDate = (v) => {
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+};
+
+// ISO 8601 문자열 변환
+const toIsoString = (v) => {
+    const d = toDate(v);
+    return d ? d.toISOString() : null;
 };
 
 /**
- * [Response DTO]
- * 1. 일간 상세 조회용 (명세서 포맷 준수: itemId, startTime 등)
+ * 1) 일간 상세 조회 DTO
  */
 export const calendarDayDetailResponseDTO = (events, dateStr) => {
-    const items = events.map((event) => {
-        // 타입 매핑
-        let type = "MY_ACTIVITY";
-        // DB 데이터(FIXED)이거나, 구글 ID가 있으면 구글 연동 일정으로 간주
-        if (event.type === "FIXED" || event.googleEventId) {
-            type = "FIXED_SCHEDULE";
-        }
+    const items = (events ?? []).map((event) => {
+        const type = event.type || (event.googleEventId ? "GOOGLE" : "MANUAL");
 
-        // 시간 추출 (DB 데이터 우선, 없으면 구글 데이터)
-        const startVal = event.startAt || event.start?.dateTime || event.start?.date;
-        const endVal = event.endAt || event.end?.dateTime || event.end?.date;
+        // DB 컬럼명(snake_case)과 DTO 필드명(camelCase) 혼용 방지
+        const startVal = event.startAt ?? event.start_at ?? event.start?.dateTime ?? event.start?.date ?? null;
+        const endVal = event.endAt ?? event.end_at ?? event.end?.dateTime ?? event.end?.date ?? null;
 
         return {
-            itemId: String(event.id || event.googleEventId),
-            type: type,
-            title: event.title || event.summary || "제목 없음",
-            startTime: formatTime(startVal),
-            endTime: formatTime(endVal),
-            completed: event.status === "DONE", // DB 데이터 기준 완료 여부
+            itemId: String(event.id ?? event.googleEventId),
+            title: event.title ?? event.summary ?? "제목 없음",
+            startAt: toIsoString(startVal),
+            endAt: toIsoString(endVal),
+            isFixed: isFixedType(type),
+            category: event.category ?? "GROWTH",
+            status: event.status ?? "TODO",
+            type,
+            eventColor: event.eventColor ?? event.event_color ?? 1,
+            recurrenceRule: event.recurrenceRule ?? event.recurrence_rule ?? null
         };
     });
 
     return {
         date: dateStr,
-        items: items,
+        todayTodos: items
     };
 };
 
 /**
- * [Response DTO]
- * 2. 월간 달력 조회용 (날짜별 일정 개수)
+ * 2) 월간 조회 DTO (캘린더 뷰 메인)
  */
-export const calendarMonthResponseDTO = (events, year, month) => {
-    const lastDay = new Date(year, month, 0).getDate();
-    
-    // 1. 날짜별 일정 개수를 미리 세어둡니다. (속도 향상)
-    const countMap = {};
-    
-    events.forEach((event) => {
-        const dateObj = new Date(event.startAt);
-        // UTC 시간 보정을 위해 로컬 날짜 문자열로 변환 (YYYY-MM-DD)
-        const dateKey = dateObj.toISOString().split('T')[0]; 
-        
-        // 날짜 키가 해당 월인지 확인
-        // (DB 쿼리에서 이미 걸러져 오겠지만, 한 번 더 안전하게 체크)
-        if (dateObj.getMonth() + 1 === parseInt(month)) {
-             // 주의: ISOString은 UTC 기준이므로, 실제 서비스 시에는 
-             // timezone offset을 고려하거나 getFullYear/Month/Date 사용 권장
-             // 여기서는 간단하게 기존 로직 유지하되 map 방식 적용:
-             const y = dateObj.getFullYear();
-             const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-             const d = String(dateObj.getDate()).padStart(2, "0");
-             const localDateKey = `${y}-${m}-${d}`;
+export const calendarMonthResponseDTO = (events, year, month, previewLimit = 3) => {
+    const y = parseInt(year);
+    const m = parseInt(month);
+    const dayMap = new Map();
 
-             countMap[localDateKey] = (countMap[localDateKey] || 0) + 1;
+    const ensure = (dateKey) => {
+        if (!dayMap.has(dateKey)) {
+            dayMap.set(dateKey, {
+                date: dateKey,
+                hasItems: true,
+                itemCount: 0,
+                schedulesPreview: [],
+                moreCount: 0
+            });
         }
-    });
+        return dayMap.get(dateKey);
+    };
 
-    const days = [];
+    for (const event of events ?? []) {
+        const itemId = String(event.id ?? event.googleEventId);
+        const title = event.title ?? event.summary ?? "제목 없음";
+        const type = event.type ?? "MANUAL";
+        const fixed = isFixedType(type);
 
-    // 2. 1일부터 말일까지 돌면서 Map에서 개수만 쏙 꺼냅니다.
-    for (let i = 1; i <= lastDay; i++) {
-        const dayString = String(i).padStart(2, "0");
-        const monthString = String(month).padStart(2, "0");
-        const dateStr = `${year}-${monthString}-${dayString}`;
+        // ReferenceError 해결: cursor 변수 초기화
+        // DB 필드명이 start_at일 수도 있으므로 둘 다 체크
+        let startVal = event.start_at ?? event.startAt;
+        let endVal = event.end_at ?? event.endAt ?? startVal;
 
-        const count = countMap[dateStr] || 0;
+        let cursor = new Date(startVal);
+        const endCursor = new Date(endVal);
 
-        days.push({
-            date: dateStr,
-            hasItems: count > 0,
-            itemCount: count,
-        });
+        while (cursor <= endCursor) {
+            if (cursor.getFullYear() === y && cursor.getMonth() === m - 1) {
+                const dateKey = toLocalDateKey(cursor);
+                const bucket = ensure(dateKey);
+
+                bucket.itemCount += 1;
+
+                if (bucket.schedulesPreview.length < previewLimit) {
+                    bucket.schedulesPreview.push({
+                        itemId,
+                        title,
+                        isFixed: fixed,
+                        type,
+                        eventColor: event.eventColor ?? event.event_color ?? 1,
+                        recurrenceRule: event.recurrenceRule ?? event.recurrence_rule ?? null
+                    });
+                } else {
+                    bucket.moreCount = bucket.itemCount - previewLimit;
+                }
+            }
+            cursor.setDate(cursor.getDate() + 1);
+            if (cursor > new Date(new Date(startVal).setFullYear(y + 1))) break;
+        }
     }
 
-    return { year: parseInt(year), month: parseInt(month), days: days };
+    return {
+        year: y,
+        month: m,
+        days: Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+    };
 };
 
 /**
- * [Response DTO]
- * 3. 단순 목록 조회용 (미리보기 등)
+ * 3) 기본 일정 응답 DTO (필요시 사용)
+ * 컨트롤러에서 이 이름을 가져다 쓰고 있으므로 반드시 export가 필요합니다.
  */
 export const calendarResponseDTO = (events) => {
-    return events.map((event) => ({
-        id: event.id || event.googleEventId,
-        title: event.title || event.summary || "제목 없음",
-        start: event.startAt || (event.start?.dateTime || event.start?.date),
-        end: event.endAt || (event.end?.dateTime || event.end?.date),
-        // 주의: 구글 미리보기 데이터(Raw)는 status가 'confirmed' 등으로 옴.
-        // DB 데이터가 아닐 경우 isDone은 항상 false가 됨
-        isDone: event.status === 'DONE', 
-        type: event.type || "GOOGLE",
+    return (events ?? []).map((event) => ({
+        id: event.id,
+        title: event.title ?? event.summary ?? "제목 없음",
     }));
 };

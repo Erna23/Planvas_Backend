@@ -1,0 +1,612 @@
+tags:
+  - name: Goal
+    description: 목표(Goal Period) 관리 API
+
+components:
+  schemas:
+    ErrorObject:
+      type: object
+      required: [errorCode, reason, data]
+      properties:
+        errorCode:
+          type: string
+          description: 서비스 에러 코드
+          example: "G400"
+        reason:
+          type: string
+          description: 에러 사유(메시지)
+          example: "목표 정보를 찾을 수 없습니다."
+        data:
+          nullable: true
+          description: 추가 데이터(없으면 null)
+          example: null
+
+    FailResponse:
+      type: object
+      required: [resultType, error, success]
+      properties:
+        resultType:
+          type: string
+          enum: [FAIL]
+          example: "FAIL"
+        error:
+          $ref: "#/components/schemas/ErrorObject"
+        success:
+          nullable: true
+          example: null
+
+  responses:
+    FailResponse:
+      description: 공통 FAIL 응답
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FailResponse"
+
+paths:
+  /api/goals:
+    post:
+      summary: 목표 생성
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, startDate, endDate]
+              properties:
+                presetId:
+                  type: integer
+                  nullable: true
+                  description: 프리셋을 쓰는 경우 presetId
+                  example: 2
+                title:
+                  type: string
+                  example: "2024 상반기 목표"
+                startDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-01-01"
+                endDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-06-30"
+                targetGrowthRatio:
+                  type: integer
+                  description: 목표 성장 비율 (미입력 시 50)
+                  example: 60
+                targetRestRatio:
+                  type: integer
+                  description: 목표 휴식 비율 (미입력 시 50)
+                  example: 40
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "409":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/current:
+    get:
+      summary: 현재 진행 중 목표 조회
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공 (진행 중 목표 없으면 goalId=null)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        nullable: true
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      growthRatio:
+                        type: integer
+                        description: 목표(타겟) 성장 비율
+                        example: 60
+                      restRatio:
+                        type: integer
+                        description: 목표(타겟) 휴식 비율
+                        example: 40
+                      currentGrowthRatio:
+                        type: integer
+                        description: 실제 기록 기반 성장 비율
+                        example: 55
+                      currentRestRatio:
+                        type: integer
+                        description: 실제 기록 기반 휴식 비율
+                        example: 45
+                      presetType:
+                        type: string
+                        example: "CUSTOM"
+                      presetId:
+                        nullable: true
+                        example: null
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/ratio-presets:
+    get:
+      summary: 목표 비율 프리셋 목록
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      presets:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            presetId:
+                              type: integer
+                            title:
+                              type: string
+                            description:
+                              type: string
+                            growthRatio:
+                              type: integer
+                            restRatio:
+                              type: integer
+                            recommendedFor:
+                              type: string
+                        example:
+                          - presetId: 1
+                            title: "파워 갓생러 🔥"
+                            description: |
+                              잠은 죽어서 잔다!
+                              이번 시즌, 후회 없이 모든 걸 쏟아붓습니다
+
+                              지금 편안하게 쉬는 것보다,
+                              미래의 압도적인 성취를 위해
+                              성장에 올인(All-in)하는 유형
+                            growthRatio: 90
+                            restRatio: 10
+                            recommendedFor: "고시, 취준, 공모전 마감이 코앞인 전사들"
+
+                          - presetId: 2
+                            title: "밸런스 챌린저 🏃"
+                            description: |
+                              열심히 달리지만 번아웃은 사절!
+                              꽉 찬 일정 속, 전략적 휴식
+
+                              가장 표준적인 '성장 지향형' 모델
+                              주중엔 달리고 주말에는 확실히 쉬는 유형
+                            growthRatio: 70
+                            restRatio: 30
+                            recommendedFor: "학점 관리와 대외활동을 병행하는 
+                                             프로 N잡러"
+
+                          - presetId: 3
+                            title: "황금 밸런스형 ⚖️"
+                            description: |
+                              성장도 휴식도 놓칠 수 없어!
+                              딱 반반, 완벽한 조화를 꿈꿉니다
+
+                              적극적으로 성장과 휴식을 탐색하는,
+                              이상적이고 건강한 루틴을 지향하는 유형
+                            growthRatio: 50
+                            restRatio: 50
+                            recommendedFor: "방학을 알차게 보내고 싶지만,
+                                             여행도 다니고 싶은 여유 있는 대학생"
+
+                          - presetId: 4
+                            title: "에너지 충전형 🔋"
+                            description: |
+                              지난 학기 너무 달린 나,
+                              이번엔 나를 돌보며 천천히 갑니다
+
+                              휴식이 메인이지만, '감'을 잃지 않기 위해
+                              최소한의 자기 개발은 유지하는 유형
+                            growthRatio: 30
+                            restRatio: 70
+                            recommendedFor: "종강 직후 지친, 번아웃을 피하려는 대학생"
+
+                          - presetId: 5
+                            title: "슬로우 스타터 🐢"
+                            description: |
+                              무리하지 말고 딱 하나만!
+                              작은 습관부터 천천히 시작해볼까요?
+
+                              거창한 목표 대신 '하루 30분 독서' 같은
+                              작은 목표 하나에 집중이 필요한 유형
+                            growthRatio: 20
+                            restRatio: 80
+                            recommendedFor: "무기력증을 극복하고 싶은 대학생, 
+                                             아주 작은 성취부터 맛보고 싶은 입문자"
+
+                          - presetId: 6
+                            title: "갭이어 탐험가 ✈️"
+                            description: |
+                              이번 시즌의 목표는 경험!
+                              마음껏 놀고, 보고, 느끼는 게 나의 스펙
+
+                              단순한 휴식이 아니라
+                              여행이나 새로운 경험을 통한
+                              '적극적인 휴식'으로 청춘을 즐기려는 유형
+                            growthRatio: 10
+                            restRatio: 90
+                            recommendedFor: "배낭 여행, 워킹 홀리데이, 휴학 후 
+                                             자아를 찾는 여행자"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+
+  /api/goals/{goalId}:
+    parameters:
+      - in: path
+        name: goalId
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: 목표 ID
+
+    delete:
+      summary: 목표 삭제
+      description: |
+        특정 목표(Goal Period)를 삭제합니다.
+        - 본인의 목표만 삭제 가능합니다.
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "목표가 성공적으로 삭제되었습니다."
+                      deletedGoalId:
+                        type: integer
+                        format: int64
+                        example: 10
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+    get:
+      summary: 목표 상세 조회 (기간 + 타겟 비율)
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        format: int64
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 상반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-01-01"
+                      endDate:
+                        type: string
+                        example: "2024-06-30"
+                      growthRatio:
+                        type: integer
+                        example: 60
+                      restRatio:
+                        type: integer
+                        example: 40
+                      presetType:
+                        type: string
+                        example: "CUSTOM"
+                      presetId:
+                        nullable: true
+                        example: null
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+    patch:
+      summary: 목표 기간/이름 수정
+      description: |
+        목표의 title, startDate, endDate를 부분 수정합니다.
+        - 최소 1개 필드는 필수 (title/startDate/endDate 중 하나)
+        - 날짜 형식: YYYY-MM-DD
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "2024 하반기 목표"
+                startDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-07-01"
+                endDate:
+                  type: string
+                  description: "YYYY-MM-DD"
+                  example: "2024-12-31"
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        format: int64
+                        example: 10
+                      title:
+                        type: string
+                        example: "2024 하반기 목표"
+                      startDate:
+                        type: string
+                        example: "2024-07-01"
+                      endDate:
+                        type: string
+                        example: "2024-12-31"
+                      growthRatio:
+                        type: integer
+                        example: 60
+                      restRatio:
+                        type: integer
+                        example: 40
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+
+  /api/goals/{goalId}/ratio:
+    patch:
+      summary: 목표 성장/휴식 비율 수정
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+          description: 목표 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [growthRatio, restRatio]
+              properties:
+                growthRatio:
+                  type: integer
+                  example: 70
+                restRatio:
+                  type: integer
+                  example: 30
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      growthRatio:
+                        type: integer
+                        example: 70
+                      restRatio:
+                        type: integer
+                        example: 30
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+  /api/goals/{goalId}/progress:
+    get:
+      summary: 목표 진행 비율 조회 (현재 성장/휴식 비율)
+      tags: [Goal]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          required: true
+          schema:
+            type: integer
+          description: 목표 ID
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      goalId:
+                        type: integer
+                        example: 10
+                      currentGrowthRatio:
+                        type: integer
+                        example: 55
+                      currentRestRatio:
+                        type: integer
+                        example: 45
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "403":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"

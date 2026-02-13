@@ -1,0 +1,204 @@
+paths:
+  /api/home:
+    get:
+      summary: 홈 화면 정보 조회 (통합)
+      description: |
+        홈 화면에 필요한 목표 정보, 달성 진행률, 주간 캘린더 요약,
+        오늘의 할 일, 추천 활동을 한 번에 조회합니다.
+      tags:
+        - Home
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    type: object
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      currentGoal:
+                        type: object
+                        nullable: true
+                        description: "설정된 목표가 없으면 null"
+                        properties:
+                          goalId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: "갓생 살기 프로젝트"
+                          startDate:
+                            type: string
+                            example: "2026-02-01"
+                          endDate:
+                            type: string
+                            example: "2026-02-28"
+                          dDay:
+                            type: integer
+                            example: 15
+                          growthRatio:
+                            type: integer
+                            example: 70
+                          restRatio:
+                            type: integer
+                            example: 30
+
+                      progress:
+                        type: object
+                        description: "목표 기간 내 완료한 활동 개수"
+                        properties:
+                          growthAchieved:
+                            type: integer
+                            example: 5
+                          restAchieved:
+                            type: integer
+                            example: 2
+
+                      weeklySummary:
+                        type: object
+                        properties:
+                          weekStartDate:
+                            type: string
+                            example: "2026-02-09"
+                          days:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                date:
+                                  type: string
+                                  example: "2026-02-10"
+                                hasItems:
+                                  type: boolean
+                                  example: true
+                                todoCount:
+                                  type: integer
+                                  example: 3
+                                schedules:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: integer
+                                        example: 101
+                                      title:
+                                        type: string
+                                        example: "공모전 마감"
+                                      category:
+                                        type: string
+                                        example: "GROWTH"
+
+                      todayTodos:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            todoId:
+                              oneOf:
+                                - type: integer
+                                - type: string
+                              example: 12
+                              description: "UserActivity ID 또는 Google Event ID"
+                            title:
+                              type: string
+                              example: "자격증 공부하기"
+                            category:
+                              type: string
+                              example: "GROWTH"
+                            scheduleTime:
+                              type: string
+                              example: "14:00 - 16:00"
+                            completed:
+                              type: boolean
+                              example: false
+
+                      recommendations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            activityId:
+                              type: integer
+                              example: 10
+                            title:
+                              type: string
+                              example: "2026 대학생 마케팅 공모전"
+                            subTitle:
+                              type: string
+                              example: "삼성전자"
+                            dDay:
+                              type: string
+                              example: "D-5"
+                            imageUrl:
+                              type: string
+                              nullable: true
+                              example: "https://api.linkareer.com/attachments/750451"
+                            tags:
+                              type: array
+                              items:
+                                type: string
+                              example: ["#공모전", "#마케팅"]
+
+        "401":
+          description: 인증 실패 (JWT 문제)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "A003"
+                      reason:
+                        type: string
+                        example: "토큰이 만료되었거나 유효하지 않습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+
+        "500":
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: "H001"
+                      reason:
+                        type: string
+                        example: "홈 화면 조회 실패"
+                      data:
+                        type: string
+                        example: "Cannot read properties of undefined (reading 'map')"
+                  success:
+                    nullable: true
+                    example: null
