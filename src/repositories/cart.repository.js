@@ -4,12 +4,13 @@ export async function getCartItems(userId, tab) {
   return prisma.cartItem.findMany({
     where: {
       userId,
-      activity: { tab },
+      Activity: { tab },     
     },
-    include: { activity: true },
+    include: { Activity: true }, 
     orderBy: { id: "desc" },
   });
 }
+
 
 export async function existsInCart(userId, activityId) {
   const row = await prisma.cartItem.findUnique({
