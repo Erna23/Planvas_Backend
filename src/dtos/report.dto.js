@@ -18,8 +18,8 @@ export function toGoalReportDto(goal, growth, rest, summary) {
         },
         summary: {
             type: summary.type,
-            title: summary.msg?.title ?? "",
-            subTitle: summary.msg?.subTitle ?? ""
+            title: summary.msg.title,
+            subTitle: summary.msg.subTitle
         },
         cta: {
             primary: {
@@ -51,22 +51,22 @@ const SummaryType = {
 
 const SUMMARY_MESSAGE = {
     [SummaryType.ALL_LACK]: {
-        title: "이번 주는 전체적으로 활동이 부족해요",
-        subTitle: "성장/휴식 활동을 조금씩 추가해보는 건 어때요?",
+        title: "다음 시즌 더 선명한 성취를 위해 잠시 쉬어간 시즌이에요",
+        subTitle: "성장과 휴식 모두 지키진 못했으나, 다음 시즌에는 더 나은 결과를 위해 노력해보는 건 어떠신가요?",
     },
     [SummaryType.GROWTH_LACK]: {
-        title: "성장 활동이 목표에 비해 부족해요",
-        subTitle: "간단한 성장 활동부터 하나 추가해보세요!",
+        title: "계획과는 조금 다르지만, 새로운 방향으로 나아갔던 기간이에요",
+        subTitle: "의도했던 균형보다, 지금 내게 더 필요한 가치에 집중한 시간이에요",
     },
     [SummaryType.REST_LACK]: {
-        title: "휴식 활동이 목표에 비해 부족해요",
-        subTitle: "컨디션을 위해 휴식도 일정에 넣어주세요 🙂",
+        title: "계획과는 조금 다르지만, 새로운 방향으로 나아갔던 기간이에요",
+        subTitle: "의도했던 균형보다, 지금 내게 더 필요한 가치에 집중한 시간이에요",
     },
     [SummaryType.PERFECT]: {
-        title: "목표에 아주 잘 맞게 진행 중이에요!",
-        subTitle: "좋아요! 지금 페이스를 유지해보세요 🔥",
+        title: "바라는 모습 그대로, 일상을 완벽히 채워낸 기간이에요",
+        subTitle: "성장과 휴식 모두 스스로 정한 기준을 성취로 바꿔낸 성공적인 시즌이네요!",
     },
-};
+}
 
 export async function getSummaryDto(goal, actualGrowth, actualRest) {
     let recommend;
