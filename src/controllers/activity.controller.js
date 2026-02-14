@@ -1,6 +1,7 @@
 import { ok, fail } from "../utils/apiResponse.js";
 import { authStub } from "../middlewares/authStub.js";
-import { listActivities, recommendations, getDetail } from "../services/activity.service.js";
+// (import 쪽)
+import { listActivities, recommendations, getDetail, listActivityCategories } from "../services/activity.service.js";
 import { addMyActivity } from "../services/myActivity.service.js";
 
 export function registerActivityRoutes(app) {
@@ -51,6 +52,21 @@ export function registerActivityRoutes(app) {
       return res.status(500).json(fail("추천 목록을 불러올 수 없습니다.", null));
     }
   });
+  app.get("/api/activities/categories", authStub, async (req, res) => {
+    try {
+      const tab = req.query.tab;
+
+      if (!(tab === "GROWTH" || tab === "REST")) {
+        return res.status(400).json(fail("요청 값이 올바르지 않습니다.", null));
+      }
+
+      const data = await listActivityCategories({ tab });
+      return res.json(ok(data));
+    } catch (e) {
+      return res.status(500).json(fail("카테고리 목록을 불러올 수 없습니다.", null));
+    }
+  });
+
 
   // 활동 상세
   app.get("/api/activities/:activityId", authStub, async (req, res) => {
