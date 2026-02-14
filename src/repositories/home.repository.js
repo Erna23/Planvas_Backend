@@ -1,6 +1,14 @@
 import { prisma } from "../db.config.js";
 
-// 1. 최신 목표(가장 최근 생성)
+// 사용자의 이름 정보 조회
+export const findUserInfo = async (userId) => {
+  return await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+};
+
+// 최신 목표 조회
 export const findRecentGoal = async (userId) => {
   return await prisma.goalPeriod.findFirst({
     where: { userId },
@@ -8,7 +16,7 @@ export const findRecentGoal = async (userId) => {
   });
 };
 
-// ✅ 1-1. 진행중 목표(오늘이 기간 안)
+// 현재 진행 중인 목표 조회
 export const findCurrentGoal = async (userId, today = new Date()) => {
   return await prisma.goalPeriod.findFirst({
     where: {
@@ -20,12 +28,11 @@ export const findCurrentGoal = async (userId, today = new Date()) => {
   });
 };
 
-// 2. 주간 일정 조회 (✅ 기간 겹치는 일정 포함)
+// 주간 일정 조회 (category 필드 추가)
 export const findWeeklyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
       userId,
-      // (startAt <= endDate) AND (endAt >= startDate)
       startAt: { lte: endDate },
       endAt: { gte: startDate },
     },
@@ -33,6 +40,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       id: true,
       title: true,
       type: true,
+      category: true, // 💡 디자인 구분을 위해 추가
       startAt: true,
       endAt: true,
       status: true,
@@ -42,7 +50,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
   });
 };
 
-// 3. 오늘의 할 일 조회 (✅ 기간 겹치는 일정 포함)
+// 오늘의 할 일 조회 (category 필드 추가)
 export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
@@ -54,6 +62,7 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
       id: true,
       title: true,
       type: true,
+      category: true, // 💡 추가
       status: true,
       startAt: true,
       endAt: true,
@@ -63,21 +72,22 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   });
 };
 
-// ✅ 4. 목표 진행률 계산용 (MyActivity + Activity.tab)
+// 진행률 계산 - include를 사용하여 관계 데이터를 더 명확히 가져옴
 export const findMyActivitiesForGoal = async (userId, goalId) => {
   return await prisma.myActivity.findMany({
     where: { userId, goalId },
-    select: {
-      id: true,
-      Activity: { select: { tab: true } }, // "GROWTH" | "REST"
+    include: {
+      Activity: {
+        select: { tab: true }
+      },
     },
   });
 };
 
-// 5. 추천 활동 조회
-export const findRecommendations = async (take = 3) => {
+// 추천 활동
+export const findRecommendations = async () => {
   return await prisma.activityCatalog.findMany({
-    take,
+    take: 3,
     select: {
       id: true,
       title: true,
@@ -85,7 +95,10 @@ export const findRecommendations = async (take = 3) => {
       thumbnailUrl: true,
       tags: true,
       recruitEndDate: true,
+      tab: true,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 };

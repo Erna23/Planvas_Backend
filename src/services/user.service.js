@@ -1,6 +1,6 @@
 import { verifyGoogleIdToken, signAccessToken, EXPIRES_IN_SECONDS, signRefreshToken,
   REFRESH_EXPIRES_IN_SECONDS, } from "../auth.config.js";
-import { parseIdTokenBody, validateOnboardingBody } from "../dtos/user.dto.js";
+import { parseIdTokenBody, validateOnboardingBody, validatePatchInterestsBody } from "../dtos/user.dto.js";
 import {
   findUserByProviderOauthId,
   createUser,
@@ -12,6 +12,8 @@ import {
   findUserProfileByUserId,
   findInterestsByIds,
 } from "../repositories/user.repository.js";
+import { findOverlappingGoalPeriodByUserId } from "../repositories/goals.repository.js";
+
 
 /**
  * POST /api/users/oauth2/google
@@ -188,6 +190,22 @@ export async function saveOnboardingByUserId(userId, body) {
     throw err;
   }
 
+  // 온보딩 시 생성하려는 목표가 기존 목표와 겹치는지 체크
+  const start = new Date(goalPeriod.dateRange.startDate);
+  const end = new Date(goalPeriod.dateRange.endDate);
+  
+  const overlap = await findOverlappingGoalPeriodByUserId(userId, start, end);
+  if (overlap) {
+    const err = new Error("Overlapping goal exists during onboarding");
+    err.statusCode = 409;
+    err.payload = {
+      resultType: "FAIL",
+      error: { errorCode: "O003", reason: "이미 해당 기간에 목표가 존재합니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
   // 1) goalPeriod 생성
   const createdGoalPeriod = await createGoalPeriod({
     userId,
@@ -267,4 +285,41 @@ function authFailGoogle() {
     success: null,
   };
   return err;
+}
+
+/**
+ * PATCH /api/users/me/interests
+ * - Request: { interestIds: number[] }
+ * - Response: { interests: [{id, name}, ...] }
+ */
+export async function patchMyInterestsByUserId(userId, body) {
+  const { interestIds } = validatePatchInterestsBody(body);
+
+  const user = await findUserById(userId);
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    err.payload = {
+      resultType: "FAIL",
+      error: { errorCode: "U404", reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+      success: null,
+    };
+    throw err;
+  }
+
+  // 1) (선택) interest master에 존재하는 id만 남기기
+  const existing = await findInterestsByIds(interestIds);
+  const validIds = existing.map((x) => x.id);
+
+  // 2) userProfile.interests upsert
+  await upsertUserProfileInterests(userId, validIds);
+
+  // 3) 최신 관심사 목록 반환
+  return {
+    resultType: "SUCCESS",
+    error: null,
+    success: {
+      interests: existing, // id/name 형태로 반환
+    },
+  };
 }

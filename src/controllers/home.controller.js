@@ -11,7 +11,9 @@ export function registerHomeRoutes(app) {
 
       const data = await homeService.getHomeData(userId);
 
+      // 💡 DTO의 첫 번째 인자로 data.userName을 추가합니다.
       const response = homeResponseDTO(
+        data.userName,        // 추가된 부분
         data.goalStatus,
         data.goal ?? null,
         data.progress ?? null,

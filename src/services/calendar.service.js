@@ -2,10 +2,9 @@ import { google } from "googleapis";
 import { getGoogleTokens } from "../auth.config.js";
 import * as calendarRepository from "../repositories/calendar.repository.js";
 
-// 1. 구글 연동
+// 1. 구글 연동 (기존과 동일)
 export const connectGoogleCalendar = async (userId, code) => {
   const { refreshToken } = await getGoogleTokens(code);
-
   if (refreshToken) {
     await calendarRepository.updateUserRefreshToken(userId, refreshToken);
     return true;
@@ -13,20 +12,20 @@ export const connectGoogleCalendar = async (userId, code) => {
   return false;
 };
 
-// 2. 연동 상태 조회
+// 2. 연동 상태 조회 (기존과 동일)
 export const getCalendarStatus = async (userId) => {
   const user = await calendarRepository.findUserById(userId);
   return { isConnected: !!user?.refreshToken };
 };
 
-// 3. 선택된 구글 일정 DB 저장
+// 3. 구글 일정 DB 저장 (기존과 동일)
 export const syncGoogleEvents = async (userId, events) => {
   if (!events || events.length === 0) return 0;
   await Promise.all(events.map((event) => calendarRepository.upsertUserActivity(userId, event)));
   return events.length;
 };
 
-// 4. 구글 일정 목록 조회(미리보기)
+// 4. 구글 일정 목록 조회 (기존과 동일)
 export const getGoogleEventsList = async (userId) => {
   const user = await calendarRepository.findUserById(userId);
   if (!user?.refreshToken) throw new Error("NOT_CONNECTED");
@@ -56,30 +55,27 @@ export const getGoogleEventsList = async (userId) => {
   return response.data.items || [];
 };
 
-// 5. 월간 조회(DB)
+// 5. 월간 조회 (기존과 동일)
 export const getMonthlyEvents = async (userId, year, month) => {
   const y = Number(year);
   const m = Number(month);
-
   const startDate = new Date(y, m - 1, 1, 0, 0, 0, 0);
   const endDate = new Date(y, m, 0, 23, 59, 59, 999);
-
   return await calendarRepository.findMonthlyActivities(userId, startDate, endDate);
 };
 
-// 6. 일간 조회(DB)
+// 6. 일간 조회 (기존과 동일)
 export const getDailyEvents = async (userId, dateStr) => {
   const [y, m, d] = dateStr.split("-").map(Number);
-
   const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
   const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
-
   return await calendarRepository.findDailyActivities(userId, startOfDay, endOfDay);
 };
 
-// 7. 직접 일정 생성
-export const createManualEvent = async (userId, { title, startAt, endAt, type }) => {
+// 7. 직접 일정 생성 (eventColor, recurrenceRule 복구)
+export const createManualEvent = async (userId, { title, startAt, endAt, type, eventColor, recurrenceRule, category }) => {
   const eventType = type === "FIXED" ? "FIXED" : "MANUAL";
+  const eventCategory = category === "REST" ? "REST" : "GROWTH";
 
   const s = new Date(startAt);
   const e = new Date(endAt);
@@ -91,19 +87,30 @@ export const createManualEvent = async (userId, { title, startAt, endAt, type })
     throw new Error("endAt은 startAt보다 빠를 수 없습니다.");
   }
 
+  // 리포지토리에 새 필드들을 함께 전달
   return await calendarRepository.createUserActivity(userId, {
     title,
     startAt: s,
     endAt: e,
     type: eventType,
+    category: eventCategory,
+    eventColor: eventColor || 1,      // 💡 기본값 1 설정
+    recurrenceRule: recurrenceRule || null, // 💡 반복 규칙 전달
   });
 };
 
-// 8. 직접 일정 수정
-export const updateManualEvent = async (userId, eventId, { title, startAt, endAt, type }) => {
+// 8. 직접 일정 수정 (eventColor, recurrenceRule 필드 허용)
+export const updateManualEvent = async (userId, eventId, payload) => {
+  const { title, startAt, endAt, type, eventColor, recurrenceRule, category, status } = payload;
   const data = {};
 
   if (title !== undefined) data.title = title;
+  if (category !== undefined) data.category = category;
+  if (status !== undefined) data.status = status;
+
+  // 색상 및 반복 규칙 업데이트 허용
+  if (eventColor !== undefined) data.eventColor = eventColor;
+  if (recurrenceRule !== undefined) data.recurrenceRule = recurrenceRule;
 
   if (startAt !== undefined) {
     const s = new Date(startAt);
@@ -128,6 +135,7 @@ export const updateManualEvent = async (userId, eventId, { title, startAt, endAt
     data.type = type;
   }
 
+  // 수정된 데이터를 리포지토리로 전달
   const updated = await calendarRepository.updateUserActivity(userId, eventId, data);
   if (!updated) throw new Error("수정할 일정이 없거나 권한이 없습니다.");
 
