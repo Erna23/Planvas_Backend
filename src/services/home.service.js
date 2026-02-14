@@ -71,7 +71,7 @@ export const getHomeData = async (userId) => {
     const dateString = toLocalDateString(currentLoopDate);
     const dailySchedules = weeklyRaw.filter((a) => overlapsDate(a, dateString));
 
-    // 지은님 요청: 고정 일정(FIXED) 여부
+    // 고정 일정(FIXED) 여부
     const hasFixedItem = dailySchedules.some(a => a.type === "FIXED");
 
     weeklyStats.push({
@@ -118,4 +118,20 @@ export const getHomeData = async (userId) => {
     todayTodos,
     recommendations,
   };
+};
+
+export const patchScheduleStatus = async (userId, activityId) => {
+  // 1. 해당 일정이 존재하고, 로그인한 사용자의 것인지 확인
+  // Repository에 해당 함수가 없다면 잠시 후 함께 만들 거예요!
+  const activity = await homeRepository.findActivityById(userId, activityId);
+
+  if (!activity) {
+    throw new Error("NOT_FOUND");
+  }
+
+  // 2. 현재 상태에 따라 반대로 업데이트 (TODO <-> DONE)
+  const newStatus = activity.status === "DONE" ? "TODO" : "DONE";
+
+  // 3. DB 업데이트 수행 후 결과 반환
+  return await homeRepository.updateActivityStatus(activityId, newStatus);
 };
