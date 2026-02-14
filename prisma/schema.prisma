@@ -58,21 +58,21 @@ model ActivityCatalog {
 }
 
 model UserActivity {
-  id            Int         @id @default(autoincrement())
-  userId        Int         @map("user_id")
-  googleEventId String?     @unique @map("google_event_id") @db.VarChar(255)
-  title         String      @db.VarChar(200)
-  startAt       DateTime    @map("start_at")
-  endAt         DateTime    @map("end_at")
-  category      ActivityTab @default(GROWTH)
-  type          String      @default("FIXED") @db.VarChar(20)
-  status        String      @default("TODO") @db.VarChar(20)
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  googleEventId String?  @unique @map("google_event_id") @db.VarChar(255)
+  title         String   @db.VarChar(200)
+  startAt       DateTime @map("start_at")
+  endAt         DateTime @map("end_at")
+  category      ActivityTab  @default(GROWTH)
+  type          String   @default("FIXED") @db.VarChar(20)
+  status        String   @default("TODO") @db.VarChar(20)
   eventColor     Int         @default(1) @map("event_color")
   recurrenceRule String?     @map("recurrence_rule")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_user_activity_user")
-
+  completed     Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
   @@map("user_activity")
 }
@@ -214,9 +214,11 @@ model MyActivity {
   userId     Int
   goalId     Int
   activityId Int
+  point      Int        
+  completed  Boolean         @default(false)
+  scheduleType scheduleType  @default(TODO)
   startDate  DateTime
   endDate    DateTime
-  point      Int
   createdAt  DateTime        @default(now())
   Activity ActivityCatalog @relation(fields: [activityId], references: [id], map: "fk_my_activity_activity")
 
@@ -233,4 +235,9 @@ enum ActivityTab {
 enum ActivityType {
   NORMAL
   CONTEST
+}
+
+enum scheduleType {
+  FIXED
+  TODO
 }
