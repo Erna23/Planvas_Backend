@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
@@ -51,6 +52,8 @@ model ActivityCatalog {
   updatedAt      DateTime     @updatedAt
   CartItem       CartItem[]
   MyActivity     MyActivity[]
+  activityInterests ActivityInterest[]
+
 
   @@index([tab])
   @@index([categoryId])
@@ -160,6 +163,8 @@ model PushToken {
 model Interest {
   id   Int    @id @default(autoincrement())
   name String @unique @db.VarChar(50)
+  activityInterests ActivityInterest[]
+
 
   @@map("interest")
 }
@@ -234,3 +239,15 @@ enum ActivityType {
   NORMAL
   CONTEST
 }
+model ActivityInterest {
+  activityId Int
+  interestId Int
+
+  activity ActivityCatalog @relation(fields: [activityId], references: [id])
+  interest Interest        @relation(fields: [interestId], references: [id])
+
+  @@id([activityId, interestId])
+  @@index([interestId])
+  @@index([activityId])
+}
+
