@@ -47,8 +47,9 @@ export async function createFixedActivitiesMany(userId, schedules) {
                     title: schedule.title,
                     startAt: schedule.startAt,
                     endAt: schedule.endAt,
-                    type: 'FIXED',
-                    status: 'TODO'
+                    category: schedule.category,
+                    type: "FIXED",
+                    status: "TODO",
                 }
             })
         )

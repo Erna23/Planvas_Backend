@@ -65,6 +65,7 @@ model UserActivity {
   category      ActivityTab  @default(GROWTH)
   type          String   @default("FIXED") @db.VarChar(20)
   status        String   @default("TODO") @db.VarChar(20)
+  completed     Boolean  @default(false)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -209,9 +210,11 @@ model MyActivity {
   userId     Int
   goalId     Int
   activityId Int
+  point      Int        
+  completed  Boolean         @default(false)
+  scheduleType scheduleType  @default(TODO)
   startDate  DateTime
   endDate    DateTime
-  point      Int
   createdAt  DateTime        @default(now())
   Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
 
@@ -228,4 +231,9 @@ enum ActivityTab {
 enum ActivityType {
   NORMAL
   CONTEST
+}
+
+enum scheduleType {
+  FIXED
+  TODO
 }
