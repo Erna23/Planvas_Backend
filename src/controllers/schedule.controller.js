@@ -15,9 +15,9 @@ import {
 
 export function registerScheduleRoutes(app) {
     // 고정 일정 CRUD
-    app.post("/api/fixed-schedules", requireAuth, async (req, res) => {
+    app.post("/api/fixed-schedules", async (req, res) => {
         try {
-            const userId = Number(req.auth.userId);
+            const userId = Number(req.query.userId);
             const result = await addFixedSchedule(userId, req.body);
             return res.status(200).json(result);
         } catch (e) {

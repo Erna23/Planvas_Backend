@@ -202,7 +202,6 @@ CREATE TABLE `MyActivity` (
     `activityId` INTEGER NOT NULL,
     `point` INTEGER NOT NULL,
     `completed` BOOLEAN NOT NULL DEFAULT false,
-    `scheduleType` ENUM('FIXED', 'TODO') NOT NULL DEFAULT 'TODO',
     `startDate` DATETIME(3) NOT NULL,
     `endDate` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
