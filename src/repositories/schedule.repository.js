@@ -41,15 +41,14 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
 export async function createFixedActivitiesMany(userId, schedules) {
     const createdActivities = await Promise.all(
         schedules.map(schedule => 
-            prisma.userActivity.create({
+            prisma.MyActivity.create({
                 data: {
                     userId,
                     title: schedule.title,
                     startAt: schedule.startAt,
                     endAt: schedule.endAt,
                     category: schedule.category,
-                    type: "FIXED",
-                    status: "TODO",
+                    scheduleType: "FIXED"
                 }
             })
         )
