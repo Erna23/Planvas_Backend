@@ -65,11 +65,11 @@ model UserActivity {
   category      ActivityTab  @default(GROWTH)
   type          String   @default("FIXED") @db.VarChar(20)
   status        String   @default("TODO") @db.VarChar(20)
-  completed     Boolean  @default(false)
+  eventColor     Int         @default(1) @map("event_color")
+  recurrenceRule String?     @map("recurrence_rule")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId])
   @@map("user_activity")
 }
