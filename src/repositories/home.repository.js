@@ -40,7 +40,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       id: true,
       title: true,
       type: true,
-      category: true, // 💡 디자인 구분을 위해 추가
+      category: true, 
       startAt: true,
       endAt: true,
       status: true,
@@ -62,7 +62,7 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
       id: true,
       title: true,
       type: true,
-      category: true, // 💡 추가
+      category: true, 
       status: true,
       startAt: true,
       endAt: true,
@@ -99,6 +99,25 @@ export const findRecommendations = async () => {
     },
     orderBy: {
       createdAt: "desc",
+    },
+  });
+};
+export const findActivityById = async (userId, activityId) => {
+  return await prisma.userActivity.findFirst({
+    where: {
+      id: Number(activityId),
+      userId: userId,
+    },
+  });
+};
+
+export const updateActivityStatus = async (activityId, status) => {
+  return await prisma.userActivity.update({
+    where: {
+      id: Number(activityId),
+    },
+    data: {
+      status: status,
     },
   });
 };
