@@ -5,7 +5,7 @@ import {
   validateUpdateGoalRatioBody,
 } from "../dtos/goals.dto.js";
 
-import { findUserById } from "../repositories/user.repository.js";
+import { findUserById, updateOnboardingStatus } from "../repositories/user.repository.js";
 import {
   findCurrentGoalPeriodByUserId,
   findOngoingGoalPeriodByUserId,
@@ -15,6 +15,7 @@ import {
   updateGoalPeriodRatio,
   findActivitiesForGoalProgress,
   deleteGoalPeriod,
+  findOverlappingGoalPeriodByUserId,
 } from "../repositories/goals.repository.js";
 
 const formatDateOnly = (d) => d.toISOString().slice(0, 10);
@@ -74,18 +75,27 @@ export async function createGoalPeriodByUserId(userId, body) {
   // 2) 바디 검증
   const dto = validateCreateGoalBody(body);
 
-  // 3) 정책: 이미 진행 중 목표 있으면 생성 제한
-  const ongoing = await findOngoingGoalPeriodByUserId(userId, new Date());
-  if (ongoing) {
-    const err = new Error("Ongoing goal exists");
+  // 3) 정책: 기간이 겹치는 목표가 있으면 생성 제한
+  const overlap = await findOverlappingGoalPeriodByUserId(userId, dto.start, dto.end);
+
+  if (overlap) {
+    const err = new Error("Overlapping goal exists");
     err.statusCode = 409;
     err.payload = {
       resultType: "FAIL",
-      error: { reason: "이미 진행 중인 목표가 존재합니다.", data: null },
+      error: {
+        reason: "이미 해당 기간과 겹치는 목표가 존재합니다.",
+        data: {
+          overlappingGoalId: overlap.id,
+          overlappingStartDate: overlap.startDate.toISOString().slice(0, 10),
+          overlappingEndDate: overlap.endDate.toISOString().slice(0, 10),
+        },
+      },
       success: null,
     };
     throw err;
   }
+
 
   // 4) presetType 결정
   // - schema에서 presetType @default("CUSTOM") 해뒀다면 아래는 그냥 CUSTOM로 고정해도 됨
@@ -163,6 +173,28 @@ export async function updateGoalPeriodByUserId(userId, goalIdParam, body) {
     };
     throw err;
   }
+
+  // 3-1) 정책: 수정 후 기간이 다른 목표와 겹치면 제한 (자기 자신은 제외)
+const overlap = await findOverlappingGoalPeriodByUserId(userId, nextStart, nextEnd, existing.id);
+
+if (overlap) {
+  const err = new Error("Overlapping goal exists");
+  err.statusCode = 409;
+  err.payload = {
+    resultType: "FAIL",
+    error: {
+      reason: "이미 해당 기간과 겹치는 목표가 존재합니다.",
+      data: {
+        overlappingGoalId: overlap.id,
+        overlappingStartDate: overlap.startDate.toISOString().slice(0, 10),
+        overlappingEndDate: overlap.endDate.toISOString().slice(0, 10),
+      },
+    },
+    success: null,
+  };
+  throw err;
+}
+
 
   // 4) 업데이트 payload 구성
   const updateData = {};
@@ -488,6 +520,9 @@ export async function deleteGoalByUserId(userId, goalIdParam) {
   // 3) 삭제 수행
   await deleteGoalPeriod(goalId);
 
+  // 4) 온보딩 상태 초기화 (다시 온보딩을 할 수 있도록!)
+  await updateOnboardingStatus(userId, false);
+
   return {
     resultType: "SUCCESS",
     error: null,
@@ -497,3 +532,5 @@ export async function deleteGoalByUserId(userId, goalIdParam) {
     }
   };
 }
+
+

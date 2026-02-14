@@ -291,6 +291,62 @@ paths:
         "500":
           $ref: "#/components/responses/FailResponse"
 
+    patch:
+      summary: 내 관심사 수정
+      tags: [User]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interestIds]
+              properties:
+                interestIds:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 3, 8]
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      interests:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            name:
+                              type: string
+                              example: "운동"
+        "400":
+          $ref: "#/components/responses/FailResponse"
+        "401":
+          $ref: "#/components/responses/FailResponse"
+        "404":
+          $ref: "#/components/responses/FailResponse"
+        "500":
+          $ref: "#/components/responses/FailResponse"
+
+
   /api/users:
     post:
       summary: 회원가입 (Google)

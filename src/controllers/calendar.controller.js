@@ -116,22 +116,27 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 7) Manual Create
+    // 7) Manual Create (eventColor, recurrenceRule 전달 활성화)
     app.post("/api/calendar/event", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
             if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
-            const { title, startAt, endAt, type } = req.body ?? {};
+            const { title, startAt, endAt, type, eventColor, recurrenceRule, category } = req.body ?? {};
+
             if (!title || !startAt || !endAt) {
                 return fail(res, "C400", "title, startAt, endAt는 필수입니다.", 400);
             }
 
+            // 이제 서비스로 모든 필드를 넘겨줍니다.
             const created = await calendarService.createManualEvent(userId, {
                 title,
                 startAt,
                 endAt,
                 type,
+                eventColor,
+                recurrenceRule,
+                category,
             });
 
             return ok(res, created, 201);
@@ -141,7 +146,7 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 8) Manual Update
+    // 8) Manual Update (필드 차단 로직 제거)
     app.patch("/api/calendar/event/:id", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);
@@ -150,7 +155,10 @@ export function registerCalendarRoutes(app) {
             const eventId = Number(req.params.id);
             if (!Number.isFinite(eventId)) return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
 
-            const updated = await calendarService.updateManualEvent(userId, eventId, req.body ?? {});
+            // 이전의 Destructuring 제거: 이제 모든 필드를 payload로 전달합니다.
+            const payload = req.body ?? {};
+
+            const updated = await calendarService.updateManualEvent(userId, eventId, payload);
             if (!updated) return fail(res, "C404", "수정할 일정이 없습니다.", 404);
 
             return ok(res, updated, 200);
@@ -160,7 +168,7 @@ export function registerCalendarRoutes(app) {
         }
     });
 
-    // 9) Manual Delete
+    // 9) Manual Delete (기존과 동일)
     app.delete("/api/calendar/event/:id", requireAuth, async (req, res) => {
         try {
             const userId = getAuthUserId(req);

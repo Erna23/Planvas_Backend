@@ -1,0 +1,223 @@
+paths:
+  /api/push-tokens:
+    post:
+      summary: 푸시 토큰 등록 (APNs)
+      description: iOS(APNs) 푸시 토큰을 등록/갱신합니다. (token 기준 upsert)
+      tags:
+        - Push Token
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, token, environment]
+              properties:
+                platform:
+                  type: string
+                  enum: [IOS]
+                  example: "IOS"
+                token:
+                  type: string
+                  example: "abcdefg123456..."
+                environment:
+                  type: string
+                  enum: [SANDBOX, PRODUCTION]
+                  example: "PRODUCTION"
+            examples:
+              production:
+                value:
+                  platform: "IOS"
+                  token: "abcdefg123456..."
+                  environment: "PRODUCTION"
+              sandbox:
+                value:
+                  platform: "IOS"
+                  token: "abcdefg123456..."
+                  environment: "SANDBOX"
+      responses:
+        "200":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      registered:
+                        type: boolean
+                        example: true
+        "400":
+          description: 요청 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      reason:
+                        type: string
+                        example: "요청 값이 올바르지 않습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+              examples:
+                invalidRequest:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      reason: "요청 값이 올바르지 않습니다."
+                      data: null
+                    success: null
+                invalidPlatform:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      reason: "platform 값이 올바르지 않습니다."
+                      data: null
+                    success: null
+                invalidEnvironment:
+                  value:
+                    resultType: "FAIL"
+                    error:
+                      reason: "environment 값이 올바르지 않습니다."
+                      data: null
+                    success: null
+        "401":
+          description: 인증 실패
+        "500":
+          description: 푸시 토큰 등록에 실패했습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      reason:
+                        type: string
+                        example: "푸시 토큰 등록에 실패했습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+
+    delete:
+      summary: 푸시 토큰 삭제 (APNs)
+      description: iOS(APNs) 푸시 토큰을 삭제합니다. (본인 토큰만 삭제 가능)
+      tags:
+        - Push Token
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, token]
+              properties:
+                platform:
+                  type: string
+                  enum: [IOS]
+                  example: "IOS"
+                token:
+                  type: string
+                  example: "abcdefg123456..."
+            examples:
+              sample:
+                value:
+                  platform: "IOS"
+                  token: "abcdefg123456..."
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+                        example: true
+        "400":
+          description: 요청 값이 올바르지 않습니다.
+        "401":
+          description: 인증 실패
+        "404":
+          description: 삭제할 토큰을 찾을 수 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      reason:
+                        type: string
+                        example: "삭제할 토큰을 찾을 수 없습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
+        "500":
+          description: 삭제할 토큰을 찾을 수 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  error:
+                    type: object
+                    properties:
+                      reason:
+                        type: string
+                        example: "삭제할 토큰을 찾을 수 없습니다."
+                      data:
+                        nullable: true
+                        example: null
+                  success:
+                    nullable: true
+                    example: null
