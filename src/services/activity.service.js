@@ -1,4 +1,29 @@
-import { findActivities, findRecommendations, findById } from "../repositories/activity.repository.js";
+import {
+  findActivities,
+  findRecommendations,
+  findById,
+  countActivitiesByCategory,
+  countActivitiesTotal,
+} from "../repositories/activity.repository.js";
+import { findUserInterestIds } from "../repositories/userProfile.repository.js";
+
+const GROWTH_CATEGORY_LIST = [
+  { id: 103, name: "공모전" },
+  { id: 105, name: "학회/동아리" },
+  { id: 101, name: "대외활동" },
+  { id: 106, name: "어학/자격증" },
+  { id: 104, name: "인턴십" },
+  { id: 102, name: "교육/강연" },
+];
+
+
+const REST_CATEGORY_LIST = [
+  { id: 201, name: "문화/예술" },
+  { id: 202, name: "취미/여가" },
+  { id: 203, name: "운동/건강" },
+  { id: 204, name: "여행" },
+];
+
 
 function todayISO() {
   const d = new Date();
@@ -52,8 +77,17 @@ function attachScheduleFields(activity, baseDate = todayISO()) {
   };
 }
 
-export async function listActivities({ tab, categoryId, q, page, size, onlyAvailable }) {
-  const { total, rows } = await findActivities({ tab, categoryId, q, page, size });
+export async function listActivities({ userId, tab, categoryId, q, page, size, onlyAvailable }) {
+  const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
+
+  const { total, rows } = await findActivities({
+    tab,
+    categoryId,
+    q,
+    page,
+    size,
+    interestIds, // ✅ 이거 추가
+  });
 
   let mapped = rows.map((a) => attachScheduleFields(a));
   if (onlyAvailable) mapped = mapped.filter((x) => x.scheduleStatus === "AVAILABLE");
@@ -66,13 +100,14 @@ export async function listActivities({ tab, categoryId, q, page, size, onlyAvail
   };
 }
 
-export async function recommendations({ tab, date }) {
-  const rows = await findRecommendations({ tab });
-  const baseDate = date || todayISO();
 
-  return {
-    activities: rows.map((a) => attachScheduleFields(a, baseDate)),
-  };
+export async function recommendations({ userId, tab, date }) {
+  const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
+
+  const rows = await findRecommendations({ tab, interestIds }); // ✅ interestIds 전달
+
+  const baseDate = date || todayISO();
+  return { activities: rows.map((a) => attachScheduleFields(a, baseDate)) };
 }
 
 export async function getDetail(activityId) {
@@ -104,3 +139,26 @@ export async function getDetail(activityId) {
     defaultPoint: mapped.point,
   };
 }
+
+export async function listActivityCategories({ userId, tab }) {
+  const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
+
+  const total = await countActivitiesTotal(tab, interestIds);       // ✅ interestIds 전달
+  const rows = await countActivitiesByCategory(tab, interestIds);   // ✅ interestIds 전달
+
+  const countMap = new Map(rows.map((r) => [r.categoryId, r._count._all]));
+  const base = tab === "GROWTH" ? GROWTH_CATEGORY_LIST : REST_CATEGORY_LIST;
+
+  return {
+    tab,
+    categories: [
+      { id: 0, name: "전체", count: total },
+      ...base.map((c) => ({
+        id: c.id,
+        name: c.name,
+        count: countMap.get(c.id) ?? 0,
+      })),
+    ],
+  };
+}
+
