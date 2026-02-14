@@ -17,9 +17,11 @@ export function registerScheduleRoutes(app) {
     // 고정 일정 CRUD
     app.post("/api/fixed-schedules", requireAuth, async (req, res) => {
         try {
-            const result = await addFixedSchedule(req.auth.userId, req.body);
+            const userId = Number(req.auth.userId);
+            const result = await addFixedSchedule(userId, req.body);
             return res.status(200).json(result);
         } catch (e) {
+            console.error("[POST /api/fixed-schedules]", e);
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultSchedulesFail());
         }
     });

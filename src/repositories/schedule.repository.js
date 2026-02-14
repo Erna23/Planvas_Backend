@@ -5,46 +5,50 @@ function toDate(d) {
 }
   
 export async function getGrowthAndRest(userId, startDate, endDate) {
-    const s = toDate(startDate);
-    const e = toDate(endDate);
-  
-    const rows = await prisma.myActivity.findMany({
-        where: {
-            userId,
-            startDate: { lt: e },
-            endDate: { gt: s },
-        },
-        select: {
-            Activity: { select: { type: true, point: true } },
-        },
-    });
-  
-    return rows.reduce(
-        (acc, r) => {
-            const a = r.Activity;
-            if (!a) return acc; // (필수 relation이라 사실상 항상 있음)
+    try {
+        const s = toDate(startDate);
+        const e = toDate(endDate);
 
-            if (a.type === "GROWTH") acc.growth += a.point ?? 0;
-            else if (a.type === "REST") acc.rest += a.point ?? 0;
+        const rows = await prisma.MyActivity.findMany({
+            where: {
+                userId,
+                startDate: { lt: e },
+                endDate: { gt: s },
+            },
+            select: {
+                Activity: { select: { tab: true, point: true } },
+            },
+        });
 
-            return acc;
-        },
-        { growth: 0, rest: 0 }
-    );
+        return rows.reduce(
+            (acc, r) => {
+                const a = r.Activity;
+                if (!a) return acc;
+
+                if (a.tab === "GROWTH") acc.growth += a.point ?? 0;
+                else if (a.tab === "REST") acc.rest += a.point ?? 0;
+
+                return acc;
+            },
+            { growth: 0, rest: 0 }
+        );
+    } catch {
+        return { growth: 0, rest: 0 };
+    }
 }
   
 
 export async function createFixedActivitiesMany(userId, schedules) {
     const createdActivities = await Promise.all(
         schedules.map(schedule => 
-            prisma.userActivity.create({
+            prisma.MyActivity.create({
                 data: {
                     userId,
                     title: schedule.title,
                     startAt: schedule.startAt,
                     endAt: schedule.endAt,
-                    type: 'FIXED',
-                    status: 'TODO'
+                    category: schedule.category,
+                    scheduleType: "FIXED"
                 }
             })
         )
