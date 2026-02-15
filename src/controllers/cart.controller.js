@@ -1,10 +1,10 @@
 import { ok, fail } from "../utils/apiResponse.js";
-import { authStub } from "../middlewares/authStub.js";
+import { requireAuth } from "../auth.config.js";
 import { getCart, addCart, removeCart } from "../services/cart.service.js";
 
 export function registerCartRoutes(app) {
   // 장바구니 목록
-  app.get("/api/cart/activities", authStub, async (req, res) => {
+  app.get("/api/cart/activities", requireAuth, async (req, res) => {
     try {
       const tab = req.query.tab;
       if (!(tab === "GROWTH" || tab === "REST")) {
@@ -19,7 +19,7 @@ export function registerCartRoutes(app) {
   });
 
   // 장바구니 담기
-  app.post("/api/cart/activities", authStub, async (req, res) => {
+  app.post("/api/cart/activities", requireAuth, async (req, res) => {
     try {
       const activityId = Number(req.body?.activityId);
       if (!Number.isFinite(activityId)) {
@@ -44,7 +44,7 @@ export function registerCartRoutes(app) {
   });
 
   // 장바구니 삭제
-  app.delete("/api/cart/activities/:cartItemId", authStub, async (req, res) => {
+  app.delete("/api/cart/activities/:cartItemId", requireAuth, async (req, res) => {
     try {
       const cartItemId = Number(req.params.cartItemId);
       const deleted = await removeCart(req.userId, cartItemId);
