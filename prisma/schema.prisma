@@ -62,6 +62,7 @@ model UserActivity {
   userId        Int         @map("user_id")
   googleEventId String?     @unique @map("google_event_id") @db.VarChar(255)
   title         String      @db.VarChar(200)
+  point          Int          @default(0)
   startAt       DateTime    @map("start_at")
   endAt         DateTime    @map("end_at")
   category      ActivityTab @default(GROWTH)

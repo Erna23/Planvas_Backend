@@ -38,19 +38,21 @@ export const homeResponseDTO = (
     restAchieved: progress?.restAchieved ?? 0,
   };
 
-  // 2. 주간 캘린더 요약 (지은님 상세 렌더링 지원)
+  // 2. 주간 캘린더 요약 (상세 렌더링 필드 보강)
   const days = weekly.map((stat) => {
     const schedules = Array.isArray(stat?.schedules) ? stat.schedules : [];
 
     return {
       date: stat?.date,
-      hasItems: stat?.hasItems ?? false, // FIXED 일정 존재 여부
+      hasItems: stat?.hasItems ?? false,
       todoCount: stat?.todoCount ?? schedules.length,
       schedules: schedules.map((s) => ({
         id: s.id,
         title: s.title,
-        type: s.type,         // ✅ "FIXED"인지 확인하여 디자인 구분
-        category: s.category, // ✅ "GROWTH", "REST"로 색상 구분
+        type: s.type,         // "FIXED" / "NORMAL"
+        category: s.category, // "GROWTH" / "REST"
+        point: s.point,
+        color: s.color,
         startTime: s.startTime,
         endTime: s.endTime,
         completed: s.status === "DONE"
@@ -59,14 +61,15 @@ export const homeResponseDTO = (
   });
 
   // 3. 오늘의 할 일 가공
-  const formatTime = (date) => date ? new Date(date).toTimeString().slice(0, 5) : "00:00";
-
   const formattedTodos = todos.map((todo) => ({
-    todoId: todo.id || todo.googleEventId,
+    todoId: todo.todoId || todo.id,
     title: todo.title,
     type: todo.type,
     category: todo.category || "GROWTH",
-    scheduleTime: `${formatTime(todo.startAt)} - ${formatTime(todo.endAt)}`,
+    point: todo.point,
+    color: todo.color,
+    startTime: todo.startTime,
+    endTime: todo.endTime,
     completed: todo.status === "DONE",
   }));
 

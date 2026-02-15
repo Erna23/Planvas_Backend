@@ -55,7 +55,6 @@ export const getHomeData = async (userId) => {
 
   // 3. 주간 일정 요약 (일요일 시작 고정)
   const startOfWeek = new Date(today);
-  // getDay()는 일(0) ~ 토(6)를 반환하므로 일요일 시작에 완벽합니다.
   startOfWeek.setDate(today.getDate() - today.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
 
@@ -71,7 +70,6 @@ export const getHomeData = async (userId) => {
     const dateString = toLocalDateString(currentLoopDate);
     const dailySchedules = weeklyRaw.filter((a) => overlapsDate(a, dateString));
 
-    // 지은님 요청: 고정 일정(FIXED) 여부
     const hasFixedItem = dailySchedules.some(a => a.type === "FIXED");
 
     weeklyStats.push({
@@ -81,10 +79,11 @@ export const getHomeData = async (userId) => {
       schedules: dailySchedules.map(s => ({
         id: s.id,
         title: s.title,
-        type: s.type,
+        type: s.type,                  // FIXED / NORMAL
         category: s.category || "GROWTH",
         status: s.status,
-        // 시연 시 시간을 보기 좋게 출력하기 위한 포맷팅
+        point: s.point || 0,
+        color: s.eventColor || 1,
         startTime: s.startAt ? new Date(s.startAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : null,
         endTime: s.endAt ? new Date(s.endAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : null
       })),
@@ -92,11 +91,24 @@ export const getHomeData = async (userId) => {
     currentLoopDate.setDate(currentLoopDate.getDate() + 1);
   }
 
+  // 4. 오늘의 할 일 (Today Todos) 포맷팅 강화
   const startOfDay = new Date(today);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
-  const todayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
+
+  const rawTodayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
+  const todayTodos = rawTodayTodos.map(t => ({
+    todoId: t.id,
+    title: t.title,
+    category: t.category || "GROWTH",
+    type: t.type,
+    status: t.status,
+    point: t.point || 0,
+    color: t.eventColor || 1,
+    startTime: t.startAt ? new Date(t.startAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : null,
+    endTime: t.endAt ? new Date(t.endAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }) : null
+  }));
 
   const rawRecs = safeArray(await homeRepository.findRecommendations());
   const recommendations = rawRecs.map((item) => ({
@@ -118,4 +130,24 @@ export const getHomeData = async (userId) => {
     todayTodos,
     recommendations,
   };
+};
+
+export const patchScheduleStatus = async (userId, activityId) => {
+  // 1. 해당 일정이 존재하는지, 그리고 현재 유저의 것이 맞는지 확인
+  const activity = await homeRepository.findActivityById(activityId);
+
+  if (!activity) {
+    throw new Error("NOT_FOUND");
+  }
+  
+  // 보안을 위해 해당 일정이 요청한 유저의 것인지 체크
+  if (activity.userId !== userId) {
+    throw new Error("FORBIDDEN"); 
+  }
+
+  // 2. 현재 상태에 따라 반대 상태로 토글 (TODO <-> DONE)
+  const newStatus = activity.status === "DONE" ? "TODO" : "DONE";
+
+  // 3. 레포지토리를 통해 DB 업데이트
+  return await homeRepository.updateActivityStatus(activityId, newStatus);
 };

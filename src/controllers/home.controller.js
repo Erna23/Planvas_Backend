@@ -11,7 +11,7 @@ export function registerHomeRoutes(app) {
 
       const data = await homeService.getHomeData(userId);
 
-      // 💡 DTO의 첫 번째 인자로 data.userName을 추가합니다.
+      // DTO의 첫 번째 인자로 data.userName을 추가합니다.
       const response = homeResponseDTO(
         data.userName,        // 추가된 부분
         data.goalStatus,
@@ -26,6 +26,28 @@ export function registerHomeRoutes(app) {
     } catch (e) {
       console.error(e);
       return fail(res, "H001", "홈 화면 조회 실패", 500, e?.message ?? null);
+    }
+  });
+
+  app.patch("/api/home/schedules/:activityId/status", requireAuth, async (req, res) => {
+    try {
+      const userId = getAuthUserId(req);
+      const { activityId } = req.params;
+
+      console.log(`PATCH 요청 수신 - 유저: ${userId}, 활동ID: ${activityId}`); // 👈 확인용 로그
+
+      const updatedActivity = await homeService.patchScheduleStatus(userId, activityId);
+
+      return ok(res, {
+        id: updatedActivity.id,
+        status: updatedActivity.status
+      }, 200);
+    } catch (e) {
+      console.error("PATCH 에러 발생:", e);
+      if (e.message === "NOT_FOUND") {
+        return fail(res, "H002", "해당 일정을 찾을 수 없습니다.", 404);
+      }
+      return fail(res, "H003", "일정 상태 변경 실패", 500, e?.message ?? null);
     }
   });
 }

@@ -28,7 +28,7 @@ export const findCurrentGoal = async (userId, today = new Date()) => {
   });
 };
 
-// 주간 일정 조회 (category 필드 추가)
+// 주간 일정 조회 (point, eventColor 필드 추가)
 export const findWeeklyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
@@ -40,17 +40,19 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       id: true,
       title: true,
       type: true,
-      category: true, // 💡 디자인 구분을 위해 추가
+      category: true,
       startAt: true,
       endAt: true,
       status: true,
+      point: true,
+      eventColor: true,
       googleEventId: true,
     },
     orderBy: { startAt: "asc" },
   });
 };
 
-// 오늘의 할 일 조회 (category 필드 추가)
+// 오늘의 할 일 조회 (point, eventColor 필드 추가)
 export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
@@ -62,17 +64,19 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
       id: true,
       title: true,
       type: true,
-      category: true, // 💡 추가
+      category: true,
       status: true,
       startAt: true,
       endAt: true,
+      point: true,
+      eventColor: true,
       googleEventId: true,
     },
     orderBy: { startAt: "asc" },
   });
 };
 
-// 진행률 계산 - include를 사용하여 관계 데이터를 더 명확히 가져옴
+// 진행률 계산
 export const findMyActivitiesForGoal = async (userId, goalId) => {
   return await prisma.myActivity.findMany({
     where: { userId, goalId },
@@ -100,5 +104,20 @@ export const findRecommendations = async () => {
     orderBy: {
       createdAt: "desc",
     },
+  });
+};
+
+// 특정 일정 단건 조회 (상태 변경 전 확인용)
+export const findActivityById = async (activityId) => {
+  return await prisma.userActivity.findUnique({
+    where: { id: parseInt(activityId) }, // activityId가 문자열로 올 수 있으므로 숫자로 변환
+  });
+};
+
+// 일정 상태 업데이트 (TODO <-> DONE)
+export const updateActivityStatus = async (activityId, status) => {
+  return await prisma.userActivity.update({
+    where: { id: parseInt(activityId) },
+    data: { status },
   });
 };
