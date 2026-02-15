@@ -3,7 +3,6 @@ import { prisma } from "../db.config.js";
 function toDate(d) {
     return d instanceof Date ? d : new Date(d);
 }
-  
 export async function getGrowthAndRest(userId, startDate, endDate) {
     try {
         const s = toDate(startDate);
@@ -36,7 +35,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
         return { growth: 0, rest: 0 };
     }
 }
-  
+
 
 export async function createFixedActivitiesMany(userId, schedules) {
     const createdActivities = await Promise.all(
@@ -61,27 +60,33 @@ export async function createFixedActivitiesMany(userId, schedules) {
 export async function findFixedActivitiesByUserId(userId) {
     const activities = await prisma.userActivity.findMany({
         where: {
-            userId,
-            activityId: null
+        userId,
+        type: { in: ["FIXED", "MANUAL"] }, // activityId: null 제거
         },
         select: {
-            id: true,
-            title: true,
-            startAt: true,
-            endAt: true
-        }
+        id: true,
+        title: true,
+        startAt: true,
+        endAt: true,
+        type: true,
+        recurrenceRule: true, 
+        },
+        orderBy: { startAt: "asc" },
     });
-    
-    const fixedSchedules = activities.map(activity => ({
+
+    const fixedSchedules = activities.map((activity) => ({
         id: activity.id,
         title: activity.title,
-        date: activity.startAt.toISOString().split('T')[0],
+        date: activity.startAt.toISOString().split("T")[0],
         startAt: activity.startAt.toTimeString().slice(0, 5),
-        endAt: activity.endAt.toTimeString().slice(0, 5)
+        endAt: activity.endAt.toTimeString().slice(0, 5),
+        type: activity.type,
+        recurrenceRule: activity.recurrenceRule ?? null,
     }));
-    
+
     return { fixedSchedules };
 }
+
 
 export async function findUserActivityById(id) {
     return await prisma.userActivity.findFirst({ where: { id } });
@@ -140,28 +145,27 @@ export async function deleteUserActivityById(id) {
 export async function addOwnUserActivity(userId, activity, data) {
     return await prisma.userActivity.create({
         data: {
-            userId,
-            activityId: activity.id,
-            title: activity.title,
-            category,
-            point,
-            startAt: new Date(`${data.startDate}T${data.startTime}:00`),
-            endAt: new Date(`${data.endDate}T${data.endTime}:00`)
+        userId,
+        title: activity.title,
+        category: activity.tab,                
+        point: data.point ?? activity.point ?? 0,
+        type: "MANUAL",                        
+        startAt: new Date(`${data.startDate}T${data.startTime}:00`),
+        endAt: new Date(`${data.endDate}T${data.endTime}:00`),
         },
-        select: {
-            id: true
-        }
-    })
+        select: { id: true },
+    });
 }
+
 
 export async function completeActivity(id) {
     return await prisma.userActivity.update({
         where: { id },
-        data: {
-            completed: true
-        }
-    })
+        data: { status: "DONE" },   // TODO -> DONE
+        select: { id: true, status: true }
+    });
 }
+
 
 export async function getDateActivity(userId, date) {
     const startOfDay = new Date(`${date}T00:00:00`);
@@ -183,7 +187,7 @@ export async function getDateActivity(userId, date) {
             id: true,
             title: true,
             category: true,
-            completed: true
+            status: true
         }
     });
 }
