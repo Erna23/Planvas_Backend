@@ -134,6 +134,7 @@ export function requireAuth(req, res, next) {
     }
 
     req.auth = decoded;
+    req.userId = decoded.userId;
     return next();
   } catch (e) {
     return res.status(401).json({
