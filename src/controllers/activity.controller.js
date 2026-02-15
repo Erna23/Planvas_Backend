@@ -84,13 +84,16 @@ export function registerActivityRoutes(app) {
   app.get("/api/activities/:activityId", requireAuth, async (req, res) => {
     try {
       const activityId = Number(req.params.activityId);
-      const data = await getDetail(activityId);
+      const userId = req.userId; 
+
+      const data = await getDetail(userId, activityId);
       if (!data) return res.status(404).json(fail("해당 활동을 찾을 수 없습니다.", null));
       return res.json(ok(data));
     } catch (e) {
       return res.status(500).json(fail("해당 활동을 찾을 수 없습니다.", null));
     }
   });
+
 
   // 내 일정(내 활동) 추가
   app.post("/api/activities/:activityId/my-activities", requireAuth, async (req, res) => {
@@ -103,7 +106,9 @@ export function registerActivityRoutes(app) {
 
       return res.json(ok(result));
     } catch (e) {
-      return res.status(500).json(fail("일정 추가에 실패했습니다.", null));
+      return res
+      .status(e?.statusCode ?? 500)
+      .json(e?.payload ?? fail("일정 추가에 실패했습니다.", null));
     }
   });
 }

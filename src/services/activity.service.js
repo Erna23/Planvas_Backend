@@ -6,6 +6,8 @@ import {
   countActivitiesTotal,
 } from "../repositories/activity.repository.js";
 import { findUserInterestIds } from "../repositories/userProfile.repository.js";
+import { prisma } from "../db.config.js";
+import { decideScheduleStatus, fetchFixedSchedulesInRange } from "./scheduleOverlap.service.js";
 
 const GROWTH_CATEGORY_LIST = [
   { id: 103, name: "공모전" },
@@ -39,7 +41,7 @@ function diffDays(fromYYYYMMDD, toYYYYMMDD) {
   return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function attachScheduleFields(activity, baseDate = todayISO()) {
+async function attachScheduleFields(activity, { userId, baseDate = todayISO(), fixedSchedules = null } = {}) {
   const startDate = activity.startDate ? activity.startDate.toISOString().slice(0, 10) : null;
   const endDate = activity.endDate ? activity.endDate.toISOString().slice(0, 10) : null;
 
@@ -47,25 +49,50 @@ function attachScheduleFields(activity, baseDate = todayISO()) {
   let scheduleStatus = "AVAILABLE";
   let tipMessage = null;
 
+  // 1) 마감/임박 계산(기존 유지)
   if (endDate) {
     dDay = diffDays(baseDate, endDate);
     if (dDay < 0) {
       scheduleStatus = "UNAVAILABLE";
       tipMessage = "마감된 일정이에요.";
-    } else if (dDay <= 3) {
-      scheduleStatus = "CAUTION";
-      tipMessage = "마감이 임박했어요! 일정 조정이 필요할 수 있어요.";
     }
+  }
+
+  // 2) 마감 아니고 + userId 있고 + 날짜 정보 있으면 => PM 겹침판정 적용
+  if (scheduleStatus !== "UNAVAILABLE" && userId && startDate && endDate) {
+    const decision = await decideScheduleStatus({
+      prisma,
+      userId,
+      activityCatalog: activity,
+      startDate,
+      endDate,
+      fixedSchedules, // ⭐ prefetch된 일정 재사용
+    });
+
+    if (decision.status === "CONFLICT") {
+      scheduleStatus = "CONFLICT";
+      tipMessage = decision.reason ?? "고정 일정과 겹쳐요.";
+    } else if (decision.status === "CAUTION") {
+      scheduleStatus = "CAUTION";
+      tipMessage = decision.reason ?? "기간 내 고정 일정이 있어요. 조정이 필요할 수 있어요.";
+    } else {
+      scheduleStatus = "AVAILABLE";
+      tipMessage = null;
+    }
+  }
+
+  // 3) 마감 임박(dDay<=3)은 AVAILABLE일 때만 CAUTION으로 올리기(우선순위)
+  if (scheduleStatus === "AVAILABLE" && dDay != null && dDay <= 3) {
+    scheduleStatus = "CAUTION";
+    tipMessage = "마감이 임박했어요! 일정 조정이 필요할 수 있어요.";
   }
 
   return {
     activityId: activity.id,
     title: activity.title,
-    category: activity.tab, // 네 명세: category에 GROWTH/REST 내려줌
+    category: activity.tab,
     point: activity.point,
     thumbnailUrl: activity.thumbnailUrl ?? "string",
-
-    // 와이어프레임 대응 확장 필드
     type: activity.type,
     categoryId: activity.categoryId ?? null,
     startDate,
@@ -77,44 +104,72 @@ function attachScheduleFields(activity, baseDate = todayISO()) {
   };
 }
 
+
 export async function listActivities({ userId, tab, categoryId, q, page, size, onlyAvailable }) {
   const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
+  const { total, rows } = await findActivities({ tab, categoryId, q, page, size, interestIds });
 
-  const { total, rows } = await findActivities({
-    tab,
-    categoryId,
-    q,
-    page,
-    size,
-    interestIds, // ✅ 이거 추가
-  });
+  // ✅ 이번 페이지 활동들의 전체 기간 범위 계산
+  const starts = rows.map(r => r.startDate).filter(Boolean);
+  const ends = rows.map(r => r.endDate).filter(Boolean);
 
-  let mapped = rows.map((a) => attachScheduleFields(a));
+  let fixedSchedules = null;
+  if (userId && starts.length && ends.length) {
+    const minStart = new Date(Math.min(...starts.map(d => d.getTime())));
+    const maxEnd = new Date(Math.max(...ends.map(d => d.getTime())));
+    fixedSchedules = await fetchFixedSchedulesInRange({
+      prisma,
+      userId,
+      rangeStart: startOfDayLocal(minStart),
+      rangeEnd: endOfDayLocal(maxEnd),
+    });
+  }
+
+  let mapped = await Promise.all(
+    rows.map((a) => attachScheduleFields(a, { userId, fixedSchedules }))
+  );
+
   if (onlyAvailable) mapped = mapped.filter((x) => x.scheduleStatus === "AVAILABLE");
 
-  return {
-    page,
-    size,
-    totalElements: total,
-    activities: mapped,
-  };
+  return { page, size, totalElements: total, activities: mapped };
 }
+
 
 
 export async function recommendations({ userId, tab, date }) {
   const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
-
-  const rows = await findRecommendations({ tab, interestIds }); // ✅ interestIds 전달
+  const rows = await findRecommendations({ tab, interestIds });
 
   const baseDate = date || todayISO();
-  return { activities: rows.map((a) => attachScheduleFields(a, baseDate)) };
+
+  // 추천도 범위 기반으로 prefetch
+  const starts = rows.map(r => r.startDate).filter(Boolean);
+  const ends = rows.map(r => r.endDate).filter(Boolean);
+
+  let fixedSchedules = null;
+  if (userId && starts.length && ends.length) {
+    const minStart = new Date(Math.min(...starts.map(d => d.getTime())));
+    const maxEnd = new Date(Math.max(...ends.map(d => d.getTime())));
+    fixedSchedules = await fetchFixedSchedulesInRange({
+      prisma,
+      userId,
+      rangeStart: startOfDayLocal(minStart),
+      rangeEnd: endOfDayLocal(maxEnd),
+    });
+  }
+
+  return {
+    activities: await Promise.all(rows.map((a) => attachScheduleFields(a, { userId, baseDate, fixedSchedules }))),
+  };
 }
 
-export async function getDetail(activityId) {
+
+export async function getDetail(userId, activityId) {
   const a = await findById(activityId);
   if (!a) return null;
 
-  const mapped = attachScheduleFields(a);
+  const mapped = await attachScheduleFields(a, { userId });
+
   return {
     activityId: mapped.activityId,
     title: mapped.title,
@@ -122,8 +177,6 @@ export async function getDetail(activityId) {
     point: mapped.point,
     description: a.description ?? null,
     thumbnailUrl: mapped.thumbnailUrl,
-
-    // 확장
     type: mapped.type,
     startDate: mapped.startDate,
     endDate: mapped.endDate,
@@ -132,13 +185,12 @@ export async function getDetail(activityId) {
     tipMessage: mapped.tipMessage,
     categoryId: mapped.categoryId,
     externalUrl: mapped.externalUrl,
-
-    // (선택) I102 점수 +/- UI용
     minPoint: 10,
     maxPoint: 50,
     defaultPoint: mapped.point,
   };
 }
+
 
 export async function listActivityCategories({ userId, tab }) {
   const interestIds = tab === "GROWTH" ? await findUserInterestIds(userId) : [];
@@ -161,4 +213,15 @@ export async function listActivityCategories({ userId, tab }) {
     ],
   };
 }
+function startOfDayLocal(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDayLocal(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
 
