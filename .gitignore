@@ -8,3 +8,4 @@ node_modules/
 # local backups
 backup.sql
 prisma/schema.prisma.bak
+local.sha256
