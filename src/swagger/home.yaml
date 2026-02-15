@@ -19,6 +19,7 @@ paths:
                 type: object
                 properties:
                   resultType: { type: string, example: "SUCCESS" }
+                  error: { type: object, nullable: true, example: null }
                   success:
                     type: object
                     properties:
@@ -57,31 +58,41 @@ paths:
                                   items:
                                     type: object
                                     properties:
-                                      id: { type: integer, example: 101, description: "스케줄 고유 ID" }
+                                      id: { type: integer, example: 101 }
                                       title: { type: string, example: "카페 알바" }
+                                      type: { type: string, example: "FIXED", description: "고정 일정 여부" }
                                       category: { type: string, example: "GROWTH" }
                                       status: { type: string, example: "TODO" }
+                                      point: { type: integer, example: 20 }
+                                      color: { type: integer, example: 1, description: "캘린더 표시 색상 인덱스" }
+                                      startTime: { type: string, example: "18:00" }
+                                      endTime: { type: string, example: "22:00" }
+                                      completed: { type: boolean, example: false }
                       todayTodos:
                         type: array
                         items:
                           type: object
                           properties:
-                            todoId: { type: integer, example: 12, description: "PATCH API에서 사용할 ID" }
+                            todoId: { type: integer, example: 12 }
                             title: { type: string, example: "자격증 공부하기" }
+                            type: { type: string, example: "NORMAL" }
                             category: { type: string, example: "GROWTH" }
+                            point: { type: integer, example: 10 }
+                            color: { type: integer, example: 1 }
                             startTime: { type: string, example: "14:00" }
-                            status: { type: string, example: "TODO" }
+                            endTime: { type: string, example: "16:00" }
+                            completed: { type: boolean, example: false }
                       recommendations:
                         type: array
                         items:
                           type: object
                           properties:
-                            activityId: { type: integer, example: 1, description: "공모전/대외활동 고유 ID" }
+                            activityId: { type: integer, example: 10 }
                             title: { type: string, example: "마케팅 공모전" }
                             subTitle: { type: string, example: "삼성전자" }
                             dDay: { type: string, example: "D-5" }
                             imageUrl: { type: string, example: "https://..." }
-                            tags: { type: array, items: { type: string }, example: ["#마케팅"] }
+                            tags: { type: array, items: { type: string }, example: ["#공모전", "#마케팅"] }
 
   # 2. 스케줄 완료 상태 변경 (투두 체크박스)
   /api/home/schedules/{activityId}/status:
