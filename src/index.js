@@ -4,7 +4,6 @@ import { specs } from "../src/config/swagger.config.js";
 import express from "express";
 import cors from "cors";
 
-
 import { registerUserRoutes } from "./controllers/user.controller.js";
 import { registerNotificationRoutes } from "./controllers/notification.controller.js";
 import { registerCalendarRoutes } from "./controllers/calendar.controller.js";
@@ -15,17 +14,15 @@ import { registerScheduleRoutes } from "./controllers/schedule.controller.js";
 import { registerActivityRoutes } from "./controllers/activity.controller.js";
 import { registerCartRoutes } from "./controllers/cart.controller.js";
 
-// 알림 기능에서 실제로 필요한 라우트들
 import { registerNotificationInboxRoutes } from "./controllers/notification.inbox.controller.js";
 import { registerPushTokenRoutes } from "./controllers/pushToken.controller.js";
 
-// dev/debug 용 (운영에선 막기)
 import { registerDevRoutes } from "./controllers/dev.controller.js";
 import { registerDebugNotificationRoutes } from "./controllers/debug.notification.controller.js";
 
-
 const app = express();
 const port = process.env.PORT || 3000;
+
 
 app.use(cors());
 app.use(express.json());
@@ -57,4 +54,3 @@ if (process.env.NODE_ENV !== "production") {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-

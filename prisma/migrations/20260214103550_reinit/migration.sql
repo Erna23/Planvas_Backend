@@ -49,6 +49,8 @@ CREATE TABLE `user_activity` (
     `category` ENUM('GROWTH', 'REST') NOT NULL DEFAULT 'GROWTH',
     `type` VARCHAR(20) NOT NULL DEFAULT 'FIXED',
     `status` VARCHAR(20) NOT NULL DEFAULT 'TODO',
+    `event_color` INTEGER NOT NULL DEFAULT 1,
+    `recurrence_rule` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -199,9 +201,10 @@ CREATE TABLE `MyActivity` (
     `userId` INTEGER NOT NULL,
     `goalId` INTEGER NOT NULL,
     `activityId` INTEGER NOT NULL,
+    `point` INTEGER NOT NULL,
+    `completed` BOOLEAN NOT NULL DEFAULT false,
     `startDate` DATETIME(3) NOT NULL,
     `endDate` DATETIME(3) NOT NULL,
-    `point` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `MyActivity_activityId_fkey`(`activityId`),

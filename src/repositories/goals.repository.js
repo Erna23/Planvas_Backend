@@ -8,10 +8,9 @@ export async function findCurrentGoalPeriodByUserId(userId, now = new Date()) {
   return prisma.goalPeriod.findFirst({
     where: {
       userId,
-      startDate: { lte: now },
       endDate: { gte: now },
     },
-    orderBy: { startDate: "desc" },
+    orderBy: { startDate: "asc" },
     select: {
       id: true,
       userId: true,

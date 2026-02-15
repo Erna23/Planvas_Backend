@@ -21,21 +21,21 @@ export async function findRecentReportsByUserId(userId) {
 
 export async function createNewReport(user, growth, rest, goal, summary) {
     return prisma.report.create({
-        data: {
-            userId: user.userId,
-            goalId: goal.goalId,
-            growth: growth,
-            rest: rest,
-            type: summary.type,
-            title: summary.title,
-            subtitle: summary.subTitle,
-        },
-        select: {
-            growth: true,
-            rest: true,
-            type: true,
-            title: true,
-            subTitle: true
-        }
-    })
-}
+      data: {
+        userId: user.id,
+        goalId: goal.id,
+        growth,
+        rest,
+        type: summary.type,
+        title: summary.msg.title,
+        subTitle: summary.msg.subTitle,
+      },
+      select: {
+        growth: true,
+        rest: true,
+        type: true,
+        title: true,
+        subTitle: true,
+      },
+    });
+  }

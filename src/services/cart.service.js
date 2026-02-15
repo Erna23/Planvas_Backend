@@ -48,7 +48,7 @@ export async function getCart(userId, tab) {
     items: rows.map((row) => ({
       cartItemId: row.id,
       activityId: row.activityId,
-      ...attachCardFields(row.activity),
+      ...attachCardFields(row.Activity),
     })),
   };
 }

@@ -5,19 +5,18 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
-  id                  Int      @id @default(autoincrement())
-  email               String?  @unique @db.VarChar(255)
-  provider            String   @db.VarChar(20)
-  oauthId             String   @map("oauth_id") @db.VarChar(255)
-  name                String   @db.VarChar(50)
-  refreshToken        String?  @map("refresh_token") @db.Text
-  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
-  createdAt           DateTime @default(now()) @map("created_at")
-
-  // 관계 정의
+  id                  Int                  @id @default(autoincrement())
+  email               String?              @unique @db.VarChar(255)
+  provider            String               @db.VarChar(20)
+  oauthId             String               @map("oauth_id") @db.VarChar(255)
+  name                String               @db.VarChar(50)
+  refreshToken        String?              @map("refresh_token") @db.Text
+  onboardingCompleted Boolean              @default(false) @map("onboarding_completed")
+  createdAt           DateTime             @default(now()) @map("created_at")
   calendar            CalendarSetting?
   goalPeriods         GoalPeriod[]
   notificationLogs    NotificationLog[]
@@ -33,24 +32,27 @@ model User {
 }
 
 model ActivityCatalog {
-  id             Int          @id @default(autoincrement())
-  title          String
-  tab            ActivityTab
-  point          Int
-  thumbnailUrl   String?      @db.VarChar(2048)
-  description    String?      @db.Text
-  type           ActivityType @default(NORMAL)
-  startDate      DateTime?
-  endDate        DateTime?
-  recruitEndDate DateTime?    @map("recruit_end_date")
+  id           Int          @id @default(autoincrement())
+  title        String
+  tab          ActivityTab
+  point        Int
+  thumbnailUrl String?      @db.VarChar(2048)
+  description  String?      @db.Text
+  type         ActivityType @default(NORMAL)
+  startDate    DateTime?
+  endDate      DateTime?  
+  recruitEndDate   DateTime?  @map("recruit_end_date") 
   organizer      String?      @db.VarChar(100)
-  tags           Json?
-  externalUrl    String?      @db.VarChar(2048)
-  categoryId     Int?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  CartItem       CartItem[]
-  MyActivity     MyActivity[]
+  
+  tags              Json?
+  externalUrl        String?      @db.VarChar(2048)
+  categoryId         Int?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  CartItem           CartItem[]
+  MyActivity         MyActivity[]
+  activityInterests  ActivityInterest[]
+
 
   @@index([tab])
   @@index([categoryId])
@@ -70,26 +72,23 @@ model UserActivity {
   status        String      @default("TODO") @db.VarChar(20)
   eventColor     Int         @default(1) @map("event_color")
   recurrenceRule String?     @map("recurrence_rule")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_user_activity_user")
-
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
   @@map("user_activity")
 }
 
-model CalendarSetting {
-  id                   Int      @id @default(autoincrement())
-  userId               Int      @unique @map("user_id")
-  connect              Boolean  @default(false)
-  provider             String?  @db.VarChar(20)
-  importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
-  selectedEventIds     Json?    @map("selected_event_ids")
-  manualFixedSchedules Json?    @map("manual_fixed_schedules")
-  updatedAt            DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_calendar_user")
+model NotificationSetting {
+  id                        Int      @id @default(autoincrement())
+  userId                    Int      @unique @map("user_id")
+  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")
+  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled")
+  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("calendar_setting")
+  @@map("notification_setting")
 }
 
 model GoalPeriod {
@@ -103,7 +102,7 @@ model GoalPeriod {
   presetType String   @default("CUSTOM") @map("preset_type") @db.VarChar(20)
   presetId   Int?
   createdAt  DateTime @default(now()) @map("created_at")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_goal_period_user")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reports    Report[]
 
   @@index([userId])
@@ -115,21 +114,23 @@ model UserProfile {
   userId    Int      @unique @map("user_id")
   interests Json
   updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "user_profile_user_fkey")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profile")
 }
 
-model NotificationSetting {
-  id                        Int      @id @default(autoincrement())
-  userId                    Int      @unique @map("user_id")
-  dDayEnabled               Boolean  @default(true) @map("d_day_enabled")
-  activityCompletionEnabled Boolean  @default(true) @map("activity_completion_enabled")
-  fcmToken                  String?  @map("fcm_token") @db.VarChar(255)
-  updatedAt                 DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_notif_setting_user")
+model CalendarSetting {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique @map("user_id")
+  connect              Boolean  @default(false)
+  provider             String?  @db.VarChar(20)
+  importFixedSchedules Boolean  @default(false) @map("import_fixed_schedules")
+  selectedEventIds     Json?    @map("selected_event_ids")
+  manualFixedSchedules Json?    @map("manual_fixed_schedules")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("notification_setting")
+  @@map("calendar_setting")
 }
 
 model Reminder {
@@ -138,7 +139,7 @@ model Reminder {
   reminderType String   @map("reminder_type") @db.VarChar(50)
   isEnabled    Boolean  @default(true) @map("is_enabled")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "reminder_user_fkey")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("reminder")
@@ -151,7 +152,7 @@ model PushToken {
   platform    String   @db.VarChar(20)
   environment String   @db.VarChar(20)
   updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "push_token_user_fkey")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("push_token")
@@ -160,6 +161,8 @@ model PushToken {
 model Interest {
   id   Int    @id @default(autoincrement())
   name String @unique @db.VarChar(50)
+  activityInterests ActivityInterest[]
+
 
   @@map("interest")
 }
@@ -174,8 +177,8 @@ model Report {
   createdAt  DateTime   @default(now()) @map("created_at")
   growth     Int
   rest       Int
-  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "fk_report_goal_period")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_report_user")
+  goalPeriod GoalPeriod @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([goalId])
@@ -190,7 +193,7 @@ model NotificationLog {
   refId    Int      @map("ref_id")
   sendDate DateTime @map("send_date")
   sentAt   DateTime @default(now()) @map("sent_at")
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "notif_log_user_fkey")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type, refType, refId, sendDate])
   @@index([userId])
@@ -202,10 +205,10 @@ model CartItem {
   userId     Int
   activityId Int
   createdAt  DateTime        @default(now())
-  Activity ActivityCatalog @relation(fields: [activityId], references: [id], map: "fk_cart_item_activity")
+  Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
 
   @@unique([userId, activityId])
-  @@index([activityId], map: "CartItem_activity_catalog_idx")
+  @@index([activityId], map: "CartItem_activityId_fkey")
   @@index([userId])
 }
 
@@ -214,13 +217,14 @@ model MyActivity {
   userId     Int
   goalId     Int
   activityId Int
+  point      Int        
+  completed  Boolean         @default(false)
   startDate  DateTime
   endDate    DateTime
-  point      Int
   createdAt  DateTime        @default(now())
-  Activity ActivityCatalog @relation(fields: [activityId], references: [id], map: "fk_my_activity_activity")
+  Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
 
-  @@index([activityId], map: "MyActivity_activity_catalog_idx")
+  @@index([activityId], map: "MyActivity_activityId_fkey")
   @@index([goalId])
   @@index([userId])
 }
@@ -233,4 +237,19 @@ enum ActivityTab {
 enum ActivityType {
   NORMAL
   CONTEST
+
 }
+
+model ActivityInterest {
+  activityId Int
+  interestId Int
+
+  activity  ActivityCatalog @relation(fields: [activityId], references: [id])
+  interest  Interest        @relation(fields: [interestId], references: [id])
+
+  @@id([activityId, interestId])
+  @@index([interestId])
+  @@index([activityId])
+}
+
+
