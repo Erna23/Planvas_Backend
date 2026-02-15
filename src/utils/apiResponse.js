@@ -65,3 +65,10 @@ export function fail(a, b, c, d = 500, e = null) {
 export function getAuthUserId(req) {
   return req?.auth?.userId ?? req?.user?.id ?? req?.auth?.id ?? null;
 }
+export function failPayload(errorCode = "COMMON", reason = "요청 처리 중 오류가 발생했습니다.", data = null) {
+  return {
+    resultType: "FAIL",
+    error: { errorCode, reason, data },
+    success: null,
+  };
+}

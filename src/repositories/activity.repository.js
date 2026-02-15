@@ -90,8 +90,26 @@ export async function findRecommendations({ tab, interestIds }) {
 
 
 export async function findById(activityId) {
-  return prisma.activityCatalog.findUnique({ where: { id: activityId } });
+  return prisma.activityCatalog.findUnique({
+    where: { id: activityId },
+    select: {
+      id: true,
+      title: true,
+      tab: true,
+      point: true,
+      categoryId: true,
+      description: true,
+      thumbnailUrl: true,
+      externalUrl: true,
+      type: true,
+      startDate: true,
+      endDate: true,
+      recruitEndDate: true, // 쓰면
+    },
+  });
 }
+
+
 export async function groupActivityCategories(tab) {
   return prisma.activityCatalog.groupBy({
     by: ["categoryId"],
