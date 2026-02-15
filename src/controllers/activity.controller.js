@@ -1,5 +1,5 @@
 import { ok, fail } from "../utils/apiResponse.js";
-import { authStub } from "../middlewares/authStub.js";
+import { requireAuth } from "../auth.config.js";
 import {
   listActivities,
   recommendations,
@@ -10,7 +10,7 @@ import { addMyActivity } from "../services/myActivity.service.js";
 
 export function registerActivityRoutes(app) {
   // 활동 탐색 목록
-  app.get("/api/activities", authStub, async (req, res) => {
+  app.get("/api/activities", requireAuth, async (req, res) => {
     try {
       const tab = req.query.tab;
       const q = (req.query.q || "").toString().trim();
@@ -46,7 +46,7 @@ export function registerActivityRoutes(app) {
   });
 
   // 추천 활동
-  app.get("/api/activities/recommendations", authStub, async (req, res) => {
+  app.get("/api/activities/recommendations", requireAuth, async (req, res) => {
     try {
       const tab = (req.query.tab ?? "GROWTH").toString(); // ✅ default
       const date = req.query.date ? req.query.date.toString() : undefined;
@@ -63,7 +63,7 @@ export function registerActivityRoutes(app) {
     }
   });
 
-  app.get("/api/activities/categories", authStub, async (req, res) => {
+  app.get("/api/activities/categories", requireAuth, async (req, res) => {
     try {
       const tab = req.query.tab;
 
@@ -81,7 +81,7 @@ export function registerActivityRoutes(app) {
   });
 
   // 활동 상세
-  app.get("/api/activities/:activityId", authStub, async (req, res) => {
+  app.get("/api/activities/:activityId", requireAuth, async (req, res) => {
     try {
       const activityId = Number(req.params.activityId);
       const data = await getDetail(activityId);
@@ -93,7 +93,7 @@ export function registerActivityRoutes(app) {
   });
 
   // 내 일정(내 활동) 추가
-  app.post("/api/activities/:activityId/my-activities", authStub, async (req, res) => {
+  app.post("/api/activities/:activityId/my-activities", requireAuth, async (req, res) => {
     try {
       const activityId = Number(req.params.activityId);
       const result = await addMyActivity(req.userId, activityId, req.body);
