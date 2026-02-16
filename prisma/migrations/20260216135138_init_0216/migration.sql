@@ -18,7 +18,7 @@ CREATE TABLE `user` (
 CREATE TABLE `Activity` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(191) NOT NULL,
-    `tab` ENUM('GROWTH', 'REST') NOT NULL,
+    `tab` ENUM('NONE', 'GROWTH', 'REST') NOT NULL DEFAULT 'GROWTH',
     `point` INTEGER NOT NULL,
     `thumbnailUrl` VARCHAR(2048) NULL,
     `description` TEXT NULL,
@@ -44,9 +44,10 @@ CREATE TABLE `user_activity` (
     `user_id` INTEGER NOT NULL,
     `google_event_id` VARCHAR(255) NULL,
     `title` VARCHAR(200) NOT NULL,
+    `point` INTEGER NOT NULL DEFAULT 0,
     `start_at` DATETIME(3) NOT NULL,
     `end_at` DATETIME(3) NOT NULL,
-    `category` ENUM('GROWTH', 'REST') NOT NULL DEFAULT 'GROWTH',
+    `category` ENUM('NONE', 'GROWTH', 'REST') NOT NULL DEFAULT 'NONE',
     `type` VARCHAR(20) NOT NULL DEFAULT 'FIXED',
     `status` VARCHAR(20) NOT NULL DEFAULT 'TODO',
     `event_color` INTEGER NOT NULL DEFAULT 1,
@@ -213,6 +214,16 @@ CREATE TABLE `MyActivity` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `ActivityInterest` (
+    `activityId` INTEGER NOT NULL,
+    `interestId` INTEGER NOT NULL,
+
+    INDEX `ActivityInterest_interestId_idx`(`interestId`),
+    INDEX `ActivityInterest_activityId_idx`(`activityId`),
+    PRIMARY KEY (`activityId`, `interestId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `user_activity` ADD CONSTRAINT `user_activity_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -248,3 +259,9 @@ ALTER TABLE `CartItem` ADD CONSTRAINT `CartItem_activityId_fkey` FOREIGN KEY (`a
 
 -- AddForeignKey
 ALTER TABLE `MyActivity` ADD CONSTRAINT `MyActivity_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ActivityInterest` ADD CONSTRAINT `ActivityInterest_activityId_fkey` FOREIGN KEY (`activityId`) REFERENCES `Activity`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ActivityInterest` ADD CONSTRAINT `ActivityInterest_interestId_fkey` FOREIGN KEY (`interestId`) REFERENCES `interest`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

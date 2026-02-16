@@ -87,69 +87,71 @@ export async function findFixedActivitiesByUserId(userId) {
     return { fixedSchedules };
 }
 
+export async function deleteUserActivityById(id) {
+    return await prisma.userActivity.delete({ where: { id } });
+}
+
 
 export async function findUserActivityById(id) {
     return await prisma.userActivity.findFirst({ where: { id } });
 }
 
-export async function updateUserActivityById(id, data) {
-    const updateData = {}
-
+export async function updateUserActivityById(id, body) {
     const existing = await prisma.userActivity.findUnique({
         where: { id },
-        select: { startAt: true, endAt: true }
-    });
-
-    let date = existing.startAt.toISOString().split('T')[0];
-    let startTime = existing.startAt.toTimeString().slice(0, 5);
-    let endTime = existing.endAt.toTimeString().slice(0, 5);
-    
-    let isChangeCate = false;
-    let isChangePoint = false;
-    if (data.title !== undefined) {
-        updateData.title = data.title;
-    }
-    if (data.category !== undefined) {
-        isChangeCate = true;
-        updateData.category = data.category;
-    }
-    if (data.point !== undefined) {
-        isChangePoint = true;
-        updateData.point = data.point;
-    }
-    if (data.date !== undefined) date = data.date;
-    if (data.startTime !== undefined) startTime = data.startTime;
-    if (data.endTime !== undefined) endTime = data.endTime;
-    
-    // DateTime 생성
-    updateData.startAt = new Date(`${date}T${startTime}:00`);
-    updateData.endAt = new Date(`${date}T${endTime}:00`);
-    
-    await prisma.userActivity.update({
-        where: { id },
-        data: updateData,
-        select: { 
-            id: true,
+        select: {
+            startAt: true,
+            endAt: true,
             title: true,
             category: true,
             point: true
-        }
+        },
+    });
+
+    if (!existing) {
+        const err = new Error("UserActivity not found");
+        err.statusCode = 404;
+        err.payload = {
+            resultType: "FAIL",
+            error: { reason: "해당 일정을 찾을 수 없습니다.", data: null },
+            success: null,
+        };
+        throw err;
+    }
+
+    const updateData = {};
+
+    // 기본값: 기존 값
+    let date = existing.startAt.toISOString().split("T")[0]; // YYYY-MM-DD
+    let startTime = existing.startAt.toTimeString().slice(0, 5); // HH:MM
+    let endTime = existing.endAt.toTimeString().slice(0, 5); // HH:MM
+
+    // 부분 수정 (body에 들어온 값만 반영)
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.point !== undefined) updateData.point = body.point;
+    if (body.date !== undefined) date = body.date;
+    if (body.startTime !== undefined) startTime = body.startTime;
+    if (body.endTime !== undefined) endTime = body.endTime;
+
+    // date + time 조합해서 DateTime 재생성
+    updateData.startAt = new Date(`${date}T${startTime}:00`);
+    updateData.endAt = new Date(`${date}T${endTime}:00`);
+
+    await prisma.userActivity.update({
+        where: { id },
+        data: updateData,
     });
 }
 
-export async function deleteUserActivityById(id) {
-    await prisma.userActivity.delete({ where: { id } });
-    return true;
-}
-
-export async function addOwnUserActivity(userId, activity, data) {
+export async function addOwnUserActivity(userId, data) {
     return await prisma.userActivity.create({
         data: {
         userId,
         title: activity.title,
         category: activity.tab,                
         point: data.point ?? activity.point ?? 0,
-        type: "MANUAL",                        
+        type: "MANUAL",
         startAt: new Date(`${data.startDate}T${data.startTime}:00`),
         endAt: new Date(`${data.endDate}T${data.endTime}:00`),
         },
@@ -161,7 +163,7 @@ export async function addOwnUserActivity(userId, activity, data) {
 export async function completeActivity(id) {
     return await prisma.userActivity.update({
         where: { id },
-        data: { status: "DONE" },   // TODO -> DONE
+        data: { status: "DONE" },
         select: { id: true, status: true }
     });
 }

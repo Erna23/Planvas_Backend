@@ -34,7 +34,7 @@ model User {
 model ActivityCatalog {
   id           Int          @id @default(autoincrement())
   title        String
-  tab          ActivityTab
+  tab          ActivityTab  @default(GROWTH)
   point        Int
   thumbnailUrl String?      @db.VarChar(2048)
   description  String?      @db.Text
@@ -64,14 +64,14 @@ model UserActivity {
   userId        Int         @map("user_id")
   googleEventId String?     @unique @map("google_event_id") @db.VarChar(255)
   title         String      @db.VarChar(200)
-  point          Int          @default(0)
+  point          Int        @default(0)
   startAt       DateTime    @map("start_at")
   endAt         DateTime    @map("end_at")
-  category      ActivityTab @default(GROWTH)
+  category      ActivityTab @default(NONE)
   type          String      @default("FIXED") @db.VarChar(20)
   status        String      @default("TODO") @db.VarChar(20)
-  eventColor     Int         @default(1) @map("event_color")
-  recurrenceRule String?     @map("recurrence_rule")
+  eventColor     Int        @default(1) @map("event_color")
+  recurrenceRule String?    @map("recurrence_rule")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -230,6 +230,7 @@ model MyActivity {
 }
 
 enum ActivityTab {
+  NONE
   GROWTH
   REST
 }
