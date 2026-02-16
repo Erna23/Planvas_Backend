@@ -464,7 +464,7 @@ paths:
 
       responses:
         "200":
-          description: 성공
+          description: 추가 성공
           content:
             application/json:
               schema:
@@ -477,6 +477,7 @@ paths:
                     type: object
                     required:
                       - myActivityId
+                      - eventId
                       - activityId
                       - title
                       - category
@@ -487,6 +488,7 @@ paths:
                       - scheduleReason
                     properties:
                       myActivityId: { type: integer, example: 1 }
+                      eventId: { type: integer, example: 10 }
                       activityId: { type: integer, example: 2 }
                       title: { type: string, example: "[디지털 마케터] 실무 60일 완성 데마완 서포터즈" }
                       category: { type: string, enum: [GROWTH, REST], example: "GROWTH" }
@@ -502,12 +504,12 @@ paths:
                         example: "성장(기타/30점 포함): 기간 내 고정 일정 존재 → 주의"
 
         "409":
-          description: 일정 충돌로 추가 불가 (교육/강연, 어학/자격증 등)
+          description: 일정 겹침으로 추가 불가
           content:
             application/json:
               schema:
                 type: object
-                required: [resultType, error, success]
+                required: [resultType, error]
                 properties:
                   resultType: { type: string, example: "FAIL" }
                   error:

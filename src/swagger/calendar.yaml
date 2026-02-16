@@ -138,7 +138,7 @@ components:
 
         type: { type: string, enum: [MANUAL, FIXED, ACTIVITY] }
         
-        category: { type: string, enum: [GROWTH, REST] }
+        category: { type: string, enum: [GROWTH, REST, NONE] }
 
         point: { type: integer, example: 30}
 
