@@ -1,4 +1,5 @@
 import { requireAuth } from "../auth.config.js";
+import { ok, fail } from "../utils/apiResponse.js";
 import { getSeasonsReports, createReport } from "../services/report.service.js";
 
 export function registerReportRoutes(app) {
@@ -8,7 +9,7 @@ export function registerReportRoutes(app) {
             const parsedYear = year ? Number(year) : 0;
 
             const result = await getSeasonsReports(req.auth.userId, parsedYear);
-            return res.status(200).json(result);
+            return ok(res, result, 200);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
         }
@@ -17,7 +18,7 @@ export function registerReportRoutes(app) {
     app.get("/api/reports/seasons/:goalId", requireAuth, async (req, res) => {
         try {
             const result = await createReport(req.auth.userId, req.params.goalId);
-            return res.status(200).json(result);
+            return ok(res, result, 200);
         } catch (e) {
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
         }

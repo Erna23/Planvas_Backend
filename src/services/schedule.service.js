@@ -3,6 +3,7 @@ import { findUserById } from "../repositories/user.repository.js";
 import {
 	createFixedActivitiesMany,
 	findFixedActivitiesByUserId,
+	deleteMyActivityById,
 	updateUserActivityById,
 	deleteUserActivityById,
 	addOwnUserActivity,
@@ -174,15 +175,31 @@ export async function deleteMyActivity(userId, id) {
 		throw err;
 	}
 
-	const deleted = await deleteUserActivityById(id);
+	const deleted = await deleteMyActivityById(id);
 	return {
 		deleted,
-		message: "고정 일정이 삭제되었습니다.",
+		message: "해당 일정이 삭제되었습니다.",
 	};
 }
 
 export async function deleteFixedSchedule(userId, id) {
-	return deleteMyActivity(userId, id);
+	const user = await findUserById(userId);
+	if (!user) {
+		const err = new Error("User not found");
+		err.statusCode = 404;
+		err.payload = {
+			resultType: "FAIL",
+			error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+			success: null,
+		};
+		throw err;
+	}
+
+	const deleted = await deleteUserActivityById(id);
+	return {
+		deleted,
+		message: "해당 일정이 삭제되었습니다.",
+	};
 }
 
 

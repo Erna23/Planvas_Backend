@@ -87,58 +87,70 @@ export async function findFixedActivitiesByUserId(userId) {
     return { fixedSchedules };
 }
 
+export async function deleteUserActivityById(id) {
+    return await prisma.userActivity.delete({ where: { id } });
+}
+
 
 export async function findUserActivityById(id) {
     return await prisma.userActivity.findFirst({ where: { id } });
 }
 
-export async function updateUserActivityById(id, data) {
-    const updateData = {}
-
+export async function updateUserActivityById(id, body) {
+    // 기존 일정 정보 조회 (없으면 에러)
     const existing = await prisma.userActivity.findUnique({
         where: { id },
-        select: { startAt: true, endAt: true }
+        select: {
+            startAt: true,
+            endAt: true,
+            title: true
+        },
     });
 
-    let date = existing.startAt.toISOString().split('T')[0];
-    let startTime = existing.startAt.toTimeString().slice(0, 5);
-    let endTime = existing.endAt.toTimeString().slice(0, 5);
-    
-    let isChangeCate = false;
-    let isChangePoint = false;
-    if (data.title !== undefined) {
-        updateData.title = data.title;
+    if (!existing) {
+        const err = new Error("UserActivity not found");
+        err.statusCode = 404;
+        err.payload = {
+            resultType: "FAIL",
+            error: { reason: "해당 일정을 찾을 수 없습니다.", data: null },
+            success: null,
+        };
+        throw err;
     }
-    if (data.category !== undefined) {
-        isChangeCate = true;
-        updateData.category = data.category;
+
+    const updateData = {};
+
+    // 기본값: 기존 값
+    let date = existing.startAt.toISOString().split("T")[0]; // YYYY-MM-DD
+    let startTime = existing.startAt.toTimeString().slice(0, 5); // HH:MM
+    let endTime = existing.endAt.toTimeString().slice(0, 5); // HH:MM
+
+    // 부분 수정 (body에 들어온 값만 반영)
+    if (body.title !== undefined) {
+        updateData.title = body.title;
     }
-    if (data.point !== undefined) {
-        isChangePoint = true;
-        updateData.point = data.point;
+    if (body.date !== undefined) {
+        date = body.date;
     }
-    if (data.date !== undefined) date = data.date;
-    if (data.startTime !== undefined) startTime = data.startTime;
-    if (data.endTime !== undefined) endTime = data.endTime;
-    
-    // DateTime 생성
+    if (body.startTime !== undefined) {
+        startTime = body.startTime;
+    }
+    if (body.endTime !== undefined) {
+        endTime = body.endTime;
+    }
+
+    // date + time 조합해서 DateTime 재생성
     updateData.startAt = new Date(`${date}T${startTime}:00`);
     updateData.endAt = new Date(`${date}T${endTime}:00`);
-    
+
     await prisma.userActivity.update({
         where: { id },
         data: updateData,
-        select: { 
-            id: true,
-            title: true,
-            category: true,
-            point: true
-        }
     });
 }
 
-export async function deleteUserActivityById(id) {
-    await prisma.userActivity.delete({ where: { id } });
+export async function deleteMyActivityById(id) {
+    await prisma.MyActivity.delete({ where: { id } });
     return true;
 }
 

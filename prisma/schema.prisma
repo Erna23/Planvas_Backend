@@ -230,6 +230,7 @@ model MyActivity {
 }
 
 enum ActivityTab {
+  NONE
   GROWTH
   REST
 }
