@@ -111,12 +111,26 @@ export const findDailyActivities = async (userId, startOfDay, endOfDay) => {
 };
 
 // 6. 직접 일정 생성 (eventColor, recurrenceRule 필드 복구)
-export const createUserActivity = async (userId, { title, startAt, endAt, type = "MANUAL", category = "GROWTH", eventColor = 1, recurrenceRule = null }) => {
-  const allowed = new Set(["MANUAL", "FIXED"]);
+export const createUserActivity = async (
+  userId,
+  {
+    title,
+    startAt,
+    endAt,
+    type = "MANUAL",
+    category = "GROWTH",
+    point = 0,
+    eventColor = 1,
+    recurrenceRule = null,
+  }
+) => {
+  const allowed = new Set(["MANUAL", "FIXED", "ACTIVITY"]); // ✅ ACTIVITY 추가
   const finalType = allowed.has(type) ? type : "MANUAL";
 
-  // 색상 방어 로직 (1~10 사이가 아니면 기본값 1)
-  const finalColor = (eventColor >= 1 && eventColor <= 10) ? eventColor : 1;
+  const finalColor = eventColor >= 1 && eventColor <= 10 ? eventColor : 1;
+
+  const p = Number(point);
+  const finalPoint = Number.isFinite(p) ? p : 0;
 
   return prisma.userActivity.create({
     data: {
@@ -124,14 +138,16 @@ export const createUserActivity = async (userId, { title, startAt, endAt, type =
       title,
       startAt: new Date(startAt),
       endAt: new Date(endAt),
-      category: category,
+      category,
       type: finalType,
+      point: finalPoint,              // ✅ point 저장
       status: "TODO",
       eventColor: finalColor,
-      recurrenceRule: recurrenceRule,
+      recurrenceRule,
     },
   });
 };
+
 
 // 7. 직접 일정 수정 (필드 제외 로직 제거 및 데이터 반영)
 export const updateUserActivity = async (userId, eventId, data) => {
