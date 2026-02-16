@@ -4,7 +4,18 @@ const prisma = new PrismaClient();
 async function main() {
   // --- 1. 유저 1 데이터 (활동 + 목표) ---
   console.log('유저 1 데이터 삽입 중...');
-
+  
+  await prisma.user.upsert({
+  where: { id: 1 },
+  update: { name: '유저1' },
+  create: {
+    id: 1,
+    email: 'user1@example.com',
+    name: '유저1',
+    provider: 'GOOGLE',
+    oauthId: 'demo_user_01',
+  },
+});
   // 기존 활동 삭제
   await prisma.userActivity.deleteMany({ where: { userId: 1 } });
 
