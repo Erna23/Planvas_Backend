@@ -101,12 +101,44 @@ export const createManualEvent = async (userId, { title, startAt, endAt, type, e
 
 // 8. 직접 일정 수정 (eventColor, recurrenceRule 필드 허용)
 export const updateManualEvent = async (userId, eventId, payload) => {
-  const { title, startAt, endAt, type, eventColor, recurrenceRule, category, status } = payload;
+  const {
+    title,
+    startAt,
+    endAt,
+    type,
+    category,
+    point,
+    status,
+    eventColor,
+    recurrenceRule,
+  } = payload ?? {};
+
   const data = {};
 
   if (title !== undefined) data.title = title;
-  if (category !== undefined) data.category = category;
-  if (status !== undefined) data.status = status;
+
+  // category 반영 (UserActivity 쪽에서만 NONE 허용하려면 여기서 허용)
+  if (category !== undefined) {
+    const allowedCategory = new Set(["GROWTH", "REST", "NONE"]); // NONE 필요 없으면 빼도 됨
+    if (!allowedCategory.has(category)) {
+      throw new Error("category는 GROWTH/REST/NONE만 가능합니다.");
+    }
+    data.category = category;
+  }
+
+  // point 반영
+  if (point !== undefined) {
+    const p = Number(point);
+    if (!Number.isFinite(p)) throw new Error("point는 숫자여야 합니다.");
+    data.point = p;
+  }
+
+  // status 반영
+  if (status !== undefined) {
+    const allowedStatus = new Set(["TODO", "DONE"]);
+    if (!allowedStatus.has(status)) throw new Error("status는 TODO 또는 DONE만 가능합니다.");
+    data.status = status;
+  }
 
   // 색상 및 반복 규칙 업데이트 허용
   if (eventColor !== undefined) data.eventColor = eventColor;
@@ -128,19 +160,21 @@ export const updateManualEvent = async (userId, eventId, payload) => {
     throw new Error("endAt은 startAt보다 빠를 수 없습니다.");
   }
 
+  // type: ACTIVITY 허용
   if (type !== undefined) {
-    if (type !== "MANUAL" && type !== "FIXED") {
-      throw new Error("type은 MANUAL 또는 FIXED만 가능합니다.");
+    const allowedType = new Set(["MANUAL", "FIXED", "ACTIVITY"]);
+    if (!allowedType.has(type)) {
+      throw new Error("type은 MANUAL/FIXED/ACTIVITY만 가능합니다.");
     }
     data.type = type;
   }
 
-  // 수정된 데이터를 리포지토리로 전달
   const updated = await calendarRepository.updateUserActivity(userId, eventId, data);
   if (!updated) throw new Error("수정할 일정이 없거나 권한이 없습니다.");
 
   return updated;
 };
+
 
 // 9. 직접 일정 삭제
 export const deleteManualEvent = async (userId, eventId) => {

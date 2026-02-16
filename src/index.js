@@ -27,8 +27,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.get("/api-docs/swagger.json", (req, res) => res.json(specs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 registerUserRoutes(app);
 registerNotificationRoutes(app);
