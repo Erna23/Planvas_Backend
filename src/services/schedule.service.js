@@ -3,7 +3,6 @@ import { findUserById } from "../repositories/user.repository.js";
 import {
 	createFixedActivitiesMany,
 	findFixedActivitiesByUserId,
-	deleteMyActivityById,
 	updateUserActivityById,
 	deleteUserActivityById,
 	addOwnUserActivity,
@@ -11,8 +10,8 @@ import {
 	getDateActivity,
 	findUserActivityById,
 } from "../repositories/schedule.repository.js";
-
 import { findById as findCatalogActivityById } from "../repositories/activity.repository.js";
+import { ActivityType } from "@prisma/client";
 
 const dayMap = {
 	SUN: 0,
@@ -108,6 +107,26 @@ export async function updateFixedSchedule(userId, id, body) {
 	return { msg: "수정이 완료되었습니다." };
 }
 
+export async function deleteFixedSchedule(userId, id) {
+	const user = await findUserById(userId);
+	if (!user) {
+		const err = new Error("User not found");
+		err.statusCode = 404;
+		err.payload = {
+			resultType: "FAIL",
+			error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+			success: null,
+		};
+		throw err;
+	}
+
+	const deleted = await deleteUserActivityById(id);
+	return {
+		deleted,
+		message: "해당 일정이 삭제되었습니다.",
+	};
+}
+
 export async function getTodos(userId, date) {
 	return await getDateActivity(userId, date);
 }
@@ -117,30 +136,7 @@ export async function completeTodos(id) {
 }
 
 export async function createMyActivity(userId, body) {
-	let baseActivity;
-
-	if (body.activityId == null) {
-		baseActivity = {
-			id: null,
-			title: body.title,
-			tab: body.category ?? body.tab,
-			point: body.point,
-		};
-	} else {
-		baseActivity = await findCatalogActivityById(Number(body.activityId));
-		if (!baseActivity) {
-			const err = new Error("Activity not found");
-			err.statusCode = 404;
-			err.payload = {
-				resultType: "FAIL",
-				error: { reason: "해당 활동을 찾을 수 없습니다.", data: null },
-				success: null,
-			};
-			throw err;
-		}
-	}
-
-	return await addOwnUserActivity(userId, baseActivity, body);
+	return { id: (await addOwnUserActivity(userId, body)).id}
 }
 
 export async function getMyActivityInfo(userId, Id) {
@@ -153,7 +149,7 @@ export async function getMyActivityInfo(userId, Id) {
 		point: ownActivity.point,
 		startAt: ownActivity.startAt,
 		endAt: ownActivity.endAt,
-		completed: ownActivity.completed,
+		completed: ownActivity.status === "TODO" ? false : true,
 	};
 }
 
@@ -175,33 +171,12 @@ export async function deleteMyActivity(userId, id) {
 		throw err;
 	}
 
-	const deleted = await deleteMyActivityById(id);
-	return {
-		deleted,
-		message: "해당 일정이 삭제되었습니다.",
-	};
-}
-
-export async function deleteFixedSchedule(userId, id) {
-	const user = await findUserById(userId);
-	if (!user) {
-		const err = new Error("User not found");
-		err.statusCode = 404;
-		err.payload = {
-			resultType: "FAIL",
-			error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
-			success: null,
-		};
-		throw err;
-	}
-
 	const deleted = await deleteUserActivityById(id);
 	return {
 		deleted,
 		message: "해당 일정이 삭제되었습니다.",
 	};
 }
-
 
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);

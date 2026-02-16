@@ -97,13 +97,14 @@ export async function findUserActivityById(id) {
 }
 
 export async function updateUserActivityById(id, body) {
-    // 기존 일정 정보 조회 (없으면 에러)
     const existing = await prisma.userActivity.findUnique({
         where: { id },
         select: {
             startAt: true,
             endAt: true,
-            title: true
+            title: true,
+            category: true,
+            point: true
         },
     });
 
@@ -126,18 +127,12 @@ export async function updateUserActivityById(id, body) {
     let endTime = existing.endAt.toTimeString().slice(0, 5); // HH:MM
 
     // 부분 수정 (body에 들어온 값만 반영)
-    if (body.title !== undefined) {
-        updateData.title = body.title;
-    }
-    if (body.date !== undefined) {
-        date = body.date;
-    }
-    if (body.startTime !== undefined) {
-        startTime = body.startTime;
-    }
-    if (body.endTime !== undefined) {
-        endTime = body.endTime;
-    }
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.point !== undefined) updateData.point = body.point;
+    if (body.date !== undefined) date = body.date;
+    if (body.startTime !== undefined) startTime = body.startTime;
+    if (body.endTime !== undefined) endTime = body.endTime;
 
     // date + time 조합해서 DateTime 재생성
     updateData.startAt = new Date(`${date}T${startTime}:00`);
@@ -149,19 +144,14 @@ export async function updateUserActivityById(id, body) {
     });
 }
 
-export async function deleteMyActivityById(id) {
-    await prisma.MyActivity.delete({ where: { id } });
-    return true;
-}
-
-export async function addOwnUserActivity(userId, activity, data) {
+export async function addOwnUserActivity(userId, data) {
     return await prisma.userActivity.create({
         data: {
         userId,
         title: activity.title,
         category: activity.tab,                
         point: data.point ?? activity.point ?? 0,
-        type: "MANUAL",                        
+        type: "MANUAL",
         startAt: new Date(`${data.startDate}T${data.startTime}:00`),
         endAt: new Date(`${data.endDate}T${data.endTime}:00`),
         },
@@ -173,7 +163,7 @@ export async function addOwnUserActivity(userId, activity, data) {
 export async function completeActivity(id) {
     return await prisma.userActivity.update({
         where: { id },
-        data: { status: "DONE" },   // TODO -> DONE
+        data: { status: "DONE" },
         select: { id: true, status: true }
     });
 }
