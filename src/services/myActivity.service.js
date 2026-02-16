@@ -14,7 +14,7 @@ export async function addMyActivity(userId, activityId, body) {
   const { goalId, startDate, endDate, point } = body || {};
   if (!goalId || !startDate || !endDate || !point) return { bad: true };
 
-  // ✅ 여기서 겹침 판정 (create 전에!)
+  // 1) 겹침 판정 먼저
   const decision = await decideScheduleStatus({
     prisma,
     userId,
@@ -23,7 +23,7 @@ export async function addMyActivity(userId, activityId, body) {
     endDate,
   });
 
-  // ✅ CONFLICT면 409로 막기 (컨트롤러에서 e.statusCode/e.payload 반영 필요)
+  // 2) CONFLICT면 여기서 막기 (아무 것도 생성 X)
   if (decision.status === "CONFLICT") {
     const err = new Error(decision.reason);
     err.statusCode = 409;
@@ -31,6 +31,7 @@ export async function addMyActivity(userId, activityId, body) {
     throw err;
   }
 
+  // 3) MyActivity 생성
   const created = await createMyActivity({
     userId,
     goalId,
@@ -40,29 +41,34 @@ export async function addMyActivity(userId, activityId, body) {
     point,
   });
 
-  await calendarRepository.createUserActivity(userId, {
-  title: activity.title,
-  startAt: `${startDate}T00:00:00`,
-  endAt: `${endDate}T23:59:59`,
-  type: "ACTIVITY",
-  category: activity.tab,      // GROWTH/REST
-  point,                       // 있으면 같이
-  eventColor: 1,
-  recurrenceRule: null,
-});
+  // 4) 캘린더(UserActivity) 생성 (eventId)
+  const ua = await calendarRepository.createUserActivity(userId, {
+    title: activity.title,
+    startAt: `${startDate}T00:00:00+09:00`,
+    endAt: `${endDate}T23:59:59+09:00`,
+    type: "ACTIVITY",
+    category: activity.tab, // GROWTH/REST
+    point,
+    eventColor: 1,
+    recurrenceRule: null,
+  });
 
-
-
-
+  // 5) MyActivity에 eventId 매핑 저장
+  await prisma.myActivity.update({
+    where: { id: created.id },
+    data: { userActivityId: ua.id },
+  });
+  
   return {
     myActivityId: created.id,
+    eventId: ua.id,
     activityId: activity.id,
     title: activity.title,
     category: activity.tab,
     point,
     startDate,
     endDate,
-    // ✅ CAUTION/AVAILABLE 내려주기
+    // CAUTION/AVAILABLE 내려주기
     scheduleStatus: decision.status,
     scheduleReason: decision.reason,
   };

@@ -9,3 +9,4 @@ node_modules/
 backup.sql
 prisma/schema.prisma.bak
 local.sha256
+planvas_backup.sql

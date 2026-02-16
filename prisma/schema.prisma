@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -32,27 +32,26 @@ model User {
 }
 
 model ActivityCatalog {
-  id           Int          @id @default(autoincrement())
-  title        String
-  tab          ActivityTab  @default(GROWTH)
-  point        Int
-  thumbnailUrl String?      @db.VarChar(2048)
-  description  String?      @db.Text
-  type         ActivityType @default(NORMAL)
-  startDate    DateTime?
-  endDate      DateTime?  
-  recruitEndDate   DateTime?  @map("recruit_end_date") 
+  id             Int          @id @default(autoincrement())
+  title          String
+  tab            ActivityTab  @default(GROWTH)
+  point          Int
+  thumbnailUrl   String?      @db.VarChar(2048)
+  description    String?      @db.Text
+  type           ActivityType @default(NORMAL)
+  startDate      DateTime?
+  endDate        DateTime?
+  recruitEndDate DateTime?    @map("recruit_end_date")
   organizer      String?      @db.VarChar(100)
-  
-  tags              Json?
-  externalUrl        String?      @db.VarChar(2048)
-  categoryId         Int?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  CartItem           CartItem[]
-  MyActivity         MyActivity[]
-  activityInterests  ActivityInterest[]
 
+  tags              Json?
+  externalUrl       String?            @db.VarChar(2048)
+  categoryId        Int?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  CartItem          CartItem[]
+  MyActivity        MyActivity[]
+  activityInterests ActivityInterest[]
 
   @@index([tab])
   @@index([categoryId])
@@ -60,21 +59,24 @@ model ActivityCatalog {
 }
 
 model UserActivity {
-  id            Int         @id @default(autoincrement())
-  userId        Int         @map("user_id")
-  googleEventId String?     @unique @map("google_event_id") @db.VarChar(255)
-  title         String      @db.VarChar(200)
-  point          Int        @default(0)
-  startAt       DateTime    @map("start_at")
-  endAt         DateTime    @map("end_at")
-  category      ActivityTab @default(NONE)
-  type          String      @default("FIXED") @db.VarChar(20)
-  status        String      @default("TODO") @db.VarChar(20)
-  eventColor     Int        @default(1) @map("event_color")
-  recurrenceRule String?    @map("recurrence_rule")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             Int         @id @default(autoincrement())
+  userId         Int         @map("user_id")
+  googleEventId  String?     @unique @map("google_event_id") @db.VarChar(255)
+  title          String      @db.VarChar(200)
+  point          Int         @default(0)
+  startAt        DateTime    @map("start_at")
+  endAt          DateTime    @map("end_at")
+  category       ActivityTab @default(NONE)
+  type           String      @default("FIXED") @db.VarChar(20)
+  status         String      @default("TODO") @db.VarChar(20)
+  eventColor     Int         @default(1) @map("event_color")
+  recurrenceRule String?     @map("recurrence_rule")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  myActivity MyActivity? @relation("MyActivity_UserActivity")
+
   @@index([userId])
   @@map("user_activity")
 }
@@ -159,10 +161,9 @@ model PushToken {
 }
 
 model Interest {
-  id   Int    @id @default(autoincrement())
-  name String @unique @db.VarChar(50)
+  id                Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(50)
   activityInterests ActivityInterest[]
-
 
   @@map("interest")
 }
@@ -217,12 +218,15 @@ model MyActivity {
   userId     Int
   goalId     Int
   activityId Int
-  point      Int        
+  point      Int
   completed  Boolean         @default(false)
   startDate  DateTime
   endDate    DateTime
   createdAt  DateTime        @default(now())
   Activity   ActivityCatalog @relation(fields: [activityId], references: [id])
+
+  userActivityId Int?          @unique
+  userActivity   UserActivity? @relation("MyActivity_UserActivity", fields: [userActivityId], references: [id], onDelete: SetNull)
 
   @@index([activityId], map: "MyActivity_activityId_fkey")
   @@index([goalId])
@@ -238,19 +242,16 @@ enum ActivityTab {
 enum ActivityType {
   NORMAL
   CONTEST
-
 }
 
 model ActivityInterest {
   activityId Int
   interestId Int
 
-  activity  ActivityCatalog @relation(fields: [activityId], references: [id])
-  interest  Interest        @relation(fields: [interestId], references: [id])
+  activity ActivityCatalog @relation(fields: [activityId], references: [id])
+  interest Interest        @relation(fields: [interestId], references: [id])
 
   @@id([activityId, interestId])
   @@index([interestId])
   @@index([activityId])
 }
-
-
