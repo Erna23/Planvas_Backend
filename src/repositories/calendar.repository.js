@@ -124,7 +124,7 @@ export const createUserActivity = async (
     recurrenceRule = null,
   }
 ) => {
-  const allowed = new Set(["MANUAL", "FIXED", "ACTIVITY"]); // ✅ ACTIVITY 추가
+  const allowed = new Set(["MANUAL", "FIXED", "ACTIVITY"]); // ACTIVITY 추가
   const finalType = allowed.has(type) ? type : "MANUAL";
 
   const finalColor = eventColor >= 1 && eventColor <= 10 ? eventColor : 1;
@@ -140,7 +140,7 @@ export const createUserActivity = async (
       endAt: new Date(endAt),
       category,
       type: finalType,
-      point: finalPoint,              // ✅ point 저장
+      point: finalPoint,              // point 저장
       status: "TODO",
       eventColor: finalColor,
       recurrenceRule,
