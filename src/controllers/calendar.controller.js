@@ -7,6 +7,58 @@ import {
 import * as calendarService from "../services/calendar.service.js";
 import { ok, fail, getAuthUserId } from "../utils/apiResponse.js";
 
+// ===== KST(+09:00) 응답 변환 유틸 =====
+const toKstIsoString = (value) => {
+  if (!value) return value;
+
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return value;
+
+  // UTC -> KST(+9h)
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().replace("Z", "+09:00");
+};
+
+// 객체/배열 payload에서 특정 날짜 필드만 KST로 변환
+const convertDatesToKstDeep = (payload) => {
+  if (payload === null || payload === undefined) return payload;
+
+  // Date 자체가 오면 변환
+  if (payload instanceof Date) return toKstIsoString(payload);
+
+  // 배열이면 재귀
+  if (Array.isArray(payload)) {
+    return payload.map(convertDatesToKstDeep);
+  }
+
+  // 객체면 날짜 필드만 변환 + 내부 재귀
+  if (typeof payload === "object") {
+    const out = { ...payload };
+
+    // 흔히 내려주는 날짜 필드들만 변환 (안전하게)
+    const dateKeys = ["startAt", "endAt", "createdAt", "updatedAt", "recurrenceEndAt"];
+
+    for (const k of dateKeys) {
+      if (k in out && out[k] !== null && out[k] !== undefined) {
+        out[k] = toKstIsoString(out[k]);
+      }
+    }
+
+    // 나머지 필드들도 중첩 구조면 재귀 변환
+    for (const key of Object.keys(out)) {
+      // dateKeys는 이미 처리했으니 스킵해도 되고, 중복 변환 방지 차원에서 스킵
+      if (dateKeys.includes(key)) continue;
+      out[key] = convertDatesToKstDeep(out[key]);
+    }
+
+    return out;
+  }
+
+  // string/number/boolean 등은 그대로
+  return payload;
+};
+
+
 export function registerCalendarRoutes(app) {
     // 1) Connect
     app.post("/api/integrations/google-calendar/connect", requireAuth, async (req, res) => {
@@ -48,7 +100,7 @@ export function registerCalendarRoutes(app) {
             const rawEvents = await calendarService.getGoogleEventsList(userId);
             const formattedEvents = calendarResponseDTO(rawEvents);
 
-            return ok(res, { events: formattedEvents }, 200);
+            return ok(res, convertDatesToKstDeep({ events: formattedEvents }), 200);
         } catch (e) {
             console.error(e);
             if (e?.message === "NOT_CONNECTED") {
@@ -90,7 +142,7 @@ export function registerCalendarRoutes(app) {
             const rawData = await calendarService.getMonthlyEvents(userId, year, month);
             const resultData = calendarMonthResponseDTO(rawData, year, month, 3);
 
-            return ok(res, resultData, 200);
+            return ok(res, convertDatesToKstDeep(resultData), 200);
         } catch (e) {
             console.error(e);
             return fail(res, "C007", "월간 조회 실패", 500, e?.message ?? null);
@@ -109,7 +161,7 @@ export function registerCalendarRoutes(app) {
             const rawData = await calendarService.getDailyEvents(userId, date);
             const resultData = calendarDayDetailResponseDTO(rawData, date);
 
-            return ok(res, resultData, 200);
+            return ok(res, convertDatesToKstDeep(resultData), 200);
         } catch (e) {
             console.error(e);
             return fail(res, "C008", "일간 조회 실패", 500, e?.message ?? null);
@@ -122,7 +174,7 @@ export function registerCalendarRoutes(app) {
             const userId = getAuthUserId(req);
             if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
-            const { title, startAt, endAt, type, eventColor, recurrenceRule, category } = req.body ?? {};
+            const { title, startAt, endAt, type, eventColor, recurrenceRule, recurrenceEndAt,category } = req.body ?? {};
 
             if (!title || !startAt || !endAt) {
                 return fail(res, "C400", "title, startAt, endAt는 필수입니다.", 400);
@@ -136,10 +188,11 @@ export function registerCalendarRoutes(app) {
                 type,
                 eventColor,
                 recurrenceRule,
+                recurrenceEndAt,
                 category,
             });
 
-            return ok(res, created, 201);
+            return ok(res, convertDatesToKstDeep(created), 201);
         } catch (e) {
             console.error(e);
             return fail(res, "C009", "일정 생성 실패", 500, e?.message ?? null);
@@ -161,7 +214,7 @@ export function registerCalendarRoutes(app) {
             const updated = await calendarService.updateManualEvent(userId, eventId, payload);
             if (!updated) return fail(res, "C404", "수정할 일정이 없습니다.", 404);
 
-            return ok(res, updated, 200);
+            return ok(res, convertDatesToKstDeep(updated), 200);
         } catch (e) {
             console.error(e);
             return fail(res, "C010", "일정 수정 실패", 500, e?.message ?? null);
@@ -187,3 +240,4 @@ export function registerCalendarRoutes(app) {
         }
     });
 }
+

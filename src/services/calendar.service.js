@@ -73,7 +73,10 @@ export const getDailyEvents = async (userId, dateStr) => {
 };
 
 // 7. 직접 일정 생성 (eventColor, recurrenceRule 복구)
-export const createManualEvent = async (userId, { title, startAt, endAt, type, eventColor, recurrenceRule, category }) => {
+export const createManualEvent = async (
+  userId,
+  { title, startAt, endAt, type, eventColor, recurrenceRule, recurrenceEndAt, category }
+) => {
   const eventType = type === "FIXED" ? "FIXED" : "MANUAL";
   const eventCategory = category === "REST" ? "REST" : "GROWTH";
 
@@ -87,15 +90,48 @@ export const createManualEvent = async (userId, { title, startAt, endAt, type, e
     throw new Error("endAt은 startAt보다 빠를 수 없습니다.");
   }
 
-  // 리포지토리에 새 필드들을 함께 전달
+  // 반복 종료일이 있으면 RRULE 기반으로 다건 생성
+  if (recurrenceRule && recurrenceEndAt) {
+    const until = new Date(recurrenceEndAt);
+    if (isNaN(until.getTime())) throw new Error("recurrenceEndAt 날짜 형식이 올바르지 않습니다.");
+    if (until < s) throw new Error("recurrenceEndAt은 startAt보다 빠를 수 없습니다.");
+
+    const rule = parseRRule(recurrenceRule);
+    if (!rule) throw new Error("지원하지 않는 recurrenceRule 형식입니다. (지원: DAILY/WEEKLY/MONTHLY)");
+
+    const occ = buildOccurrences({ startAt: s, endAt: e, rule, recurrenceEndAt: until });
+
+    const createdItems = await Promise.all(
+      occ.map(({ s: os, e: oe }) =>
+        calendarRepository.createUserActivity(userId, {
+          title,
+          startAt: os,
+          endAt: oe,
+          type: eventType,
+          category: eventCategory,
+          eventColor: eventColor || 1,
+          recurrenceRule: recurrenceRule || null,
+        })
+      )
+    );
+
+    // 응답: 기존 호환을 위해 첫 번째 item + 생성 개수/전체도 같이 제공(원하면 client가 활용)
+    return {
+      createdCount: createdItems.length,
+      item: createdItems[0],
+      items: createdItems,
+    };
+  }
+
+  // 반복이 없으면 기존처럼 1건 생성
   return await calendarRepository.createUserActivity(userId, {
     title,
     startAt: s,
     endAt: e,
     type: eventType,
     category: eventCategory,
-    eventColor: eventColor || 1,      // 💡 기본값 1 설정
-    recurrenceRule: recurrenceRule || null, // 💡 반복 규칙 전달
+    eventColor: eventColor || 1,
+    recurrenceRule: recurrenceRule || null,
   });
 };
 
@@ -181,4 +217,101 @@ export const deleteManualEvent = async (userId, eventId) => {
   const ok = await calendarRepository.deleteUserActivity(userId, eventId);
   if (!ok) throw new Error("삭제할 일정이 없거나 권한이 없습니다.");
   return true;
+};
+
+// --- RRULE 파서 (최소 지원: FREQ, INTERVAL, BYDAY) ---
+const parseRRule = (rrule) => {
+  if (!rrule || typeof rrule !== "string") return null;
+  const parts = rrule.split(";").map((s) => s.trim()).filter(Boolean);
+
+  const map = {};
+  for (const p of parts) {
+    const [k, v] = p.split("=");
+    if (!k || v === undefined) continue;
+    map[k.toUpperCase()] = v;
+  }
+
+  const freq = (map.FREQ || "").toUpperCase();         // DAILY | WEEKLY | MONTHLY
+  const interval = Math.max(1, Number(map.INTERVAL || 1) || 1);
+  const byday = map.BYDAY ? map.BYDAY.split(",").map(s => s.trim().toUpperCase()) : null; // MO,TU...
+
+  if (!["DAILY", "WEEKLY", "MONTHLY"].includes(freq)) return null;
+
+  return { freq, interval, byday };
+};
+
+// 요일 문자열 -> JS 요일(0=일..6=토)
+const dayCodeToJsDay = (code) => {
+  const m = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+  return m[code] ?? null;
+};
+
+const addDays = (d, n) => {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+};
+
+const addMonths = (d, n) => {
+  const x = new Date(d);
+  x.setMonth(x.getMonth() + n);
+  return x;
+};
+
+// startAt 기준 “반복 발생 startAt들” 생성 (startAt 포함)
+const buildOccurrences = ({ startAt, endAt, rule, recurrenceEndAt }) => {
+  const durationMs = endAt.getTime() - startAt.getTime();
+  const until = recurrenceEndAt;
+
+  const occurrences = [];
+
+  if (rule.freq === "DAILY") {
+    let cur = new Date(startAt);
+    while (cur <= until) {
+      occurrences.push({ s: new Date(cur), e: new Date(cur.getTime() + durationMs) });
+      cur = addDays(cur, rule.interval);
+    }
+    return occurrences;
+  }
+
+  if (rule.freq === "WEEKLY") {
+    // BYDAY 없으면 startAt의 요일로
+    const days = (rule.byday?.length ? rule.byday : [ ["SU","MO","TU","WE","TH","FR","SA"][startAt.getDay()] ])
+      .map(dayCodeToJsDay)
+      .filter((v) => v !== null);
+
+    // 시작 주의 일요일(weekStart)로 맞추고, interval 주 단위로 전개
+    const startWeekStart = addDays(startAt, -startAt.getDay());
+    let weekStart = new Date(startWeekStart);
+
+    while (weekStart <= until) {
+      for (const jsDay of days) {
+        const candidate = addDays(weekStart, jsDay);
+
+        // 시간은 startAt의 시:분:초 유지 (candidate는 날짜만 맞춰졌으니 시간 덮어씌움)
+        candidate.setHours(startAt.getHours(), startAt.getMinutes(), startAt.getSeconds(), startAt.getMilliseconds());
+
+        if (candidate < startAt) continue;
+        if (candidate > until) continue;
+
+        occurrences.push({ s: new Date(candidate), e: new Date(candidate.getTime() + durationMs) });
+      }
+      weekStart = addDays(weekStart, 7 * rule.interval);
+    }
+
+    // 날짜 정렬
+    occurrences.sort((a, b) => a.s - b.s);
+    return occurrences;
+  }
+
+  if (rule.freq === "MONTHLY") {
+    let cur = new Date(startAt);
+    while (cur <= until) {
+      occurrences.push({ s: new Date(cur), e: new Date(cur.getTime() + durationMs) });
+      cur = addMonths(cur, rule.interval);
+    }
+    return occurrences;
+  }
+
+  return occurrences;
 };

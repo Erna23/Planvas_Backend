@@ -210,13 +210,61 @@ paths:
 
   /api/calendar/event:
     post:
-      summary: 직접 일정 추가
-      tags: [Calendar]
+      summary: 직접 일정 생성
+      description: |
+        직접 일정 생성 API.
+        recurrenceRule과 recurrenceEndAt이 모두 존재하면 반복 일정이 생성됩니다.
+      tags:
+        - Calendar
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ManualCreateRequest" }
+            schema:
+              type: object
+              required:
+                - title
+                - startAt
+                - endAt
+              properties:
+                title:
+                  type: string
+                  example: 기획서 작성
+                startAt:
+                  type: string
+                  format: date-time
+                  example: 2026-02-12T14:00:00+09:00
+                endAt:
+                  type: string
+                  format: date-time
+                  example: 2026-02-12T16:00:00+09:00
+                type:
+                  type: string
+                  enum: [MANUAL, FIXED]
+                  default: MANUAL
+                category:
+                  type: string
+                  enum: [GROWTH, REST]
+                  default: GROWTH
+                eventColor:
+                  type: integer
+                  default: 1
+                  example: 1
+                recurrenceRule:
+                  type: string
+                  nullable: true
+                  description: |
+                    반복 규칙 (RRULE 형식)
+                    예: FREQ=DAILY;INTERVAL=1
+                  example: null
+                recurrenceEndAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: 반복 종료 일시
+                  example: null
       responses:
         "201":
           description: 생성 성공
