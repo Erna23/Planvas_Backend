@@ -59,7 +59,7 @@ components:
         itemId: { type: string, example: "10" }
         title: { type: string, example: "과제하기" }
         isFixed: { type: boolean, example: false }
-        type: { type: string, example: "MANUAL" }
+        type: { type: string, enum: [MANUAL, FIXED, ACTIVITY, GOOGLE], example: "MANUAL" }
         category: { type: string, example: "GROWTH" }
         eventColor: { type: integer, example: 3 }
         recurrenceRule: { type: string, nullable: true, example: "FREQ=WEEKLY;BYDAY=MO" }
@@ -109,7 +109,7 @@ components:
           type: object
           properties:
             date: { type: string, example: "2026-02-12" }
-            # ✅ 지은님이 요청한 필드명으로 변경
+            # 지은님이 요청한 필드명으로 변경
             todayTodos:
               type: array
               items: { $ref: "#/components/schemas/CalendarDayItem" }
@@ -122,19 +122,26 @@ components:
         title: { type: string, example: "기획서 작성" }
         startAt: { type: string, format: date-time, example: "2026-02-12T14:00:00+09:00" }
         endAt: { type: string, format: date-time, example: "2026-02-12T16:00:00+09:00" }
-        type: { type: string, enum: [MANUAL, FIXED], default: "MANUAL" }
+        type: { type: string, enum: [MANUAL, FIXED, ACTIVITY], default: "MANUAL" }
         category: { type: string, enum: [GROWTH, REST], default: "GROWTH" }
+        point: { type: integer, example: 20, default: 0 }
         eventColor: { type: integer, minimum: 1, maximum: 10, default: 1 }
         recurrenceRule: { type: string, nullable: true, example: "FREQ=DAILY;INTERVAL=1" }
 
     ManualUpdateRequest:
       type: object
+      description: 변경할 필드만 포함해서 전송합니다.
       properties:
         title: { type: string }
         startAt: { type: string, format: date-time }
         endAt: { type: string, format: date-time }
-        type: { type: string, enum: [MANUAL, FIXED] }
+
+        type: { type: string, enum: [MANUAL, FIXED, ACTIVITY] }
+        
         category: { type: string, enum: [GROWTH, REST] }
+
+        point: { type: integer, example: 30}
+
         eventColor: { type: integer, minimum: 1, maximum: 10 }
         recurrenceRule: { type: string, nullable: true }
         status: { type: string, enum: [TODO, DONE] }
