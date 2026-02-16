@@ -7,7 +7,7 @@ const __dirname = process.cwd();
 const controllerPath = path.join(__dirname, "src", "controllers", "*.js").replace(/\\/g, "/");
 
 // 2.  방금 만든 yaml 파일 경로
-const yamlPath = path.join(__dirname, "src", "swagger", "*.yaml").replace(/\\/g, "/");
+const yamlPath = path.resolve(process.cwd(), "src/swagger/*.yaml").replace(/\\/g, "/");
 
 const options = {
     definition: {

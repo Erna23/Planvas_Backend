@@ -41,13 +41,17 @@ export async function addMyActivity(userId, activityId, body) {
   });
 
   await calendarRepository.createUserActivity(userId, {
-    title: activity.title,
-    startAt: new Date(startDate),
-    endAt: new Date(endDate),
-    type: "NORMAL",              
-    category: activity.tab,     
-    eventColor: 1,               
-  });
+  title: activity.title,
+  startAt: `${startDate}T00:00:00`,
+  endAt: `${endDate}T23:59:59`,
+  type: "ACTIVITY",
+  category: activity.tab,      // GROWTH/REST
+  point,                       // 있으면 같이
+  eventColor: 1,
+  recurrenceRule: null,
+});
+
+
 
 
   return {
