@@ -262,10 +262,26 @@ components:
         title:
           type: string
           example: "출근 전 영어 공부"
+        type:
+          type: string
+          example: "type"
         category:
           type: string
           enum: [NONE, GROWTH, REST]
           example: "GROWTH"
+        point: 
+          type: integer
+          example: 30,
+        eventColor:
+          type: integer
+          description: 1 ~ 10
+          example: 1
+        startAt:
+          type: string
+          example: "2026-02-17 19:00:00"
+        endAt:
+          type: string
+          example: "2026-02-17 21:00:00"
         status:
           type: string
           enum: ["TODO", "DONE"]
@@ -278,32 +294,6 @@ components:
         id:
           type: integer
           example: 1
-        title:
-          type: string
-          example: "출근 전 영어 공부"
-        type:
-          type: string
-          nullable: true
-          example: "MANUAL"
-        category:
-          type: string
-          enum: [NONE, GROWTH, REST]
-          example: "GROWTH"
-        point:
-          type: integer
-          example: 5
-        eventColor:
-          type: string
-          nullable: true
-          example: "BLUE"
-        startAt:
-          type: string
-          format: date-time
-          example: "2026-02-15T07:00:00.000Z"
-        endAt:
-          type: string
-          format: date-time
-          example: "2026-02-15T08:00:00.000Z"
         status:
           type: string
           enum: ["TODO", "DONE"]
