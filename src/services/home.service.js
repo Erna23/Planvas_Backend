@@ -114,7 +114,8 @@ export const getHomeData = async (userId) => {
     point: t.point || 0,
     color: t.eventColor || 1,
     startTime: formatTime(t.startAt),
-    endTime: formatTime(t.endAt)
+    endTime: formatTime(t.endAt),
+    recurrenceRule: t.recurrenceRule ?? t.recurrence_rule ?? null,
   }));
 
   const rawRecs = safeArray(await homeRepository.findRecommendations());

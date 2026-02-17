@@ -71,6 +71,7 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
       point: true,
       eventColor: true,
       googleEventId: true,
+      recurrenceRule: true,
     },
     orderBy: { startAt: "asc" },
   });

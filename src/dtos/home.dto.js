@@ -71,6 +71,7 @@ export const homeResponseDTO = (
     startTime: todo.startTime,
     endTime: todo.endTime,
     completed: todo.status === "DONE",
+    recurrenceRule: todo.recurrenceRule ?? null,
   }));
 
   // 4. 추천 활동
