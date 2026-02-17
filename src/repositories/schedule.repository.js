@@ -187,7 +187,7 @@ export async function completeActivity(id) {
         where: { id },
         select: { status: true }
     })
-    const next = current === "TODO" ? "DONE" : "TODO";
+    const next = current.status == "TODO" ? "DONE" : "TODO";
 
     return await prisma.userActivity.update({
         where: { id },
