@@ -1,4 +1,6 @@
 import * as homeRepository from "../repositories/home.repository.js";
+import { getGrowthAndRest } from "../repositories/schedule.repository.js";
+import { getGrowthAndRestPointFromActivities } from "../repositories/activity.repository.js";
 
 const toLocalDateString = (d) => {
   const y = d.getFullYear();
