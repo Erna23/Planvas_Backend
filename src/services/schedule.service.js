@@ -6,6 +6,7 @@ import {
 	updateUserActivityById,
 	deleteUserActivityById,
 	addOwnUserActivity,
+	addDateTodo,
 	completeActivity,
 	getDateActivity,
 	findUserActivityById,
@@ -127,12 +128,17 @@ export async function deleteFixedSchedule(userId, id) {
 	};
 }
 
+// TO-DO
+export async function addTodos(userId, body, date) {
+	return await addDateTodo(userId, body, date);
+}
+
 export async function getTodos(userId, date) {
 	return await getDateActivity(userId, date);
 }
 
 export async function completeTodos(id) {
-	return { id: (await completeActivity(id)).id };
+	return await completeActivity(id);
 }
 
 export async function createMyActivity(userId, body) {
@@ -178,6 +184,7 @@ export async function deleteMyActivity(userId, id) {
 	};
 }
 
+// 활동 완료 처리
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
 	const { before_growth, before_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
