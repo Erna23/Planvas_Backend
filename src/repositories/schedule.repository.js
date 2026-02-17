@@ -180,15 +180,7 @@ export async function completeActivity(id) {
         where: { id },
         data: { status: "DONE" },
         select: { 
-            id: true, 
-            title: true,
-            type: true,
-            category: true,
-            point: true,
-            eventColor: true,
-            startAt: true,
-            endAt: true,
-            status : true
+            id: true, status : true
         }
     });
 }
@@ -212,8 +204,13 @@ export async function getDateActivity(userId, date) {
         select: {
             id: true,
             title: true,
+            type: true,
             category: true,
-            status: true
+            point: true,
+            eventColor: true,
+            startAt: true,
+            endAt: true,
+            status: true,
         }
     });
 }
