@@ -100,6 +100,7 @@ components:
             startAt: { type: string, format: date-time }
             endAt: { type: string, format: date-time }
             status: { type: string, example: "TODO" }
+            point: { type: integer, nullable: true, example: 20 }
 
     ApiCalendarDay:
       type: object

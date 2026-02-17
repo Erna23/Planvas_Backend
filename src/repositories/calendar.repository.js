@@ -188,11 +188,21 @@ export const deleteUserActivity = async (userId, eventId) => {
 
   return result.count > 0;
 };
-export const findEventById = async (userId, eventId) => {
+export const findEventById = (userId, eventId) => {
   return prisma.userActivity.findFirst({
-    where: {
-      id: eventId,
-      userId,
+    where: { id: eventId, userId },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      category: true,
+      eventColor: true,
+      recurrenceRule: true,
+      startAt: true,
+      endAt: true,
+      status: true,
+      point: true, 
     },
   });
 };
+
