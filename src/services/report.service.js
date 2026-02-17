@@ -58,7 +58,11 @@ export async function createReport(userId, goalId = null) {
         throw err;
     }
   
-    const { growth, rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+    let { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+    const activities = await getGrowthAndRestPointFromActivities(activityIds);
+
+    growth += activities.growth;
+    rest += activities.rest;
     const summary = await getSummaryDto(goal, growth, rest);
 
     await createNewReport(user, growth, rest, goal, summary);
