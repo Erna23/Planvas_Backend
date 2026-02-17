@@ -183,9 +183,15 @@ export async function addDateTodo(userId, body, date = new Date(now())) {
 }
 
 export async function completeActivity(id) {
+    const current = await prisma.userActivity.findUnique({
+        where: { id },
+        select: { status: true }
+    })
+    const next = current === "TODO" ? "DONE" : "TODO";
+
     return await prisma.userActivity.update({
         where: { id },
-        data: { status: "DONE" },
+        data: { status: next },
         select: { 
             id: true, status : true
         }
