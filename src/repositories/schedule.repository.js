@@ -16,14 +16,14 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
                 endAt: { gt: s },
             },
             select: {
-                tab: true, point: true
+                category: true, point: true
             },
         });
 
         rows.reduce(
             (acc, r) => {
-                if (tab === "GROWTH") acc.growth += a.point ?? 0;
-                else if (tab === "REST") acc.rest += a.point ?? 0;
+                if (category === "GROWTH") acc.growth += a.point ?? 0;
+                else if (category === "REST") acc.rest += a.point ?? 0;
 
                 return acc;
             },
@@ -38,11 +38,15 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
                 completed: true
             },
             select: {
-                activityId
+                activityId: true
             }
         })
 
-        return { rows, rows2 }
+        const activityIds = rows2
+            .map(r => r.activityId)
+            .filter((v) => v != null);
+
+        return { rows, activityIds }
 
     } catch {
         return { growth: 0, rest: 0, activityId: [] };
