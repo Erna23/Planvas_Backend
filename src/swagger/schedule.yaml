@@ -223,14 +223,13 @@ paths:
         security:
             - bearerAuth: []
         parameters:
-            - in: 
-                query:
-                    name: date
-                    required: true
-                    description: 조회할 날짜 (YYYY-MM-DD)
-                    schema:
-                        type: string
-                        example: "2026-02-15"
+            - in: query
+              name: date
+              required: true
+              description: 조회할 날짜 (YYYY-MM-DD)
+              schema:
+                type: string
+                example: "2026-02-15"
         responses:
             "200":
             description: 조회 성공
