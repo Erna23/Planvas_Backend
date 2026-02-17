@@ -193,26 +193,30 @@ export async function deleteMyActivity(userId, id) {
 // 활동 완료 처리
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
-	const { before_growth, before_rest, before_rows2 } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
-	const { activityGrowthBefore, activityRestBefore } = await getGrowthAndRestPointFromActivities(before_rows2);
-	before_growth += activityGrowthBefore;
-	before_rest += activityRestBefore;
-
+  
+	const before = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const beforeAct = await getGrowthAndRestPointFromActivities(before.activityIds);
+  
+	const beforeGrowth = before.growth + beforeAct.growth;
+	const beforeRest   = before.rest  + beforeAct.rest;
+  
 	const activity = await completeActivity(Number(id));
-	const { after_growth, after_rest, after_rows2 } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
-	const { activity_growth, activityRestAfter } = await getGrowthAndRestPointFromActivities(after_rows2);
-	after_growth += activity_growth;
-	after_rest += activityRestAfter;
-
+  
+	const after = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const afterAct = await getGrowthAndRestPointFromActivities(after.activityIds);
+  
+	const afterGrowth = after.growth + afterAct.growth;
+	const afterRest   = after.rest  + afterAct.rest;
+  
 	return {
 		myActivityId: activity.id,
 		beforeProgress: {
-			growthAchieved: before_growth,
-			restAchieved: before_rest,
+			growthAchieved: beforeGrowth,
+			restAchieved: beforeRest,
 		},
 		afterProgress: {
-			growthAchieved: after_growth,
-			restAchieved: after_rest,
+			growthAchieved: afterGrowth,
+			restAchieved: afterRest,
 		},
 	};
-}
+}  
