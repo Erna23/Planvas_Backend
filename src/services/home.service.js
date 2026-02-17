@@ -55,8 +55,8 @@ export const getHomeData = async (userId) => {
   let progress = { growthAchieved: 0, restAchieved: 0 };
   const { growth, rest, activityIds } = await getGrowthAndRest(Number(userId), goal.startDate, goal.endDate);
 	const activity = await getGrowthAndRestPointFromActivities(activityIds);
-  progress.growthAchieved = growth + activity.growth;
-  progress.restAchieved = rest + activity.rest;
+  progress.growthAchieved = growth + activity.growth > 100 ? 100 : growth + activity.growth;
+  progress.restAchieved = rest + activity.rest > 100 ? 100 : rest + activity.rest;
 
   if (goal) {
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
