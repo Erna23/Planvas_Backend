@@ -227,7 +227,7 @@ components:
     # ---------- Todo ----------
     TodoCreateRequest:
       type: object
-      required: [title, category, point, startTime, endTime]
+      required: [title, category, point, eventColor, startTime, endTime]
       properties:
         title:
           type: string
@@ -242,6 +242,10 @@ components:
           type: integer
           description: 완료 시 받을 점수
           example: 5
+        eventColor:
+          type: integer
+          description: 색깔 번호 (1 ~ 10)
+          example: 1
         startTime:
           type: string
           description: 시작 시각 (HH:mm)
