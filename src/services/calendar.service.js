@@ -219,6 +219,25 @@ export const deleteManualEvent = async (userId, eventId) => {
   return true;
 };
 
+export const getEventDetail = async (userId, eventId) => {
+  const event = await calendarRepository.findEventById(userId, eventId);
+  if (!event) return null;
+
+  return {
+    itemId: String(event.id),
+    title: event.title,
+    isFixed: event.type === "FIXED",
+    type: event.type,
+    category: event.category,
+    eventColor: event.eventColor,
+    recurrenceRule: event.recurrenceRule ?? null,
+    startAt: event.startAt,
+    endAt: event.endAt,
+    status: event.status ?? "TODO",
+  };
+};
+
+
 // --- RRULE 파서 (최소 지원: FREQ, INTERVAL, BYDAY) ---
 const parseRRule = (rrule) => {
   if (!rrule || typeof rrule !== "string") return null;

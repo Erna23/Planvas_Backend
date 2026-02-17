@@ -239,5 +239,26 @@ export function registerCalendarRoutes(app) {
             return fail(res, "C011", "일정 삭제 실패", 500, e?.message ?? null);
         }
     });
+
+    // 10) Event Detail (일정 상세 조회)
+    app.get("/api/calendar/event/:id", requireAuth, async (req, res) => {
+        try {
+            const userId = getAuthUserId(req);
+            if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+            const eventId = Number(req.params.id);
+            if (!Number.isFinite(eventId)) {
+                return fail(res, "C400", "event id가 올바르지 않습니다.", 400);
+            }
+
+            // 서비스에서 요구 DTO 형태로 만들어서 반환하게 할 것
+            const detail = await calendarService.getEventDetail(userId, eventId);
+            if (!detail) return fail(res, "C404", "해당 일정을 찾을 수 없습니다.", 404);
+            return ok(res, convertDatesToKstDeep(detail), 200);
+        } catch (e) {
+            console.error(e);
+            return fail(res, "C012", "일정 상세 조회 실패", 500, e?.message ?? null);
+        }
+    });
 }
 
