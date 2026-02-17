@@ -23,31 +23,50 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                description: 시즌(목표 기간)별 리포트 목록
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      description: 리포트 ID (또는 목표 ID에 매핑된 식별자)
-                      example: 1
-                    title:
-                      type: string
-                      description: 목표/시즌 제목
-                      example: "2024 상반기 목표"
-                    startDate:
-                      type: string
-                      description: 목표 시작일 (YYYY-MM-DD)
-                      example: "2024-01-01"
-                    endDate:
-                      type: string
-                      description: 목표 종료일 (YYYY-MM-DD)
-                      example: "2024-06-30"
-                    year:
-                      type: integer
-                      description: 리포트가 속한 연도 (endDate 기준)
-                      example: 2024
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
+                    type: object
+                    nullable: true
+                    description: 성공 시 null
+                    example: null
+                  success:
+                    type: array
+                    description: 시즌(목표 기간)별 리포트 목록
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: 목표 ID
+                          example: 1
+                        title:
+                          type: string
+                          description: 목표/시즌 제목
+                          example: "2024 상반기 목표"
+                        startDate:
+                          type: string
+                          format: date-time
+                          description: 목표 시작일
+                          example: "2024-01-01T00:00:00.000Z"
+                        endDate:
+                          type: string
+                          format: date-time
+                          description: 목표 종료일
+                          example: "2024-06-30T00:00:00.000Z"
+                        year:
+                          type: integer
+                          description: 리포트가 속한 연도 (endDate 기준)
+                          example: 2024
+        "401":
+          description: 인증 실패 (Bearer 토큰 필요)
+        "404":
+          description: 사용자 정보를 찾을 수 없음
+        "500":
+          description: 서버 오류
 
   /api/reports/seasons/{goalId}:
     get:
@@ -66,6 +85,7 @@ paths:
           description: 리포트를 생성할 목표 ID
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: 리포트 생성 및 조회 성공
@@ -74,86 +94,104 @@ paths:
               schema:
                 type: object
                 properties:
-                  goal:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  error:
                     type: object
-                    description: 리포트 대상 목표 정보
-                    properties:
-                      goalId:
-                        type: integer
-                        example: 1
-                      title:
-                        type: string
-                        example: "2024 상반기 목표"
-                      startDate:
-                        type: string
-                        example: "2024-01-01"
-                      endDate:
-                        type: string
-                        example: "2024-06-30"
-                  ratio:
+                    nullable: true
+                    description: 성공 시 null
+                    example: null
+                  success:
                     type: object
-                    description: 목표 대비 실제 성장/휴식 비율
                     properties:
-                      target:
+                      goal:
                         type: object
+                        description: 리포트 대상 목표 정보
                         properties:
-                          growthRatio:
+                          goalId:
                             type: integer
-                            description: 목표 성장 비율
-                            example: 60
-                          restRatio:
-                            type: integer
-                            description: 목표 휴식 비율
-                            example: 40
-                      actual:
+                            example: 1
+                          title:
+                            type: string
+                            example: "2024 상반기 목표"
+                          startDate:
+                            type: string
+                            format: date-time
+                            example: "2024-01-01T00:00:00.000Z"
+                          endDate:
+                            type: string
+                            format: date-time
+                            example: "2024-06-30T00:00:00.000Z"
+                      ratio:
                         type: object
+                        description: 목표 대비 실제 성장/휴식 비율
                         properties:
-                          growthRatio:
-                            type: integer
-                            description: 실제 성장 달성치
-                            example: 45
-                          restRatio:
-                            type: integer
-                            description: 실제 휴식 달성치
-                            example: 35
-                  summary:
-                    type: object
-                    description: 리포트 요약 콘텐츠
-                    properties:
-                      type:
-                        type: string
-                        description: 요약 타입 (ALL_LACK, GROWTH_LACK, REST_LACK, PERFECT 등)
-                        example: "GROWTH_LACK"
-                      title:
-                        type: string
-                        example: "성장 활동이 목표에 비해 부족해요"
-                      subTitle:
-                        type: string
-                        example: "간단한 성장 활동부터 하나 추가해보세요!"
-                  cta:
-                    type: object
-                    description: 후속 행동(Call To Action) 정보
-                    properties:
-                      primary:
+                          target:
+                            type: object
+                            properties:
+                              growthRatio:
+                                type: integer
+                                description: 목표 성장 비율
+                                example: 60
+                              restRatio:
+                                type: integer
+                                description: 목표 휴식 비율
+                                example: 40
+                          actual:
+                            type: object
+                            properties:
+                              growthRatio:
+                                type: integer
+                                description: 실제 성장 달성치
+                                example: 45
+                              restRatio:
+                                type: integer
+                                description: 실제 휴식 달성치
+                                example: 35
+                      summary:
                         type: object
+                        description: 리포트 요약 콘텐츠
                         properties:
                           type:
                             type: string
-                            example: "RECOMMEND"
-                          focus:
+                            enum: [ALL_LACK, GROWTH_LACK, REST_LACK, PERFECT]
+                            example: "GROWTH_LACK"
+                          title:
                             type: string
-                            description: 추천 포커스 (ALL, GROWTH, REST, NONE)
-                            example: "GROWTH"
-                          label:
+                            example: "계획과는 조금 다르지만, 새로운 방향으로 나아갔던 기간이에요"
+                          subTitle:
                             type: string
-                            example: "새로운 성장 활동 탐색하기"
-                      secondary:
+                            example: "의도했던 균형보다, 지금 내게 더 필요한 가치에 집중한 시간이에요"
+                      cta:
                         type: object
+                        description: 후속 행동(Call To Action) 정보
                         properties:
-                          type:
-                            type: string
-                            example: "SET_NEXT_GOAL"
-                          label:
-                            type: string
-                            example: "다음 목표 기간 설정하러 가기"
-
+                          primary:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                example: "RECOMMEND"
+                              focus:
+                                type: string
+                                enum: [ALL, GROWTH, REST, NONE]
+                                example: "GROWTH"
+                              label:
+                                type: string
+                                example: "새로운 성장 활동 탐색하기"
+                          secondary:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                example: "SET_NEXT_GOAL"
+                              label:
+                                type: string
+                                example: "다음 목표 기간 설정하러 가기"
+        "401":
+          description: 인증 실패 (Bearer 토큰 필요)
+        "404":
+          description: 사용자 또는 목표 기간 정보를 찾을 수 없음
+        "500":
+          description: 서버 오류

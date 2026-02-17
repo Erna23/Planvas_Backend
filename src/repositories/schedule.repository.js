@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { prisma } from "../db.config.js";
 
 function toDate(d) {
@@ -159,15 +160,33 @@ export async function addOwnUserActivity(userId, data) {
     });
 }
 
+export async function addDateTodo(userId, body, date = new Date(now())) {
+    return await prisma.userActivity.create({
+        data: {
+            body,
+            status: "TODO"
+        },
+        select: { id: true }
+    })
+}
 
 export async function completeActivity(id) {
     return await prisma.userActivity.update({
         where: { id },
         data: { status: "DONE" },
-        select: { id: true, status: true }
+        select: { 
+            id: true, 
+            title: true,
+            type: true,
+            category: true,
+            point: true,
+            eventColor: true,
+            startAt: true,
+            endAt: true,
+            status : true
+        }
     });
 }
-
 
 export async function getDateActivity(userId, date) {
     const startOfDay = new Date(`${date}T00:00:00`);
