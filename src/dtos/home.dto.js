@@ -55,7 +55,8 @@ export const homeResponseDTO = (
         color: s.color,
         startTime: s.startTime,
         endTime: s.endTime,
-        completed: s.status === "DONE"
+        completed: s.status === "DONE",
+        recurrenceRule: s.recurrenceRule ?? null,
       })),
     };
   });

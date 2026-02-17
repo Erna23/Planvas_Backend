@@ -93,7 +93,8 @@ export const getHomeData = async (userId) => {
         point: s.point || 0,
         color: s.eventColor || 1,
         startTime: formatTime(s.startAt),
-        endTime: formatTime(s.endAt)
+        endTime: formatTime(s.endAt),
+        recurrenceRule: s.recurrenceRule ?? s.recurrence_rule ?? null,
       })),
     });
     currentLoopDate.setDate(currentLoopDate.getDate() + 1);
