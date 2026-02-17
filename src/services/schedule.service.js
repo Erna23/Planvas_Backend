@@ -15,7 +15,9 @@ import {
 import {
 	findCurrentGoalPeriodByUserId
 } from "../repositories/goals.repository.js";
-import { findById as findCatalogActivityById } from "../repositories/activity.repository.js";
+import {
+	getGrowthAndRestPointFromActivities
+} from "../repositories/activity.repository.js";
 import { ActivityType } from "@prisma/client";
 
 const dayMap = {
@@ -191,10 +193,16 @@ export async function deleteMyActivity(userId, id) {
 // 활동 완료 처리
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
-	const { before_growth, before_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const { before_growth, before_rest, before_rows2 } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const { activityGrowthBefore, activityRestBefore } = await getGrowthAndRestPointFromActivities(before_rows2);
+	before_growth += activityGrowthBefore;
+	before_rest += activityRestBefore;
 
 	const activity = await completeActivity(Number(id));
-	const { after_growth, after_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const { after_growth, after_rest, after_rows2 } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const { activity_growth, activityRestAfter } = await getGrowthAndRestPointFromActivities(after_rows2);
+	after_growth += activity_growth;
+	after_rest += activityRestAfter;
 
 	return {
 		myActivityId: activity.id,
