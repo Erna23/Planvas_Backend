@@ -15,6 +15,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
                 userId,
                 startAt: { lt: e },
                 endAt: { gt: s },
+                status: "DONE"
             },
             select: { category: true, point: true },
         });
