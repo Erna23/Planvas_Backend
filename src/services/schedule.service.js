@@ -193,7 +193,7 @@ export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
 	const { before_growth, before_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
 
-	const activity = await completeActivity(id);
+	const activity = await completeActivity(Number(id));
 	const { after_growth, after_rest } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
 
 	return {
