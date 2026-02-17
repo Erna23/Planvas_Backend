@@ -262,7 +262,7 @@ paths:
                     description: 종료 시각 (HH:mm)
                     example: "08:00"
         responses:
-            "200":
+          "200":
             description: 생성 성공
             content:
                 application/json:
@@ -330,17 +330,17 @@ paths:
             type: integer
       responses:
         "200":
-        description: 완료 처리 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-              resultType: { type: string, example: "SUCCESS" }
-              success:
+          description: 완료 처리 성공
+          content:
+            application/json:
+              schema:
                 type: object
                 properties:
-                id: { type: integer, example: 1 }
+                resultType: { type: string, example: "SUCCESS" }
+                success:
+                  type: object
+                  properties:
+                  id: { type: integer, example: 1 }
 
 #   /api/my-activities:
 #     post:
