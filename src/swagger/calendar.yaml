@@ -273,86 +273,49 @@ paths:
               schema: { $ref: "#/components/schemas/ApiManualEvent" }
 
   /api/calendar/event/{id}:
-  get:
-    summary: 일정 상세 조회
-    description: 일정 id로 단건 상세를 조회합니다. (일간 일정 상세 조회 item 형태와 동일)
-    tags:
-      - Calendar
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-        description: 일정 ID (userActivity.id)
-    responses:
-      "200":
-        description: 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                resultType:
-                  type: string
-                  example: SUCCESS
-                error:
-                  nullable: true
-                  example: null
-                success:
-                  type: object
-                  properties:
-                    itemId:
-                      type: string
-                      example: "1"
-                    title:
-                      type: string
-                      example: "오전 운동 (유저1)"
-                    isFixed:
-                      type: boolean
-                      example: true
-                    type:
-                      type: string
-                      example: FIXED
-                      description: MANUAL | FIXED | ACTIVITY | GOOGLE
-                    category:
-                      type: string
-                      example: GROWTH
-                      description: GROWTH | REST | NONE
-                    eventColor:
-                      type: integer
-                      example: 3
-                    recurrenceRule:
-                      type: string
-                      nullable: true
-                      example: "FREQ=WEEKLY;BYDAY=MO"
-                    startAt:
-                      type: string
-                      format: date-time
-                      example: "2026-02-12T16:00:00.000+09:00"
-                    endAt:
-                      type: string
-                      format: date-time
-                      example: "2026-02-12T17:30:00.000+09:00"
-                    status:
-                      type: string
-                      example: TODO
-                      description: TODO | DONE
-      "400":
-        description: 잘못된 요청 (id 형식 오류)
-      "401":
-        description: 인증 실패
-      "404":
-        description: 해당 일정 없음
-      "500":
-        description: 서버 오류
+    get:
+      summary: 일정 상세 조회
+      description: 일정 id로 단건 상세를 조회합니다. (일간 일정 상세 조회 item 형태와 동일)
+      tags: [Calendar]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 일정 ID (userActivity.id)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    nullable: true
+                    example: null
+                  success:
+                    $ref: "#/components/schemas/CalendarDayItem"
+        "400":
+          description: 잘못된 요청 (id 형식 오류)
+        "401":
+          description: 인증 실패
+        "404":
+          description: 해당 일정 없음
+        "500":
+          description: 서버 오류
 
-  /api/calendar/event/{id}:
     patch:
       summary: 직접 일정 수정
       tags: [Calendar]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -369,9 +332,12 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ApiManualEvent" }
+
     delete:
       summary: 직접 일정 삭제
       tags: [Calendar]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
