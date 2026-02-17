@@ -234,6 +234,7 @@ export const getEventDetail = async (userId, eventId) => {
     startAt: event.startAt,
     endAt: event.endAt,
     status: event.status ?? "TODO",
+    point: event.point ?? null,
   };
 };
 
