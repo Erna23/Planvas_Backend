@@ -124,6 +124,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiFailResponse"
 
+  /api/my-activities/{id}/complete:
+    patch:
+      summary: 내 활동 완료 처리 및 목표 달성도 갱신
+      tags:
+        - Schedule
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: 완료 처리할 내 활동 ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 완료 처리 및 전후 성장/휴식 달성도 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  myActivityId:
+                    type: integer
+                    example: 10
+                  beforeProgress:
+                    type: object
+                    properties:
+                      growthAchieved:
+                        type: integer
+                        example: 40
+                      restAchieved:
+                        type: integer
+                        example: 20
+                  afterProgress:
+                    type: object
+                    properties:
+                      growthAchieved:
+                        type: integer
+                        example: 60
+                      restAchieved:
+                        type: integer
+                        example: 20
+
+
 components:
   schemas:
     # ---------- Common ----------
