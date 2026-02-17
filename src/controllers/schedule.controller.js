@@ -117,8 +117,8 @@ export function registerScheduleRoutes(app) {
         }
     });
 
-    // 할 일 수정
-    app.patch("/api/todos/:todoId", requireAuth, async (req, res) => {
+    // 할 일 완료
+    app.patch("/api/todos/:todoId", async (req, res) => {
         try {
             const todoId = Number(req.params.todoId);
             const result = await completeTodos(todoId);
