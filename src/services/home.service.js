@@ -53,6 +53,11 @@ export const getHomeData = async (userId) => {
   const goalStatus = currentGoal ? "ACTIVE" : (recentGoal ? "ENDED" : "NONE");
 
   let progress = { growthAchieved: 0, restAchieved: 0 };
+  const { growth, rest, activityIds } = await getGrowthAndRest(Number(userId), goal.startDate, goal.endDate);
+	const activity = await getGrowthAndRestPointFromActivities(activityIds);
+  progress.growthAchieved = growth + activity.growth;
+  progress.restAchieved = rest + activity.rest;
+
   if (goal) {
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
     myActs.forEach(a => {
