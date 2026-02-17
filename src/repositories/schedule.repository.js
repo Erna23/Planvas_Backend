@@ -163,6 +163,7 @@ export async function addOwnUserActivity(userId, data) {
 export async function addDateTodo(userId, body, date = new Date(now())) {
     return await prisma.userActivity.create({
         data: {
+            userId,
             title: body.title,
             category: body.category,
             point: body.point,
