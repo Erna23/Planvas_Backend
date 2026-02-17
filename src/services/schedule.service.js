@@ -10,6 +10,7 @@ import {
 	completeActivity,
 	getDateActivity,
 	findUserActivityById,
+	getGrowthAndRest
 } from "../repositories/schedule.repository.js";
 import {
 	findCurrentGoalPeriodByUserId
