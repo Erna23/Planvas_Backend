@@ -330,15 +330,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: 완료 처리 성공
-          content:
-            application/json:
-              schema:
+        description: 완료 처리 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+              resultType: { type: string, example: "SUCCESS" }
+              success:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                    example: 1
+                id: { type: integer, example: 1 }
 
 #   /api/my-activities:
 #     post:
