@@ -143,3 +143,23 @@ export async function countActivitiesTotal(tab, interestIds) {
   }
   return prisma.activityCatalog.count({ where });
 }
+
+export async function getGrowthAndRestPointFromActivities(ids) {
+  let growth = 0;
+  let rest = 0;
+
+  for (const id of ids) {
+    const temp = await prisma.activityCatalog.findFirst({ 
+      where: { id: id },
+      select: {
+        tab: true,
+        point: true
+      }
+    })
+
+    if(temp.tab == "GROWTH") growth += temp.point
+    else if(temp.tab == "REST") rest += temp.point
+  }
+
+  return { growth, rest }
+}

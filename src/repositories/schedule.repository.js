@@ -9,31 +9,43 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
         const s = toDate(startDate);
         const e = toDate(endDate);
 
-        const rows = await prisma.MyActivity.findMany({
+        const rows = await prisma.userActivity.findMany({
             where: {
                 userId,
-                startDate: { lt: e },
-                endDate: { gt: s },
+                startAt: { lt: e },
+                endAt: { gt: s },
             },
             select: {
-                Activity: { select: { tab: true, point: true } },
+                tab: true, point: true
             },
         });
 
-        return rows.reduce(
+        rows.reduce(
             (acc, r) => {
-                const a = r.Activity;
-                if (!a) return acc;
-
-                if (a.tab === "GROWTH") acc.growth += a.point ?? 0;
-                else if (a.tab === "REST") acc.rest += a.point ?? 0;
+                if (tab === "GROWTH") acc.growth += a.point ?? 0;
+                else if (tab === "REST") acc.rest += a.point ?? 0;
 
                 return acc;
             },
             { growth: 0, rest: 0 }
         );
+
+        const rows2 = await prisma.myActivity.findMany({
+            where: {
+                userId,
+                startDate: { lt: e },
+                endDate: { gt: s },
+                completed: true
+            },
+            select: {
+                activityId
+            }
+        })
+
+        return { rows, rows2 }
+
     } catch {
-        return { growth: 0, rest: 0 };
+        return { growth: 0, rest: 0, activityId: [] };
     }
 }
 
