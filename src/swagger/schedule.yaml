@@ -225,11 +225,42 @@ paths:
         parameters:
             - in: query
               name: date
-              required: true
+              required: true  
               description: 조회할 날짜 (YYYY-MM-DD)
               schema:
                 type: string
                 example: "2026-02-15"
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - title
+                  - category
+                  - point
+                  - startTime
+                  - endTime
+                properties:
+                  title:
+                    type: string
+                    description: 할일일 제목
+                    example: "출근 전 영어 공부"
+                  category:
+                    type: string
+                    description: NONE, GROWTH, REST 3개 중 하나
+                  point:
+                    type: integer
+                    description: 완료 시 받을 점수
+                  startTime:
+                    type: string
+                    description: 시작 시각 (HH:mm)
+                    example: "07:00"
+                  endTime:
+                    type: string
+                    description: 종료 시각 (HH:mm)
+                    example: "08:00"
         responses:
             "200":
             description: 조회 성공
