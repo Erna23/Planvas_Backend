@@ -47,6 +47,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
       point: true,
       eventColor: true,
       googleEventId: true,
+      recurrenceRule: true,
     },
     orderBy: { startAt: "asc" },
   });
