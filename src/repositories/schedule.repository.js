@@ -174,6 +174,7 @@ export async function addDateTodo(userId, body, date = new Date(now())) {
             title: body.title,
             category: body.category,
             point: body.point,
+            eventColor: body.eventColor,
             startAt: new Date(`${date}T${body.startTime}:00`),
             endAt: new Date(`${date}T${body.endTime}:00`),
             type: "TODO",
