@@ -176,6 +176,7 @@ export async function addDateTodo(userId, body, date = new Date(now())) {
             point: body.point,
             startAt: new Date(`${date}T${body.startTime}:00`),
             endAt: new Date(`${date}T${body.endTime}:00`),
+            type: "TODO",
             status: "TODO"
         },
         select: { id: true }
