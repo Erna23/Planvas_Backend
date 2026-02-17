@@ -11,6 +11,9 @@ import {
 	getDateActivity,
 	findUserActivityById,
 } from "../repositories/schedule.repository.js";
+import {
+	findCurrentGoalPeriodByUserId
+} from "../repositories/goals.repository.js";
 import { findById as findCatalogActivityById } from "../repositories/activity.repository.js";
 import { ActivityType } from "@prisma/client";
 
