@@ -6,10 +6,23 @@ import { ok, fail, getAuthUserId } from "../utils/apiResponse.js";
 export function registerHomeRoutes(app) {
   app.get("/api/home", requireAuth, async (req, res) => {
     try {
-      const userId = getAuthUserId(req);
+      const userId = req.auth?.userId;
+
+      console.log("[HOME] authorization =", req.headers.authorization);
+      console.log("[HOME] getAuthUserId(userId) =", userId);
+      console.log("[HOME] req.userId =", req.userId);
+      console.log("[HOME] req.user =", req.user);
+
+      console.log("[HOME] req.auth?.userId =", req.auth?.userId);
+      console.log("[HOME] getAuthUserId(req) =", getAuthUserId(req));
+
+
       if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
       const data = await homeService.getHomeData(userId);
+
+      console.log("[HOME] data.goal =", data.goal);
+      console.log("[HOME] data.goal?.userId =", data?.goal?.userId);
 
       // DTO의 첫 번째 인자로 data.userName을 추가합니다.
       const response = homeResponseDTO(
@@ -31,7 +44,8 @@ export function registerHomeRoutes(app) {
 
   app.patch("/api/home/schedules/:activityId/status", requireAuth, async (req, res) => {
     try {
-      const userId = getAuthUserId(req);
+      const userId = req.auth?.userId;
+      
       const { activityId } = req.params;
 
       console.log(`PATCH 요청 수신 - 유저: ${userId}, 활동ID: ${activityId}`); // 👈 확인용 로그
