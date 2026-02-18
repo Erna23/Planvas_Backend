@@ -28,31 +28,22 @@ function endDateToExclusive(endDate) {
 }
 
 function calcCurrentRatios(activities) {
-  // 분 단위 합산
-  let growthMin = 0;
-  let restMin = 0;
+  let growthCount = 0;
+  let restCount = 0;
 
   for (const a of activities) {
-    // start/end 없는 데이터 방어
-    if (!a.startAt || !a.endAt) continue;
-    const ms = new Date(a.endAt).getTime() - new Date(a.startAt).getTime();
-    if (!Number.isFinite(ms) || ms <= 0) continue;
+    if (!a.completed) continue; 
 
-    const minutes = ms / (1000 * 60);
-    if (a.category === "GROWTH") growthMin += minutes;
-    if (a.category === "REST") restMin += minutes;
+    const category = a.Activity?.tab || a.activity?.tab;
+    
+    if (category === "GROWTH") growthCount += 1;
+    if (category === "REST") restCount += 1;
   }
 
-  const total = growthMin + restMin;
-  if (total <= 0) return { currentGrowthRatio: 0, currentRestRatio: 0 };
-
-  let currentGrowthRatio = Math.round((growthMin / total) * 100);
-  // 합이 100 안 맞는 케이스 보정
-  if (currentGrowthRatio < 0) currentGrowthRatio = 0;
-  if (currentGrowthRatio > 100) currentGrowthRatio = 100;
-  const currentRestRatio = 100 - currentGrowthRatio;
-
-  return { currentGrowthRatio, currentRestRatio };
+  return { 
+    currentGrowthRatio: growthCount, 
+    currentRestRatio: restCount 
+  };
 }
 
 /**
