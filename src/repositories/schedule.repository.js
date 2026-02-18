@@ -41,6 +41,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
   
         return { growth, rest, activityIds };
     } catch (e) {
+        console.log("getGrowthAndRest: " + e);
         return { growth: 0, rest: 0, activityIds: [] };
     }
 }  

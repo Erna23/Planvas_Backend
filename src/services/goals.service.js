@@ -219,12 +219,13 @@ export async function getCurrentGoalByUserId(userId) {
     };
   }
 
-  const user = Number(userId);
-  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(user, current.startDate, current.endDate);
+  let currentGrowthRatio = 0
+  let currentRestRatio = 0
+  let { growth, rest, activityIds } = await getGrowthAndRest(user, current.startDate, current.endDate);
   const activities = await getGrowthAndRestPointFromActivities(activityIds);
 
-  currentGrowthRatio += activities.growth;
-  currentRestRatio += activities.rest;
+  currentGrowthRatio = growth + activities.growth;
+  currentRestRatio = rest + activities.rest;
 
   return {
     resultType: "SUCCESS",
@@ -364,11 +365,13 @@ export async function getGoalProgressByUserId(userIdRaw, goalIdParam) {
     throw err;
   }
 
-  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+  let currentGrowthRatio = 0
+  let currentRestRatio = 0
+  let { growth, rest, activityIds } = await getGrowthAndRest(user, current.startDate, current.endDate);
   const activities = await getGrowthAndRestPointFromActivities(activityIds);
 
-  currentGrowthRatio += activities.growth;
-  currentRestRatio += activities.rest;
+  currentGrowthRatio = growth + activities.growth;
+  currentRestRatio = rest + activities.rest;
 
   return {
     resultType: "SUCCESS",
