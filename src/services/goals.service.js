@@ -363,9 +363,11 @@ export async function getGoalProgressByUserId(userIdRaw, goalIdParam) {
     throw err;
   }
 
-  const endExclusive = endDateToExclusive(goal.endDate);
-  const activities = await findActivitiesForGoalProgress(userId, goal.startDate, endExclusive);
-  const { currentGrowthRatio, currentRestRatio } = calcCurrentRatios(activities);
+  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+  const activities = await getGrowthAndRestPointFromActivities(activityIds);
+
+  currentGrowthRatio += activities.growth;
+  currentRestRatio += activities.rest;
 
   return {
     resultType: "SUCCESS",
