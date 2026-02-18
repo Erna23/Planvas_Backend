@@ -17,6 +17,8 @@ import {
   deleteGoalPeriod,
   findOverlappingGoalPeriodByUserId,
 } from "../repositories/goals.repository.js";
+import { getGrowthAndRest } from "../repositories/schedule.repository.js";
+import { getGrowthAndRestPointFromActivities } from "../repositories/activity.repository.js";
 
 const formatDateOnly = (d) => d.toISOString().slice(0, 10);
 
@@ -217,9 +219,11 @@ export async function getCurrentGoalByUserId(userId) {
     };
   }
 
-  const endExclusive = endDateToExclusive(current.endDate);
-  const activities = await findActivitiesForGoalProgress(userId, current.startDate, endExclusive);
-  const { currentGrowthRatio, currentRestRatio } = calcCurrentRatios(activities);
+  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+  const activities = await getGrowthAndRestPointFromActivities(activityIds);
+
+  currentGrowthRatio += activities.growth;
+  currentRestRatio += activities.rest;
 
   return {
     resultType: "SUCCESS",
