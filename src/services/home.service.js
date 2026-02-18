@@ -67,15 +67,6 @@ export const getHomeData = async (userIdRaw) => {
 
     progress.growthAchieved = growth + activityInfo.growth;
     progress.restAchieved = rest + activityInfo.rest;
-
-    const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
-    myActs.forEach(a => {
-      if (a.completed === true) {
-        const tab = a.Activity?.tab || a.activity?.tab;
-        if (tab === "GROWTH") progress.growthAchieved += 1;
-        if (tab === "REST") progress.restAchieved += 1;
-      }
-    });
   }
 
   // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
