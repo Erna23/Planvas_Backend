@@ -219,7 +219,8 @@ export async function getCurrentGoalByUserId(userId) {
     };
   }
 
-  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(userId, current.startDate, current.endDate);
+  const user = Number(userId);
+  let { currentGrowthRatio, currentRestRatio, activityIds } = await getGrowthAndRest(user, current.startDate, current.endDate);
   const activities = await getGrowthAndRestPointFromActivities(activityIds);
 
   currentGrowthRatio += activities.growth;
