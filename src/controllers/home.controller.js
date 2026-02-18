@@ -19,6 +19,7 @@ export function registerHomeRoutes(app) {
 
       if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
+      // 2. 서비스 호출
       const data = await homeService.getHomeData(userId);
 
       console.log("[HOME] data.goal =", data.goal);
@@ -26,7 +27,7 @@ export function registerHomeRoutes(app) {
 
       // DTO의 첫 번째 인자로 data.userName을 추가합니다.
       const response = homeResponseDTO(
-        data.userName,        // 추가된 부분
+        data.userName,
         data.goalStatus,
         data.goal ?? null,
         data.progress ?? null,
@@ -48,7 +49,9 @@ export function registerHomeRoutes(app) {
       
       const { activityId } = req.params;
 
-      console.log(`PATCH 요청 수신 - 유저: ${userId}, 활동ID: ${activityId}`); // 👈 확인용 로그
+      if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+
+      console.log(`PATCH 요청 수신 - 유저: ${userId}, 활동ID: ${activityId}`);
 
       const updatedActivity = await homeService.patchScheduleStatus(userId, activityId);
 
@@ -58,9 +61,15 @@ export function registerHomeRoutes(app) {
       }, 200);
     } catch (e) {
       console.error("PATCH 에러 발생:", e);
+      
       if (e.message === "NOT_FOUND") {
         return fail(res, "H002", "해당 일정을 찾을 수 없습니다.", 404);
       }
+      
+      if (e.message === "FORBIDDEN") {
+        return fail(res, "H004", "해당 일정에 대한 수정 권한이 없습니다.", 403);
+      }
+
       return fail(res, "H003", "일정 상태 변경 실패", 500, e?.message ?? null);
     }
   });

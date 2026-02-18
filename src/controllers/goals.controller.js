@@ -14,7 +14,7 @@ export function registerGoalRoutes(app) {
   // POST /api/goals
   app.post("/api/goals", requireAuth, async (req, res) => {
     try {
-      const result = await createGoalPeriodByUserId(req.auth.id, req.body);
+      const result = await createGoalPeriodByUserId(req.auth.userId, req.body);
       return res.status(201).json(result);
     } catch (e) {
       console.error("[POST /api/goals] error:", e);
@@ -25,7 +25,7 @@ export function registerGoalRoutes(app) {
   // DELETE /api/goals/:goalId (목표 삭제)
   app.delete("/api/goals/:goalId", requireAuth, async (req, res) => { //
     try {
-      const result = await deleteGoalByUserId(req.auth.id, req.params.goalId);
+      const result = await deleteGoalByUserId(req.auth.userId, req.params.goalId);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[DELETE /api/goals/:goalId] error:", e);
@@ -36,7 +36,7 @@ export function registerGoalRoutes(app) {
   // GET /api/goals/current (현재 목표 조회)
   app.get("/api/goals/current", requireAuth, async (req, res) => {
     try {
-      const result = await getCurrentGoalByUserId(req.auth.id);
+      const result = await getCurrentGoalByUserId(req.auth.userId);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[GET /api/goals/current] error:", e);
@@ -58,7 +58,7 @@ export function registerGoalRoutes(app) {
   // GET /api/goals/:goalId/progress (진행 비율)  ← :goalId 보다 위!
   app.get("/api/goals/:goalId/progress", requireAuth, async (req, res) => {
     try {
-      const result = await getGoalProgressByUserId(req.auth.id, req.params.goalId);
+      const result = await getGoalProgressByUserId(req.auth.userId, req.params.goalId);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[GET /api/goals/:goalId/progress] error:", e);
@@ -69,7 +69,7 @@ export function registerGoalRoutes(app) {
   // PATCH /api/goals/:goalId/ratio
   app.patch("/api/goals/:goalId/ratio", requireAuth, async (req, res) => {
     try {
-      const result = await updateGoalRatioByUserId(req.auth.id, req.params.goalId, req.body);
+      const result = await updateGoalRatioByUserId(req.auth.userId, req.params.goalId, req.body);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[PATCH /api/goals/:goalId/ratio] error:", e);
@@ -80,7 +80,7 @@ export function registerGoalRoutes(app) {
   // PATCH /api/goals/:goalId (기간/이름 수정)
   app.patch("/api/goals/:goalId", requireAuth, async (req, res) => {
     try {
-      const result = await updateGoalPeriodByUserId(req.auth.id, req.params.goalId, req.body);
+      const result = await updateGoalPeriodByUserId(req.auth.userId, req.params.goalId, req.body);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[PATCH /api/goals/:goalId] error:", e);
@@ -91,7 +91,7 @@ export function registerGoalRoutes(app) {
   // GET /api/goals/:goalId (목표 상세: 기간 + 타겟비율)
   app.get("/api/goals/:goalId", requireAuth, async (req, res) => {
     try {
-      const result = await getGoalDetailByUserId(req.auth.id, req.params.goalId);
+      const result = await getGoalDetailByUserId(req.auth.userId, req.params.goalId);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[GET /api/goals/:goalId] error:", e);

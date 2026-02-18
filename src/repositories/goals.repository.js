@@ -4,9 +4,12 @@ import { prisma } from "../db.config.js";
  * 진행 중 목표(현재 목표) 조회
  */
 export async function findCurrentGoalPeriodByUserId(userId, now = new Date()) {
+  const numericId = Number(userId);
+  if (isNaN(numericId)) return null; 
+
   return prisma.goalPeriod.findFirst({
     where: {
-      userId,
+      userId: numericId, 
       endDate: { gte: now },
     },
     orderBy: { startDate: "asc" },
@@ -45,7 +48,7 @@ export async function findOngoingGoalPeriodByUserId(userId, now = new Date()) {
 export async function findActivitiesForGoalProgress(userId, startInclusive, endExclusive) {
   return prisma.myActivity.findMany({
     where: {
-      userId,
+      userId: Number(userId),
       startDate: { gte: startInclusive, lt: endExclusive },
     },
     include: {
