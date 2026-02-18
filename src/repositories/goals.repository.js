@@ -47,7 +47,6 @@ export async function findActivitiesForGoalProgress(userId, startInclusive, endE
     where: {
       userId,
       startDate: { gte: startInclusive, lt: endExclusive },
-      completed: true,
     },
     include: {
       Activity: true, 
