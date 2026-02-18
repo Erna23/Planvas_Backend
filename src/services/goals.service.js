@@ -37,19 +37,17 @@ function calcCurrentRatios(activities) {
   let restCount = 0;
 
   for (const a of activities) {
-    if (a.completed === true || a.status === "DONE") {
-      const tab = a.Activity?.tab || a.activity?.tab;
-      if (!tab) continue;
+    if (!a.completed) continue; 
 
-      const upperTab = tab.toUpperCase();
-      if (upperTab === "GROWTH") growthCount += 1;
-      if (upperTab === "REST") restCount += 1;
-    }
+    const category = a.Activity?.tab || a.activity?.tab;
+    
+    if (category === "GROWTH") growthCount += 1;
+    if (category === "REST") restCount += 1;
   }
 
-  return {
-    currentGrowthRatio: growthCount,
-    currentRestRatio: restCount
+  return { 
+    currentGrowthRatio: growthCount, 
+    currentRestRatio: restCount 
   };
 }
 
@@ -163,24 +161,26 @@ export async function updateGoalPeriodByUserId(userIdRaw, goalIdParam, body) {
     throw err;
   }
 
-  const overlap = await findOverlappingGoalPeriodByUserId(userId, nextStart, nextEnd, existing.id);
-  if (overlap) {
-    const err = new Error("Overlapping goal exists");
-    err.statusCode = 409;
-    err.payload = {
-      resultType: "FAIL",
-      error: {
-        reason: "이미 해당 기간과 겹치는 목표가 존재합니다.",
-        data: {
-          overlappingGoalId: overlap.id,
-          overlappingStartDate: overlap.startDate.toISOString().slice(0, 10),
-          overlappingEndDate: overlap.endDate.toISOString().slice(0, 10),
-        },
+  // 3-1) 정책: 수정 후 기간이 다른 목표와 겹치면 제한 (자기 자신은 제외)
+const overlap = await findOverlappingGoalPeriodByUserId(userId, nextStart, nextEnd, existing.id);
+
+if (overlap) {
+  const err = new Error("Overlapping goal exists");
+  err.statusCode = 409;
+  err.payload = {
+    resultType: "FAIL",
+    error: {
+      reason: "이미 해당 기간과 겹치는 목표가 존재합니다.",
+      data: {
+        overlappingGoalId: overlap.id,
+        overlappingStartDate: overlap.startDate.toISOString().slice(0, 10),
+        overlappingEndDate: overlap.endDate.toISOString().slice(0, 10),
       },
-      success: null,
-    };
-    throw err;
-  }
+    },
+    success: null,
+  };
+  throw err;
+}
 
   const updateData = {};
   if (dto.title != null) updateData.title = dto.title;
@@ -206,11 +206,10 @@ export async function updateGoalPeriodByUserId(userIdRaw, goalIdParam, body) {
 /**
  * GET /api/goals/current (현재 목표 조회)
  */
-export async function getCurrentGoalByUserId(userIdRaw) {
-  const userId = Number(userIdRaw);
+export async function getCurrentGoalByUserId(userId) {
   const current = await findCurrentGoalPeriodByUserId(userId, new Date());
 
-  if (!current || Number(current.userId) !== userId) {
+  if (!current) {
     return {
       resultType: "SUCCESS",
       error: null,

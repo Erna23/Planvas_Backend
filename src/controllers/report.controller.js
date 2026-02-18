@@ -11,6 +11,7 @@ export function registerReportRoutes(app) {
             const result = await getSeasonsReports(req.auth.userId, parsedYear);
             return ok(res, result, 200);
         } catch (e) {
+            console.error("[GET /api/reports/seasons]", e);
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
         }
     });
@@ -20,6 +21,7 @@ export function registerReportRoutes(app) {
             const result = await createReport(req.auth.userId, req.params.goalId);
             return ok(res, result, 200);
         } catch (e) {
+            console.error("[GET /api/reports/seasons/:goalId]", e);
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultReportsFail());
         }
     });
