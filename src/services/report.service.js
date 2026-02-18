@@ -3,7 +3,7 @@ import { createNewReport } from "../repositories/report.repository.js";
 import { findGoalReports, findCurrentGoalPeriodByUserId, findGoalPeriodById } from "../repositories/goals.repository.js";
 import { getGrowthAndRest } from "../repositories/schedule.repository.js";
 import { getSummaryDto, toGoalReportDto } from "../dtos/report.dto.js";
-
+import { getGrowthAndRestPointFromActivities } from "../repositories/activity.repository.js"
 
 export async function getSeasonsReports(userId, year = 0) {
     const user = await findUserById(userId);
