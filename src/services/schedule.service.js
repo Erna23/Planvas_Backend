@@ -10,7 +10,8 @@ import {
 	completeActivity,
 	getDateActivity,
 	findUserActivityById,
-	getGrowthAndRest
+	getGrowthAndRest,
+	updateMyActivityCompletedByUserActivityId
 } from "../repositories/schedule.repository.js";
 import {
 	findCurrentGoalPeriodByUserId
@@ -32,16 +33,16 @@ const dayMap = {
 
 export async function addFixedSchedule(userId, body) {
 	const user = await findUserById(userId);
-	if(!user) {
-        const err = new Error("User not found");
-        err.statusCode = 404;
-        err.payload = {
-            resultType: "FAIL",
-            error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
-            success: null,
-        };
-        throw err;
-    }
+	if (!user) {
+		const err = new Error("User not found");
+		err.statusCode = 404;
+		err.payload = {
+			resultType: "FAIL",
+			error: { reason: "사용자 정보를 찾을 수 없습니다.", data: null },
+			success: null,
+		};
+		throw err;
+	}
 
 	const targetDays = body.daysOfWeek.map((day) => dayMap[day]);
 
@@ -148,7 +149,7 @@ export async function completeTodos(id) {
 }
 
 export async function createMyActivity(userId, body) {
-	return { id: (await addOwnUserActivity(userId, body)).id}
+	return { id: (await addOwnUserActivity(userId, body)).id }
 }
 
 export async function getMyActivityInfo(userId, Id) {
@@ -193,21 +194,25 @@ export async function deleteMyActivity(userId, id) {
 // 활동 완료 처리
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
-  
+
 	const before = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
 	const beforeAct = await getGrowthAndRestPointFromActivities(before.activityIds);
-  
+
 	const beforeGrowth = before.growth + beforeAct.growth;
-	const beforeRest   = before.rest  + beforeAct.rest;
-  
+	const beforeRest = before.rest + beforeAct.rest;
+
 	const activity = await completeActivity(Number(id));
-  
+
+
+	const isCompleted = (activity.status === "DONE");
+	await updateMyActivityCompletedByUserActivityId(activity.id, isCompleted);
+
 	const after = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
 	const afterAct = await getGrowthAndRestPointFromActivities(after.activityIds);
-  
+
 	const afterGrowth = after.growth + afterAct.growth;
-	const afterRest   = after.rest  + afterAct.rest;
-  
+	const afterRest = after.rest + afterAct.rest;
+
 	return {
 		myActivityId: activity.id,
 		beforeProgress: {
@@ -219,4 +224,4 @@ export async function completeMyActivity(userId, id) {
 			restAchieved: afterRest,
 		},
 	};
-}  
+}
