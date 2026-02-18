@@ -132,8 +132,8 @@ export const getHomeData = async (userId) => {
   return {
     userName,
     goalStatus,
-    goal,
-    progress,
+    goal: currentGoal ?? null,
+    progress: progress ?? null,
     weekStartDate: toLocalDateString(startOfWeek),
     weeklyStats,
     todayTodos,
