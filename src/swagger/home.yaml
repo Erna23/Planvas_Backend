@@ -60,7 +60,7 @@ paths:
                                     properties:
                                       id: { type: integer, example: 101 }
                                       title: { type: string, example: "카페 알바" }
-                                      type: { type: string, example: "FIXED", description: "고정 일정 여부" }
+                                      type: { type: string, enum: [MANUAL, FIXED, ACTIVITY, GOOGLE], example: "FIXED" }
                                       category: { type: string, example: "GROWTH" }
                                       status: { type: string, example: "TODO" }
                                       point: { type: integer, example: 20 }
@@ -68,6 +68,7 @@ paths:
                                       startTime: { type: string, example: "18:00" }
                                       endTime: { type: string, example: "22:00" }
                                       completed: { type: boolean, example: false }
+                                      recurrenceRule: { type: string, nullable: true, example: "FREQ=WEEKLY;BYDAY=MO"}
                       todayTodos:
                         type: array
                         items:
@@ -75,13 +76,14 @@ paths:
                           properties:
                             todoId: { type: integer, example: 12 }
                             title: { type: string, example: "자격증 공부하기" }
-                            type: { type: string, example: "NORMAL" }
+                            type: { type: string, enum: [MANUAL, FIXED, ACTIVITY, GOOGLE], example: "MANUAL" }
                             category: { type: string, example: "GROWTH" }
                             point: { type: integer, example: 10 }
                             color: { type: integer, example: 1 }
                             startTime: { type: string, example: "14:00" }
                             endTime: { type: string, example: "16:00" }
                             completed: { type: boolean, example: false }
+                            recurrenceRule: { type: string, nullable: true, example: "FREQ=WEEKLY;BYDAY=MO" }
                       recommendations:
                         type: array
                         items:

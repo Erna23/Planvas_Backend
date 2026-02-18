@@ -13,7 +13,7 @@ const formatTime = (date) => {
   if (!date) return null;
   const d = new Date(date);
   let timeStr = d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
-  
+
   if (timeStr === "24:00") timeStr = "00:00";
   return timeStr;
 };
@@ -55,17 +55,25 @@ export const getHomeData = async (userId) => {
   const goalStatus = currentGoal ? "ACTIVE" : (recentGoal ? "ENDED" : "NONE");
 
   let progress = { growthAchieved: 0, restAchieved: 0 };
-  const { growth, rest, activityIds } = await getGrowthAndRest(Number(userId), goal.startDate, goal.endDate);
-	const activity = await getGrowthAndRestPointFromActivities(activityIds);
-  progress.growthAchieved = growth + activity.growth > 100 ? 100 : growth + activity.growth;
-  progress.restAchieved = rest + activity.rest > 100 ? 100 : rest + activity.rest;
 
   if (goal) {
+    // 1. 기존 schedule/activity 레포지토리 로직
+    const { growth, rest, activityIds } = await getGrowthAndRest(Number(userId), goal.startDate, goal.endDate);
+    const activityInfo = await getGrowthAndRestPointFromActivities(activityIds);
+
+    // 100 제한 제거 (무조건 합산)
+    progress.growthAchieved = growth + activityInfo.growth;
+    progress.restAchieved = rest + activityInfo.rest;
+
+    // 2. 내 활동(MyActivity) 계산
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
+
     myActs.forEach(a => {
-      const tab = a?.Activity?.tab || a?.activity?.tab;
-      if (tab === "GROWTH") progress.growthAchieved += 1;
-      if (tab === "REST") progress.restAchieved += 1;
+      if (a.completed === true) {
+        const tab = a.Activity?.tab || a.activity?.tab;
+        if (tab === "GROWTH") progress.growthAchieved += 1;
+        if (tab === "REST") progress.restAchieved += 1;
+      }
     });
   }
 
@@ -100,7 +108,8 @@ export const getHomeData = async (userId) => {
         point: s.point || 0,
         color: s.eventColor || 1,
         startTime: formatTime(s.startAt),
-        endTime: formatTime(s.endAt)
+        endTime: formatTime(s.endAt),
+        recurrenceRule: s.recurrenceRule ?? s.recurrence_rule ?? null,
       })),
     });
     currentLoopDate.setDate(currentLoopDate.getDate() + 1);
@@ -121,7 +130,8 @@ export const getHomeData = async (userId) => {
     point: t.point || 0,
     color: t.eventColor || 1,
     startTime: formatTime(t.startAt),
-    endTime: formatTime(t.endAt)
+    endTime: formatTime(t.endAt),
+    recurrenceRule: t.recurrenceRule ?? t.recurrence_rule ?? null,
   }));
 
   const rawRecs = safeArray(await homeRepository.findRecommendations());
@@ -137,8 +147,8 @@ export const getHomeData = async (userId) => {
   return {
     userName,
     goalStatus,
-    goal,
-    progress,
+    goal: currentGoal ?? null,
+    progress: progress ?? null,
     weekStartDate: toLocalDateString(startOfWeek),
     weeklyStats,
     todayTodos,
@@ -149,7 +159,7 @@ export const getHomeData = async (userId) => {
 export const patchScheduleStatus = async (userId, activityId) => {
   const activity = await homeRepository.findActivityById(activityId);
   if (!activity) throw new Error("NOT_FOUND");
-  if (activity.userId !== userId) throw new Error("FORBIDDEN"); 
+  if (activity.userId !== userId) throw new Error("FORBIDDEN");
   const newStatus = activity.status === "DONE" ? "TODO" : "DONE";
   return await homeRepository.updateActivityStatus(activityId, newStatus);
 };

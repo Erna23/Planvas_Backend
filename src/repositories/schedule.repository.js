@@ -229,3 +229,10 @@ export async function getDateActivity(userId, date) {
         }
     });
 }
+
+export async function updateMyActivityCompletedByUserActivityId(userActivityId, isCompleted) {
+    return await prisma.myActivity.update({
+        where: { userActivityId: userActivityId },
+        data: { completed: isCompleted }
+    });
+}

@@ -55,7 +55,8 @@ export const homeResponseDTO = (
         color: s.color,
         startTime: s.startTime,
         endTime: s.endTime,
-        completed: s.status === "DONE"
+        completed: s.status === "DONE",
+        recurrenceRule: s.recurrenceRule ?? null,
       })),
     };
   });
@@ -71,6 +72,7 @@ export const homeResponseDTO = (
     startTime: todo.startTime,
     endTime: todo.endTime,
     completed: todo.status === "DONE",
+    recurrenceRule: todo.recurrenceRule ?? null,
   }));
 
   // 4. 추천 활동
