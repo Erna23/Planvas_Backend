@@ -13,7 +13,6 @@ const formatTime = (date) => {
   if (!date) return null;
   const d = new Date(date);
   let timeStr = d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
-
   if (timeStr === "24:00") timeStr = "00:00";
   return timeStr;
 };
@@ -43,31 +42,33 @@ function calculateDDay(targetDate) {
   return `D-${diffDays}`;
 }
 
-export const getHomeData = async (userId) => {
+export const getHomeData = async (userIdRaw) => {
   const today = new Date();
+  const userId = Number(userIdRaw); 
 
   const userInfo = await homeRepository.findUserInfo(userId);
   const userName = userInfo?.name || "사용자";
 
   const currentGoal = await homeRepository.findCurrentGoal(userId, today);
   const recentGoal = await homeRepository.findRecentGoal(userId);
-  const goal = currentGoal || null;
-  const goalStatus = currentGoal ? "ACTIVE" : (recentGoal ? "ENDED" : "NONE");
+
+
+  const isMyCurrent = currentGoal && Number(currentGoal.userId) === userId;
+  const isMyRecent = recentGoal && Number(recentGoal.userId) === userId;
+
+  const goal = isMyCurrent ? currentGoal : null;
+  const goalStatus = isMyCurrent ? "ACTIVE" : (isMyRecent ? "ENDED" : "NONE");
 
   let progress = { growthAchieved: 0, restAchieved: 0 };
 
   if (goal) {
-    // 1. 기존 schedule/activity 레포지토리 로직
-    const { growth, rest, activityIds } = await getGrowthAndRest(Number(userId), goal.startDate, goal.endDate);
+    const { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
     const activityInfo = await getGrowthAndRestPointFromActivities(activityIds);
 
-    // 100 제한 제거 (무조건 합산)
     progress.growthAchieved = growth + activityInfo.growth;
     progress.restAchieved = rest + activityInfo.rest;
 
-    // 2. 내 활동(MyActivity) 계산
     const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
-
     myActs.forEach(a => {
       if (a.completed === true) {
         const tab = a.Activity?.tab || a.activity?.tab;
@@ -77,10 +78,10 @@ export const getHomeData = async (userId) => {
     });
   }
 
+  // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - today.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
-
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
@@ -92,7 +93,6 @@ export const getHomeData = async (userId) => {
   for (let i = 0; i < 7; i++) {
     const dateString = toLocalDateString(currentLoopDate);
     const dailySchedules = weeklyRaw.filter((a) => overlapsDate(a, dateString));
-
     const hasFixedItem = dailySchedules.some(a => a.type === "FIXED");
 
     weeklyStats.push({
@@ -156,10 +156,12 @@ export const getHomeData = async (userId) => {
   };
 };
 
-export const patchScheduleStatus = async (userId, activityId) => {
+export const patchScheduleStatus = async (userIdRaw, activityId) => {
+  const userId = Number(userIdRaw);
   const activity = await homeRepository.findActivityById(activityId);
   if (!activity) throw new Error("NOT_FOUND");
-  if (activity.userId !== userId) throw new Error("FORBIDDEN");
+  if (Number(activity.userId) !== userId) throw new Error("FORBIDDEN"); 
+  
   const newStatus = activity.status === "DONE" ? "TODO" : "DONE";
   return await homeRepository.updateActivityStatus(activityId, newStatus);
 };

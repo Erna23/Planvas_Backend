@@ -3,7 +3,7 @@ import { prisma } from "../db.config.js";
 // 사용자의 이름 정보 조회
 export const findUserInfo = async (userId) => {
   return await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: Number(userId) },
     select: { name: true },
   });
 };
@@ -11,7 +11,7 @@ export const findUserInfo = async (userId) => {
 // 최신 목표 조회
 export const findRecentGoal = async (userId) => {
   return await prisma.goalPeriod.findFirst({
-    where: { userId },
+    where: { userId: Number(userId) },
     orderBy: { createdAt: "desc" },
   });
 };
@@ -20,7 +20,7 @@ export const findRecentGoal = async (userId) => {
 export const findCurrentGoal = async (userId, today = new Date()) => {
   return await prisma.goalPeriod.findFirst({
     where: {
-      userId,
+      userId: Number(userId),
       startDate: { lte: today },
       endDate: { gte: today },
     },
@@ -32,7 +32,7 @@ export const findCurrentGoal = async (userId, today = new Date()) => {
 export const findWeeklyActivities = async (userId, startDate, endDate) => {
   return await prisma.userActivity.findMany({
     where: {
-      userId,
+      userId: Number(userId),
       startAt: { lte: endDate },
       endAt: { gte: startDate },
     },
@@ -57,7 +57,7 @@ export const findWeeklyActivities = async (userId, startDate, endDate) => {
 export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
   return await prisma.userActivity.findMany({
     where: {
-      userId,
+      userId: Number(userId),
       startAt: { lte: endOfDay },
       endAt: { gte: startOfDay },
     },
@@ -81,7 +81,7 @@ export const findTodayActivities = async (userId, startOfDay, endOfDay) => {
 // 진행률 계산
 export const findMyActivitiesForGoal = async (userId, goalId) => {
   return await prisma.myActivity.findMany({
-    where: { userId, goalId },
+    where: { userId: Number(userId), goalId },
     include: {
       Activity: {
         select: { tab: true }
