@@ -45,10 +45,11 @@ export async function findOngoingGoalPeriodByUserId(userId, now = new Date()) {
 /**
  * 목표 기간 내 활동(성장/휴식) 조회 - 진행률 계산용 (MyActivity 기준)
  */
-export async function findActivitiesForGoalProgress(userId, startInclusive, endExclusive) {
+export async function findActivitiesForGoalProgress(userId, startInclusive, endExclusive, goalId) {
   return prisma.myActivity.findMany({
     where: {
       userId: Number(userId),
+      goalId: Number(goalId),
       startDate: { gte: startInclusive, lt: endExclusive },
     },
     include: {
