@@ -195,7 +195,7 @@ export async function deleteMyActivity(userId, id) {
 export async function completeMyActivity(userId, id) {
 	const goal = await findCurrentGoalPeriodByUserId(userId);
 
-	const before = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const before = await getGrowthAndRest(userId, goal.startDate, goal.endDate, goal.id);
 	const beforeAct = await getGrowthAndRestPointFromActivities(before.activityIds);
 
 	const beforeGrowth = before.growth + beforeAct.growth;
@@ -207,7 +207,7 @@ export async function completeMyActivity(userId, id) {
 	const isCompleted = (activity.status === "DONE");
 	await updateMyActivityCompletedByUserActivityId(activity.id, isCompleted);
 
-	const after = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+	const after = await getGrowthAndRest(userId, goal.startDate, goal.endDate, goal.id);
 	const afterAct = await getGrowthAndRestPointFromActivities(after.activityIds);
 
 	const afterGrowth = after.growth + afterAct.growth;
