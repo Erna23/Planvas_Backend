@@ -18,11 +18,13 @@ export const findRecentGoal = async (userId) => {
 
 // 현재 진행 중인 목표 조회
 export const findCurrentGoal = async (userId, today = new Date()) => {
+  const kstToday = new Date(today.getTime() + 9 * 60 * 60 * 1000);
+  
   return await prisma.goalPeriod.findFirst({
     where: {
       userId: Number(userId),
-      startDate: { lte: today },
-      endDate: { gte: today },
+      startDate: { lte: kstToday },
+      endDate: { gte: kstToday },
     },
     orderBy: { startDate: "desc" },
   });
