@@ -4,23 +4,23 @@ import { homeResponseDTO } from "../dtos/home.dto.js";
 import { ok, fail, getAuthUserId } from "../utils/apiResponse.js";
 
 export function registerHomeRoutes(app) {
-  app.get("/api/home", requireAuth, async (req, res) => {
+  app.get("/api/home/:userId", async (req, res) => {
     try {
-      const userId = req.auth?.userId;
+      // const userId = req.auth?.userId;
 
-      console.log("[HOME] authorization =", req.headers.authorization);
-      console.log("[HOME] getAuthUserId(userId) =", userId);
-      console.log("[HOME] req.userId =", req.userId);
-      console.log("[HOME] req.user =", req.user);
+      // console.log("[HOME] authorization =", req.headers.authorization);
+      // console.log("[HOME] getAuthUserId(userId) =", userId);
+      // console.log("[HOME] req.userId =", req.userId);
+      // console.log("[HOME] req.user =", req.user);
 
-      console.log("[HOME] req.auth?.userId =", req.auth?.userId);
-      console.log("[HOME] getAuthUserId(req) =", getAuthUserId(req));
+      // console.log("[HOME] req.auth?.userId =", req.auth?.userId);
+      // console.log("[HOME] getAuthUserId(req) =", getAuthUserId(req));
 
 
-      if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
+      // if (!userId) return fail(res, "AUTH001", "인증 정보가 없습니다.", 401);
 
       // 2. 서비스 호출
-      const data = await homeService.getHomeData(userId);
+      const data = await homeService.getHomeData(req.params.userId);
 
       console.log("[HOME] data.goal =", data.goal);
       console.log("[HOME] data.goal?.userId =", data?.goal?.userId);
