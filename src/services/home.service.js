@@ -80,10 +80,15 @@ export const getHomeData = async (userIdRaw) => {
 
   // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const day = today.getDay(); // 0(일) ~ 6(토)
+  
+  // 일요일(0)이면 -6일, 그 외 요일은 (1 - 요일값)만큼 더해서 월요일로 맞춤
+  const diff = (day === 0 ? -6 : 1) - day; 
+  startOfWeek.setDate(today.getDate() + diff);
   startOfWeek.setHours(0, 0, 0, 0);
+
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // 월요일로부터 6일 뒤는 일요일
   endOfWeek.setHours(23, 59, 59, 999);
 
   const weeklyRaw = safeArray(await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek));
