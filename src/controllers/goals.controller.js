@@ -34,9 +34,9 @@ export function registerGoalRoutes(app) {
   });
 
   // GET /api/goals/current (현재 목표 조회)
-  app.get("/api/goals/current/:userId", async (req, res) => {
+  app.get("/api/goals/current", requireAuth, async (req, res) => {
     try {
-      const result = await getCurrentGoalByUserId(req.params.userId);
+      const result = await getCurrentGoalByUserId(req.auth.userId);
       return res.status(200).json(result);
     } catch (e) {
       console.error("[GET /api/goals/current] error:", e);
