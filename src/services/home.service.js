@@ -44,7 +44,6 @@ function calculateDDay(targetDate) {
 
 export const getHomeData = async (userIdRaw) => {
   const today = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
-  console.log("today: " + today)
   const userId = Number(userIdRaw);
 
   const userInfo = await homeRepository.findUserInfo(userId);
@@ -79,8 +78,6 @@ export const getHomeData = async (userIdRaw) => {
   const endOfWeek = new Date(today);
   endOfWeek.setDate(today.getDate() + 4);
   endOfWeek.setHours(8, 59, 59, 999);
-
-  console.log("range: " + startOfWeek + " ~ " + endOfWeek);
 
   const weeklyRaw = safeArray(await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek));
   const weeklyStats = [];
