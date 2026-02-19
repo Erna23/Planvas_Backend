@@ -44,7 +44,7 @@ function calculateDDay(targetDate) {
 
 export const getHomeData = async (userIdRaw) => {
   const today = new Date();
-  const userId = Number(userIdRaw); 
+  const userId = Number(userIdRaw);
 
   const userInfo = await homeRepository.findUserInfo(userId);
   const userName = userInfo?.name || "사용자";
@@ -67,6 +67,15 @@ export const getHomeData = async (userIdRaw) => {
 
     progress.growthAchieved = growth + activityInfo.growth;
     progress.restAchieved = rest + activityInfo.rest;
+
+    const myActs = safeArray(await homeRepository.findMyActivitiesForGoal(userId, goal.id));
+    myActs.forEach(a => {
+      if (a.completed === true) {
+        const tab = a.Activity?.tab || a.activity?.tab;
+        if (tab === "GROWTH") progress.growthAchieved += 1;
+        if (tab === "REST") progress.restAchieved += 1;
+      }
+    });
   }
 
   // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
@@ -83,7 +92,19 @@ export const getHomeData = async (userIdRaw) => {
 
   for (let i = 0; i < 7; i++) {
     const dateString = toLocalDateString(currentLoopDate);
-    const dailySchedules = weeklyRaw.filter((a) => overlapsDate(a, dateString));
+
+    // 1. 해당 날짜 범위에 있는 모든 일정을 일차적으로 필터링
+    const dailySchedulesRaw = weeklyRaw.filter((a) => overlapsDate(a, dateString));
+
+    // 2. [수정] ACTIVITY 타입은 종료일(endAt)에만 표시되도록 추가 필터링
+    const dailySchedules = dailySchedulesRaw.filter((s) => {
+      if (s.type === "ACTIVITY") {
+        const endDateString = toLocalDateString(new Date(s.endAt));
+        return endDateString === dateString; // 오늘이 마지막 날인 경우만 포함
+      }
+      return true; // 다른 타입(FIXED, MANUAL 등)은 기존처럼 유지
+    });
+
     const hasFixedItem = dailySchedules.some(a => a.type === "FIXED");
 
     weeklyStats.push({
@@ -112,18 +133,29 @@ export const getHomeData = async (userIdRaw) => {
   endOfDay.setHours(23, 59, 59, 999);
 
   const rawTodayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
-  const todayTodos = rawTodayTodos.map(t => ({
-    todoId: t.id,
-    title: t.title,
-    category: t.category || "GROWTH",
-    type: t.type || "MANUAL",
-    status: t.status,
-    point: t.point || 0,
-    color: t.eventColor || 1,
-    startTime: formatTime(t.startAt),
-    endTime: formatTime(t.endAt),
-    recurrenceRule: t.recurrenceRule ?? t.recurrence_rule ?? null,
-  }));
+  const todayString = toLocalDateString(today);
+
+  // 2. 오늘의 할 일 목록 필터링 및 데이터 구성
+  const todayTodos = rawTodayTodos
+    .filter((t) => {
+      if (t.type === "ACTIVITY") {
+        const endDateString = toLocalDateString(new Date(t.endAt));
+        return endDateString === todayString;
+      }
+      return true;
+    })
+    .map(t => ({
+      todoId: t.id,
+      title: t.title,
+      category: t.category || "GROWTH",
+      type: t.type || "MANUAL",
+      status: t.status,
+      point: t.point || 0,
+      color: t.eventColor || 1,
+      startTime: formatTime(t.startAt), 
+      endTime: formatTime(t.endAt),
+      recurrenceRule: t.recurrenceRule ?? t.recurrence_rule ?? null,
+    }));
 
   const rawRecs = safeArray(await homeRepository.findRecommendations());
   const recommendations = rawRecs.map((item) => ({
@@ -138,7 +170,7 @@ export const getHomeData = async (userIdRaw) => {
   return {
     userName,
     goalStatus,
-    goal: currentGoal ?? null,
+    goal: isMyCurrent ? currentGoal : (isMyRecent ? recentGoal : null),
     progress: progress ?? null,
     weekStartDate: toLocalDateString(startOfWeek),
     weeklyStats,
@@ -151,8 +183,8 @@ export const patchScheduleStatus = async (userIdRaw, activityId) => {
   const userId = Number(userIdRaw);
   const activity = await homeRepository.findActivityById(activityId);
   if (!activity) throw new Error("NOT_FOUND");
-  if (Number(activity.userId) !== userId) throw new Error("FORBIDDEN"); 
-  
+  if (Number(activity.userId) !== userId) throw new Error("FORBIDDEN");
+
   const newStatus = activity.status === "DONE" ? "TODO" : "DONE";
   return await homeRepository.updateActivityStatus(activityId, newStatus);
 };
