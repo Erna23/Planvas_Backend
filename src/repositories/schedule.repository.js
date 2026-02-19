@@ -210,8 +210,10 @@ export async function getDateActivity(userId, date) {
         where: {
             userId,
             startAt: {
-                gte: startOfDay,
                 lt: endOfDay
+            },
+            endAt: {
+                gt: startOfDay
             }
         },
         orderBy: {
