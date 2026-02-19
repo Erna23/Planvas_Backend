@@ -70,20 +70,21 @@ export const getHomeData = async (userIdRaw) => {
   }
 
   // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
+  // 오늘 기준 -3일
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - 3);
   startOfWeek.setHours(9, 0, 0, 0);
 
-  // 오늘 기준 +3일
+  // 오늘 기준 +4일
   const endOfWeek = new Date(today);
-  endOfWeek.setDate(today.getDate() + 4);
+  endOfWeek.setDate(today.getDate() + 5);
   endOfWeek.setHours(8, 59, 59, 999);
 
   const weeklyRaw = safeArray(await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek));
   const weeklyStats = [];
   let currentLoopDate = new Date(startOfWeek);
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 8; i++) {
     const dateString = toLocalDateString(currentLoopDate);
 
     // 1. 해당 날짜 범위에 있는 모든 일정을 일차적으로 필터링

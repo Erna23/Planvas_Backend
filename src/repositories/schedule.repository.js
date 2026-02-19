@@ -47,61 +47,6 @@ export async function getGrowthAndRest(userId, startDate, endDate, goalId = null
     }
 }
 
-export async function createFixedActivitiesMany(userId, schedules) {
-    const createdActivities = await Promise.all(
-        schedules.map(schedule =>
-            prisma.MyActivity.create({
-                data: {
-                    userId,
-                    title: schedule.title,
-                    startAt: schedule.startAt,
-                    endAt: schedule.endAt,
-                    category: schedule.category,
-                    scheduleType: "FIXED"
-                }
-            })
-        )
-    );
-
-    const ids = createdActivities.map(activity => activity.id);
-    return { ids };
-}
-
-export async function findFixedActivitiesByUserId(userId) {
-    const activities = await prisma.userActivity.findMany({
-        where: {
-            userId,
-            type: { in: ["FIXED", "MANUAL"] }, // activityId: null 제거
-        },
-        select: {
-            id: true,
-            title: true,
-            startAt: true,
-            endAt: true,
-            type: true,
-            recurrenceRule: true,
-        },
-        orderBy: { startAt: "asc" },
-    });
-
-    const fixedSchedules = activities.map((activity) => ({
-        id: activity.id,
-        title: activity.title,
-        date: activity.startAt.toISOString().split("T")[0],
-        startAt: activity.startAt.toTimeString().slice(0, 5),
-        endAt: activity.endAt.toTimeString().slice(0, 5),
-        type: activity.type,
-        recurrenceRule: activity.recurrenceRule ?? null,
-    }));
-
-    return { fixedSchedules };
-}
-
-export async function deleteUserActivityById(id) {
-    return await prisma.userActivity.delete({ where: { id } });
-}
-
-
 export async function findUserActivityById(id) {
     return await prisma.userActivity.findFirst({ where: { id } });
 }

@@ -23,6 +23,11 @@ import { registerDebugNotificationRoutes } from "./controllers/debug.notificatio
 const app = express();
 const port = process.env.PORT || 3000;
 
+console.log("process.env.TZ =", process.env.TZ);
+console.log(
+  "Intl TZ =",
+  Intl.DateTimeFormat().resolvedOptions().timeZone
+);
 
 app.use(cors());
 app.use(express.json());
