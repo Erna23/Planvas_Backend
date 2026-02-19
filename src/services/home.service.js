@@ -43,7 +43,8 @@ function calculateDDay(targetDate) {
 }
 
 export const getHomeData = async (userIdRaw) => {
-  const today = new Date();
+  const today = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+  console.log("today: " + today)
   const userId = Number(userIdRaw);
 
   const userInfo = await homeRepository.findUserInfo(userId);
@@ -62,7 +63,6 @@ export const getHomeData = async (userIdRaw) => {
   let progress = { growthAchieved: 0, restAchieved: 0 };
 
   if (goal) {
-
     const { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate, goal.id);
     const activityInfo = await getGrowthAndRestPointFromActivities(activityIds);
 
@@ -72,16 +72,15 @@ export const getHomeData = async (userIdRaw) => {
 
   // 주간 활동 및 투두 조회 로직 (userId 변수 사용)
   const startOfWeek = new Date(today);
-  const day = today.getDay(); // 0(일) ~ 6(토)
-  
-  // 일요일(0)이면 -6일, 그 외 요일은 (1 - 요일값)만큼 더해서 월요일로 맞춤
-  const diff = (day === 0 ? -6 : 1) - day; 
-  startOfWeek.setDate(today.getDate() + diff);
-  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setDate(today.getDate() - 3);
+  startOfWeek.setHours(9, 0, 0, 0);
 
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // 월요일로부터 6일 뒤는 일요일
-  endOfWeek.setHours(23, 59, 59, 999);
+  // 오늘 기준 +3일
+  const endOfWeek = new Date(today);
+  endOfWeek.setDate(today.getDate() + 4);
+  endOfWeek.setHours(8, 59, 59, 999);
+
+  console.log("range: " + startOfWeek + " ~ " + endOfWeek);
 
   const weeklyRaw = safeArray(await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek));
   const weeklyStats = [];
@@ -125,9 +124,10 @@ export const getHomeData = async (userIdRaw) => {
   }
 
   const startOfDay = new Date(today);
-  startOfDay.setHours(0, 0, 0, 0);
+  startOfDay.setHours(9, 0, 0, 0);
   const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59, 999);
+  endOfWeek.setDate(today.getDate() + 1);
+  endOfWeek.setHours(8, 59, 59, 999);
 
   const rawTodayTodos = safeArray(await homeRepository.findTodayActivities(userId, startOfDay, endOfDay));
   const todayString = toLocalDateString(today);
