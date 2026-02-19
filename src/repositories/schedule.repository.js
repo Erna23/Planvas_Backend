@@ -21,10 +21,10 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
         });
 
         const { growth, rest } = rows.reduce((acc, r) => {
-                if (r.category === "GROWTH") acc.growth += r.point ?? 0;
-                else if (r.category === "REST") acc.rest += r.point ?? 0;
-                return acc;
-            }, { growth: 0, rest: 0 }
+            if (r.category === "GROWTH") acc.growth += r.point ?? 0;
+            else if (r.category === "REST") acc.rest += r.point ?? 0;
+            return acc;
+        }, { growth: 0, rest: 0 }
         );
 
         const rows2 = await prisma.myActivity.findMany({
@@ -36,19 +36,19 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
             },
             select: { activityId: true },
         });
-  
+
         const activityIds = rows2.map(r => r.activityId).filter(v => v != null);
-  
+
         return { growth, rest, activityIds };
     } catch (e) {
         console.log("getGrowthAndRest: " + e);
         return { growth: 0, rest: 0, activityIds: [] };
     }
-}  
+}
 
 export async function createFixedActivitiesMany(userId, schedules) {
     const createdActivities = await Promise.all(
-        schedules.map(schedule => 
+        schedules.map(schedule =>
             prisma.MyActivity.create({
                 data: {
                     userId,
@@ -61,7 +61,7 @@ export async function createFixedActivitiesMany(userId, schedules) {
             })
         )
     );
-    
+
     const ids = createdActivities.map(activity => activity.id);
     return { ids };
 }
@@ -69,16 +69,16 @@ export async function createFixedActivitiesMany(userId, schedules) {
 export async function findFixedActivitiesByUserId(userId) {
     const activities = await prisma.userActivity.findMany({
         where: {
-        userId,
-        type: { in: ["FIXED", "MANUAL"] }, // activityId: null 제거
+            userId,
+            type: { in: ["FIXED", "MANUAL"] }, // activityId: null 제거
         },
         select: {
-        id: true,
-        title: true,
-        startAt: true,
-        endAt: true,
-        type: true,
-        recurrenceRule: true, 
+            id: true,
+            title: true,
+            startAt: true,
+            endAt: true,
+            type: true,
+            recurrenceRule: true,
         },
         orderBy: { startAt: "asc" },
     });
@@ -156,13 +156,13 @@ export async function updateUserActivityById(id, body) {
 export async function addOwnUserActivity(userId, data) {
     return await prisma.userActivity.create({
         data: {
-        userId,
-        title: activity.title,
-        category: activity.tab,                
-        point: data.point ?? activity.point ?? 0,
-        type: "MANUAL",
-        startAt: new Date(`${data.startDate}T${data.startTime}:00`),
-        endAt: new Date(`${data.endDate}T${data.endTime}:00`),
+            userId,
+            title: activity.title,
+            category: activity.tab,
+            point: data.point ?? activity.point ?? 0,
+            type: "MANUAL",
+            startAt: new Date(`${data.startDate}T${data.startTime}:00`),
+            endAt: new Date(`${data.endDate}T${data.endTime}:00`),
         },
         select: { id: true },
     });
@@ -195,8 +195,8 @@ export async function completeActivity(id) {
     return await prisma.userActivity.update({
         where: { id },
         data: { status: next },
-        select: { 
-            id: true, status : true
+        select: {
+            id: true, status: true
         }
     });
 }
@@ -209,12 +209,20 @@ export async function getDateActivity(userId, date) {
     return await prisma.userActivity.findMany({
         where: {
             userId,
-            startAt: {
-                lt: endOfDay
-            },
-            endAt: {
-                gt: startOfDay
-            }
+            startAt: { lt: endOfDay },
+            OR: [
+                {
+                    type: { not: "Activity" },
+                    endAt: { gt: startOfDay },
+                },
+                {
+                    type: "Activity",
+                    endAt: {
+                        gte: startOfDay,
+                        lt: endOfDay
+                    }
+                }
+            ]
         },
         orderBy: {
             startAt: 'asc'
@@ -232,6 +240,7 @@ export async function getDateActivity(userId, date) {
         }
     });
 }
+
 
 export async function updateMyActivityCompletedByUserActivityId(userActivityId, isCompleted) {
     return await prisma.myActivity.update({
