@@ -6,7 +6,6 @@ import {
     completeTodos,
     completeMyActivity,
 } from "../services/schedule.service.js";
-import { networkconnectivity } from "googleapis/build/src/apis/networkconnectivity/index.js";
 
 function getAuthUserId(req) {
   //  프로젝트 표준: req.userId
@@ -19,28 +18,28 @@ function getAuthUserId(req) {
 export function registerScheduleRoutes(app) {
 
     // 할 일 생성
-    app.post("/api/todos/:userId", async (req, res) => {
+    app.post("/api/todos", requireAuth, async (req, res) => {
         try {
-            // const userId = getAuthUserId(req);
-            // if (!userId) return res.status(401).json(authFail());
+            const userId = getAuthUserId(req);
+            if (!userId) return res.status(401).json(authFail());
             
             const date = req.query.date ? req.query.date.toString() : new Date().toString();
-            const result = await addTodos(req.params.userId, req.body, date);
+            const result = await addTodos(userId, req.body, date);
             return ok(res, result, 200);
         } catch (e) {
-            console.error("[POST /api/todos]", e);
+            console.error("[GET /api/todos]", e);
             return res.status(e.statusCode ?? 500).json(e.payload ?? defaultSchedulesFail());
         }
     }); 
 
     // 할 일 조회
-    app.get("/api/todos/:userId", async (req, res) => {
+    app.get("/api/todos", requireAuth, async (req, res) => {
         try {
-            // const userId = getAuthUserId(req);
-            // if (!userId) return res.status(401).json(authFail());
+            const userId = getAuthUserId(req);
+            if (!userId) return res.status(401).json(authFail());
             
             const date = req.query.date ? req.query.date.toString() : new Date().toString();
-            const result = await getTodos(req.params.userId, date);
+            const result = await getTodos(userId, date);
             return ok(res, result, 200);
         } catch (e) {
             console.error("[GET /api/todos]", e);
