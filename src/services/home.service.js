@@ -43,7 +43,7 @@ function calculateDDay(targetDate) {
 }
 
 export const getHomeData = async (userIdRaw) => {
-  const today = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+  const today = new Date();
   const userId = Number(userIdRaw);
 
   const userInfo = await homeRepository.findUserInfo(userId);
