@@ -73,12 +73,12 @@ export const getHomeData = async (userIdRaw) => {
   // 오늘 기준 -3일
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - 3);
-  startOfWeek.setHours(9, 0, 0, 0);
+  startOfWeek.setHours(0, 0, 0, 0);
 
   // 오늘 기준 +4일
   const endOfWeek = new Date(today);
   endOfWeek.setDate(today.getDate() + 5);
-  endOfWeek.setHours(8, 59, 59, 999);
+  endOfWeek.setHours(23, 59, 59, 999);
 
   const weeklyRaw = safeArray(await homeRepository.findWeeklyActivities(userId, startOfWeek, endOfWeek));
   const weeklyStats = [];
