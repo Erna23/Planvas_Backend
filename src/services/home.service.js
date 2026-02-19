@@ -63,7 +63,7 @@ export const getHomeData = async (userIdRaw) => {
 
   if (goal) {
 
-    const { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
+    const { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate, goal.id);
     const activityInfo = await getGrowthAndRestPointFromActivities(activityIds);
 
     progress.growthAchieved = growth + activityInfo.growth;

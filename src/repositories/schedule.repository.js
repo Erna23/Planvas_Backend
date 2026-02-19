@@ -5,7 +5,7 @@ function toDate(d) {
     return d instanceof Date ? d : new Date(d);
 }
 
-export async function getGrowthAndRest(userId, startDate, endDate) {
+export async function getGrowthAndRest(userId, startDate, endDate, goalId = null) {
     try {
         const s = toDate(startDate);
         const e = toDate(endDate);
@@ -30,6 +30,7 @@ export async function getGrowthAndRest(userId, startDate, endDate) {
         const rows2 = await prisma.myActivity.findMany({
             where: {
                 userId,
+                goalId,
                 startDate: { lt: e },
                 endDate: { gt: s },
                 completed: true,
