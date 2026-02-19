@@ -4,17 +4,22 @@ import { getGrowthAndRestPointFromActivities } from "../repositories/activity.re
 
 const toLocalDateString = (d) => {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const m = String(d.getMonth() + 1);
+  const day = String(d.getDate());
   return `${y}-${m}-${day}`;
 };
 
 const formatTime = (date) => {
   if (!date) return null;
-  const d = new Date(date);
-  let timeStr = d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
-  if (timeStr === "24:00") timeStr = "00:00";
-  return timeStr;
+
+  return date
+    .toLocaleTimeString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+    .replace("24:00", "00:00");
 };
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);

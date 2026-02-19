@@ -114,7 +114,13 @@ export async function addOwnUserActivity(userId, data) {
     });
 }
 
-export async function addDateTodo(userId, body, date = new Date(now())) {
+export async function addDateTodo(userId, body, date) {
+    const startAt = new Date(`${date.getFullYear()}-${String(date.getMonth() + 1)}-${String(date.getDate())} ${body.startTime}`)
+    const endAt = new Date(`${date.getFullYear()}-${String(date.getMonth() + 1)}-${String(date.getDate())} ${body.endTime}`)
+
+    console.log(startAt)
+    console.log(endAt)
+
     return await prisma.userActivity.create({
         data: {
             userId,
@@ -122,8 +128,8 @@ export async function addDateTodo(userId, body, date = new Date(now())) {
             category: body.category,
             point: body.point,
             eventColor: body.eventColor,
-            startAt: new Date(`${date}T${body.startTime}:00`),
-            endAt: new Date(`${date}T${body.endTime}:00`),
+            startAt,
+            endAt,
             type: "TODO",
             status: "TODO"
         },
@@ -147,12 +153,17 @@ export async function completeActivity(id) {
     });
 }
 
-export async function getDateActivity(userId, date) {
-    const startOfDay = new Date(`${date}T00:00:00`);
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
+function toKSTString(date) {
+    if (!date) return null;
+    return date.toLocaleString("sv-SE", { timeZone: "Asia/Seoul", hour12: false })
+}
 
-    return await prisma.userActivity.findMany({
+export async function getDateActivity(userId, date = new Date()) {
+    const startOfDay = new Date(`${date.getFullYear()}-${String(date.getMonth() + 1)}-${String(date.getDate())} 00:00`)
+    const endOfDay = new Date(startOfDay);;
+    endOfDay.setDate(startOfDay.getDate() + 1);
+
+    const rows = await prisma.userActivity.findMany({
         where: {
             userId,
             startAt: { lt: endOfDay },
@@ -185,6 +196,12 @@ export async function getDateActivity(userId, date) {
             status: true,
         }
     });
+
+    return rows.map(r => ({
+        ...r,
+        startAt: toKSTString(r.startAt),
+        endAt: toKSTString(r.endAt),
+    }));
 }
 
 

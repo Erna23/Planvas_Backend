@@ -23,7 +23,7 @@ export function registerScheduleRoutes(app) {
             const userId = getAuthUserId(req);
             if (!userId) return res.status(401).json(authFail());
             
-            const date = req.query.date ? req.query.date.toString() : undefined;
+            const date = req.query.date ? req.query.date.toString() : new Date().toString();
             const result = await addTodos(userId, req.body, date);
             return ok(res, result, 200);
         } catch (e) {
@@ -38,7 +38,7 @@ export function registerScheduleRoutes(app) {
             const userId = getAuthUserId(req);
             if (!userId) return res.status(401).json(authFail());
             
-            const date = req.query.date ? req.query.date.toString() : undefined;
+            const date = req.query.date ? req.query.date.toString() : new Date().toString();
             const result = await getTodos(userId, date);
             return ok(res, result, 200);
         } catch (e) {

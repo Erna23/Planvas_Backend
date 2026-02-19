@@ -15,11 +15,11 @@ import {
 
 // TO-DO
 export async function addTodos(userId, body, date) {
-	return await addDateTodo(userId, body, date);
+	return await addDateTodo(Number(userId), body, new Date(date));
 }
 
 export async function getTodos(userId, date) {
-	return await getDateActivity(userId, date);
+	return await getDateActivity(Number(userId), new Date(date));
 }
 
 export async function completeTodos(id) {
