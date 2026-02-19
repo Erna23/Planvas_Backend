@@ -62,6 +62,7 @@ export const getHomeData = async (userIdRaw) => {
   let progress = { growthAchieved: 0, restAchieved: 0 };
 
   if (goal) {
+
     const { growth, rest, activityIds } = await getGrowthAndRest(userId, goal.startDate, goal.endDate);
     const activityInfo = await getGrowthAndRestPointFromActivities(activityIds);
 
@@ -176,7 +177,7 @@ export const getHomeData = async (userIdRaw) => {
     userName,
     goalStatus,
     goal: isMyCurrent ? currentGoal : (isMyRecent ? recentGoal : null),
-    progress: progress ?? null,
+    progress: progress, 
     weekStartDate: toLocalDateString(startOfWeek),
     weeklyStats,
     todayTodos,
