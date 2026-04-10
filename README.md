@@ -82,3 +82,6 @@ Prisma ORM을 활용하여 데이터베이스와의 상호작용을 효율적으
 - **Task**: 세부 실행 단위 및 달성률 관리  
 
 ---
+<div align="center">
+<img width="378" height="824" alt="image" src="https://github.com/user-attachments/assets/03c53b36-5546-470f-876d-252bd07f11a0" />
+
